@@ -11,8 +11,7 @@
   "dependencies": {
     "@open-keys/core": "workspace:*",
     "@tonejs/midi": "2.0.28",
-    "pixi.js": "8.23.0",
-    "tone": "15.1.22"
+    "pixi.js": "8.23.0"
   },
   "devDependencies": {
     "@open-keys/config": "workspace:*",

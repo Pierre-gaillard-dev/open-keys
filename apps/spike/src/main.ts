@@ -1,6 +1,6 @@
-import { loaded, Sampler, setContext, start as startTone } from "tone";
 import { FallingNotesRenderer } from "./falling-notes-renderer";
 import { NoteScheduler } from "./note-scheduler";
+import { PianoSampler } from "./piano-sampler";
 import { parseSong, type Song } from "./song";
 import { SongClock, type SyncMode } from "./song-clock";
 
@@ -20,18 +20,6 @@ function byId<T extends HTMLElement>(id: string, type: new () => T): T {
 
 function isSyncMode(value: string): value is SyncMode {
   return value === "output-timestamp" || value === "current-time" || value === "raw";
-}
-
-/** Salamander samples every minor third (A, C, D#, F#), as published by Tone.js. */
-function salamanderUrls(): Record<string, string> {
-  const urls: Record<string, string> = { A0: "A0.mp3", C8: "C8.mp3" };
-  for (let octave = 1; octave <= 7; octave++) {
-    urls[`C${octave}`] = `C${octave}.mp3`;
-    urls[`D#${octave}`] = `Ds${octave}.mp3`;
-    urls[`F#${octave}`] = `Fs${octave}.mp3`;
-    urls[`A${octave}`] = `A${octave}.mp3`;
-  }
-  return urls;
 }
 
 const ui = {
@@ -55,12 +43,7 @@ const ui = {
 };
 
 const audioContext = new AudioContext({ latencyHint: "interactive" });
-setContext(audioContext);
-const sampler = new Sampler({
-  urls: salamanderUrls(),
-  baseUrl: SALAMANDER_BASE_URL,
-  release: 1,
-}).toDestination();
+const sampler = new PianoSampler(audioContext);
 const clock = new SongClock(audioContext);
 const scheduler = new NoteScheduler(clock, sampler, audioContext);
 const renderer = new FallingNotesRenderer(clock);
@@ -109,7 +92,7 @@ async function play(): Promise<void> {
   if (!(song && samplesReady)) {
     return;
   }
-  await startTone();
+  await audioContext.resume();
   scheduler.reset(clock.scheduledSongTime());
   clock.play();
   scheduler.start();
@@ -182,7 +165,7 @@ function hudText(): string {
     `baseLatency ${formatMs(audioContext.baseLatency)} · outputLatency ${formatMs(audioContext.outputLatency || 0)}`,
     `sync ${clock.syncMode} · décalage ${clock.offsetMs} ms · écart programmé/entendu ${formatMs(scheduled - heard)}`,
     `position ${formatSeconds(heard)} / ${formatSeconds(song?.duration ?? 0)} · vitesse ${clock.rate * 100} %`,
-    `notes jouées ${scheduler.stats.scheduledNotes} · en retard ${scheduler.stats.skippedLateNotes} · boucles ${scheduler.stats.loopCount}`,
+    `notes jouées ${scheduler.stats.scheduledNotes} · en retard ${scheduler.stats.skippedLateNotes} · voix ${sampler.activeVoices} · boucles ${scheduler.stats.loopCount}`,
   ].join("\n");
 }
 
@@ -253,7 +236,7 @@ async function boot(): Promise<void> {
   bindControls();
   const firstOption = ui.songSelect.selectedOptions[0];
   await loadFromUrl(ui.songSelect.value, firstOption?.textContent ?? "");
-  await loaded();
+  await sampler.load(SALAMANDER_BASE_URL);
   samplesReady = true;
   // Test helper: ?autoplay starts immediately (needs a browser autoplay policy that allows audio).
   if (new URLSearchParams(location.search).has("autoplay")) {

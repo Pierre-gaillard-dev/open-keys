@@ -14,7 +14,11 @@ export class SongClock {
   #anchorAudioTime = 0;
   #anchorSongTime = 0;
 
-  syncMode: SyncMode = "output-timestamp";
+  /**
+   * Default: currentTime − outputLatency − baseLatency, consistent on Chrome and Firefox.
+   * Firefox's getOutputTimestamp() does not include the output latency (measured: 0 ms vs 42 ms reported).
+   */
+  syncMode: SyncMode = "current-time";
   /** Manual visual offset in real milliseconds (positive = visuals later). */
   offsetMs = 0;
 

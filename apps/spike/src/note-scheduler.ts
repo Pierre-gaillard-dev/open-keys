@@ -1,4 +1,4 @@
-import { Frequency, type Sampler } from "tone";
+import type { PianoSampler } from "./piano-sampler";
 import { firstNoteAtOrAfter, type Song } from "./song";
 import type { SongClock } from "./song-clock";
 
@@ -21,7 +21,7 @@ export interface SchedulerStats {
 
 export class NoteScheduler {
   readonly #clock: SongClock;
-  readonly #sampler: Sampler;
+  readonly #sampler: PianoSampler;
   readonly #context: AudioContext;
   #song: Song | undefined;
   #nextIndex = 0;
@@ -31,7 +31,7 @@ export class NoteScheduler {
   onEnd: () => void = () => undefined;
   readonly stats: SchedulerStats = { scheduledNotes: 0, skippedLateNotes: 0, loopCount: 0 };
 
-  constructor(clock: SongClock, sampler: Sampler, context: AudioContext) {
+  constructor(clock: SongClock, sampler: PianoSampler, context: AudioContext) {
     this.#clock = clock;
     this.#sampler = sampler;
     this.#context = context;
@@ -54,12 +54,12 @@ export class NoteScheduler {
       clearInterval(this.#timer);
       this.#timer = undefined;
     }
-    this.#sampler.releaseAll();
+    this.#sampler.stopAll();
   }
 
   /** Call after any seek or rate change: cancels pending notes and repositions. */
   reset(songTime: number): void {
-    this.#sampler.releaseAll();
+    this.#sampler.stopAll();
     this.#nextIndex = this.#song ? firstNoteAtOrAfter(this.#song.notes, songTime) : 0;
   }
 
@@ -97,8 +97,7 @@ export class NoteScheduler {
       } else {
         const end = this.loop ? Math.min(note.soundEnd, this.loop.end) : note.soundEnd;
         const duration = Math.max(0.05, (end - note.start) / rate);
-        const name = Frequency(note.pitch, "midi").toNote();
-        this.#sampler.triggerAttackRelease(name, duration, Math.max(audioStart, now), note.velocity);
+        this.#sampler.play(note.pitch, Math.max(audioStart, now), duration, note.velocity);
         this.stats.scheduledNotes++;
       }
       this.#nextIndex++;
