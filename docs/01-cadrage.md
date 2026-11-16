@@ -64,7 +64,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 - **Une seule base de code** pour les trois plateformes.
 - **Firefox** est le navigateur principal, sur PC comme sur Android. Tout doit aussi être testé sur Chromium.
 - HTTPS obligatoire (PWA, Service Worker, Wake Lock).
-- Déploiement en **un seul conteneur** via Dokploy, avec un volume persistant pour SQLite et les fichiers.
+- Déploiement via Dokploy : **deux conteneurs** (`web` nginx + `api` Hono) orchestrés par un `docker-compose`, sur un seul domaine. Un volume persistant pour SQLite et les fichiers ; pas de conteneur de base de données.
 - Pas de secrets ni de contenu protégé dans le dépôt. Les attributions de licence sont respectées (échantillons Salamander en CC-BY).
 
 ## 7. Décisions
@@ -86,6 +86,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D13 | Licence | Dépôt public, licence MIT, codé « open source ready » | Portfolio |
 | D14 | Couvertures | WebP 720×720 carré, sources MusicBrainz/CAA + Wikidata (gratuites, sans clé), choix validé par l'utilisateur à l'import | Les MIDI n'ont pas d'image ; le classique n'a pas d'album de référence → portrait du compositeur |
 | D15 | Doc de la base | `docs/database.dbml` comme référence, généré à partir de Drizzle dès que le code existe | Plus lisible que Mermaid ; on évite que la doc diverge du code |
+| D16 | Déploiement | Compose avec deux conteneurs : `web` (nginx, PWA) et `api` (Hono + SQLite) ; routage par chemin sur un seul domaine | Séparation front/back et déploiements indépendants, sans CORS ; pas de conteneur DB avec SQLite |
 
 ## 8. Risques
 

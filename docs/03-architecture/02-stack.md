@@ -21,4 +21,4 @@
 | Images | **sharp** | Conversion des couvertures en WebP 720×720 |
 | Authentification | Sessions en base, cookie `httpOnly`, hash **argon2id** | Un seul utilisateur, prêt pour plusieurs |
 | Qualité | **Biome** (lint et formatage), `tsc --noEmit`, **Vitest**, **Playwright** (e2e) | CI stricte |
-| Déploiement | Dockerfile multi-stage, Dokploy (Traefik, HTTPS) | Un seul conteneur, volume `/data` |
+| Déploiement | docker-compose (`web` nginx + `api` Node), Dokploy (Traefik, HTTPS) | Deux conteneurs, un seul domaine, volume `/data` |

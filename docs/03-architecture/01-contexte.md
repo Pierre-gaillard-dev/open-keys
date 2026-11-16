@@ -45,12 +45,16 @@ flowchart TB
     SW[Service Worker<br/>shell + échantillons]
   end
 
-  subgraph Server["Conteneur unique — Dokploy sur VPS OVH"]
-    API[API Hono]
-    CORE[packages/core<br/>analyse MIDI, mains]
+  subgraph Host["VPS OVH — Dokploy (Traefik, HTTPS)"]
+    subgraph WEB["Conteneur web — nginx"]
+      STATIC[Fichiers statiques de la PWA]
+    end
+    subgraph APIC["Conteneur api — Node"]
+      API[API Hono]
+      CORE[packages/core<br/>analyse MIDI, mains]
+    end
     DB[(SQLite<br/>Drizzle)]
-    FS[(Volume /data/midi)]
-    STATIC[Fichiers statiques de la PWA]
+    FS[(Volume /data<br/>midi, covers)]
   end
 
   EXT[Sources externes<br/>URL, Mutopia]
@@ -59,10 +63,10 @@ flowchart TB
   PL --> AU
   IN -.V2.-> PL
   UI <--> IDB
-  UI <-->|HTTPS, client RPC typé| API
+  UI <-->|HTTPS /api, client RPC typé| API
   API --> CORE
   API --> DB
   API --> FS
   API --> EXT
-  STATIC --> Client
+  STATIC -->|HTTPS /| Client
 ```

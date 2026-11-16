@@ -136,8 +136,12 @@ open-keys/
 │
 ├── docs/
 ├── docker/
-│   └── Dockerfile
-├── docker-compose.yml                        # local / auto-hébergement
+│   ├── web.Dockerfile                        # build Vite → nginx:alpine
+│   ├── api.Dockerfile                        # build tsup → node:22-slim
+│   ├── nginx.conf                            # repli SPA, cache, compression
+│   └── Caddyfile                             # reverse proxy local (rôle de Traefik)
+├── docker-compose.yml                        # web + api (+ proxy en local)
+├── .env.example
 ├── biome.json
 ├── pnpm-workspace.yaml
 ├── package.json

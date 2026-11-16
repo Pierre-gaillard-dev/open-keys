@@ -43,7 +43,7 @@ flowchart LR
 - [ ] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
 - [ ] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
 - [ ] **1.6** Web : Vite, Tailwind, TanStack Router et Query, client `hc` typé, page de connexion, thème sombre.
-- [ ] **1.7** Dockerfile multi-stage + `docker-compose.yml`. Déploiement Dokploy en HTTPS avec un volume `/data`.
+- [ ] **1.7** `web.Dockerfile` (nginx) + `api.Dockerfile` (Node) + `docker-compose.yml`. Application compose dans Dokploy : routage `/api` → api, `/` → web, HTTPS, volume `data`.
 - [ ] **1.8** README initial (présentation, stack, lancement en local) + LICENSE MIT.
 
 **Critères de fin**
