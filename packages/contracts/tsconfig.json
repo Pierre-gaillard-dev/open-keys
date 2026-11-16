@@ -1,0 +1,4 @@
+{
+  "extends": "@open-keys/config/tsconfig.base.json",
+  "include": ["src", "vitest.config.ts"]
+}
