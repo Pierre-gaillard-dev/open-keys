@@ -1,0 +1,112 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0e13;
+  --surface: #141922;
+  --border: #2a3342;
+  --text: #e8ecf2;
+  --muted: #9aa4b2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    13px / 1.4 system-ui,
+    sans-serif;
+  overflow: hidden;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+}
+
+#hud {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgb(11 14 19 / 80%);
+  font:
+    11px / 1.35 ui-monospace,
+    monospace;
+  pointer-events: none;
+  white-space: pre;
+}
+
+#controls {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  max-width: min(720px, 60vw);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgb(20 25 34 / 92%);
+  border: 1px solid var(--border);
+}
+
+#controls[hidden] {
+  display: none;
+}
+
+button,
+select,
+.file {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+button[aria-pressed="true"] {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.group {
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.file {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.file input {
+  display: none;
+}
+
+label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted);
+}
+
+#show-btn {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+}

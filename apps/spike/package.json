@@ -1,0 +1,22 @@
+{
+  "name": "@open-keys/spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@open-keys/core": "workspace:*",
+    "@tonejs/midi": "2.0.28",
+    "pixi.js": "8.23.0",
+    "tone": "15.1.22"
+  },
+  "devDependencies": {
+    "@open-keys/config": "workspace:*",
+    "typescript": "catalog:",
+    "vite": "8.3.8"
+  }
+}
