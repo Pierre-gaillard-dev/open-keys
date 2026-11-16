@@ -77,7 +77,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D4 | Hébergement | VPS OVH existant, Dokploy, Docker | Infrastructure déjà en place, coût nul |
 | D5 | Backend | Hono + Drizzle + SQLite, monorepo pnpm en TypeScript | Logique métier spécifique (MIDI), types partagés de bout en bout |
 | D6 | Hors-ligne | Lecture hors-ligne + file d'attente pour les données de pratique, la dernière écriture l'emporte | Bon compromis valeur/complexité pour un seul utilisateur |
-| D7 | Front | PWA React + Vite + PixiJS, validée par un spike | Une seule base de code ; la performance n'est pas un risque sur un Pixel 10 |
+| D7 | Front | PWA React + Vite + PixiJS, **validée par le spike (D17)** | Une seule base de code ; la performance n'est pas un risque sur un Pixel 10 |
 | D8 | Navigateurs | Firefox et Chromium ; MIDI sur Android à trancher en V2 (piste : Capacitor) | Firefox Android ne supporte pas Web MIDI |
 | D9 | Import | Fichier et URL dans le MVP, Mutopia en V1.1, écran de vérification obligatoire | Beaucoup de MIDI ne séparent pas les mains |
 | D10 | Progression | Réglages, boucles, temps de pratique, statut ; vitesse cible et tableau de bord plus tard | Mesurable sans MIDI ; la V2 enrichira les sessions |
@@ -87,12 +87,13 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D14 | Couvertures | WebP 720×720 carré, sources MusicBrainz/CAA + Wikidata (gratuites, sans clé), choix validé par l'utilisateur à l'import | Les MIDI n'ont pas d'image ; le classique n'a pas d'album de référence → portrait du compositeur |
 | D15 | Doc de la base | `docs/database.dbml` comme référence, généré à partir de Drizzle dès que le code existe | Plus lisible que Mermaid ; on évite que la doc diverge du code |
 | D16 | Déploiement | Compose avec deux conteneurs : `web` (nginx, PWA) et `api` (Hono + SQLite) ; routage par chemin sur un seul domaine | Séparation front/back et déploiements indépendants, sans CORS ; pas de conteneur DB avec SQLite |
+| D17 | Spike falling notes | **GO PWA**. Audio en Web Audio natif (sans Tone.js) ; synchro sur `currentTime − outputLatency − baseLatency` ; la pédale prolonge le son mais pas l'affichage | 60 FPS sur Chrome (PC et Pixel 10) et sur Firefox, synchro validée à l'écoute sur les deux. Tone.js plantait sous Firefox et masquait la latence, et `getOutputTimestamp()` ignore la latence sous Firefox |
 
 ## 8. Risques
 
 | Risque | Impact | Mitigation |
 |---|---|---|
-| Décalage entre le son et l'image | Fort | Horloge unique (horloge audio) avec compensation de `outputLatency`, validée au spike |
+| Décalage entre le son et l'image | ~~Fort~~ Faible | Horloge unique (horloge audio) avec compensation de `outputLatency` : **validée au spike** sur Chrome et Firefox (D17) |
 | MIDI mal structuré (mains non séparées, pistes parasites) | Moyen | Écran de vérification, séparation automatique (pistes, sinon découpage par hauteur), mapping modifiable |
 | Pas de Web MIDI dans Firefox Android (V2) | Moyen | Couche d'entrée abstraite ; wrapper Capacitor avec plugin MIDI natif, ou Chrome dédié |
 | Firefox PC ne permet plus d'installer de PWA | Faible | Utilisation en onglet ou raccourci ; le hors-ligne reste assuré par le Service Worker |

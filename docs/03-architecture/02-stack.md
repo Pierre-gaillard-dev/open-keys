@@ -12,7 +12,7 @@
 | État serveur | **TanStack Query** | Cache et invalidation des données de l'API |
 | État du lecteur | **Zustand** (store vanilla) | Lu par le renderer **hors du cycle de rendu React** |
 | Rendu | **PixiJS v8** (WebGL) | Notes qui tombent et clavier |
-| Audio | **Tone.js** (`Sampler`, `Transport`) | Lecture, tempo, boucles |
+| Audio | **Web Audio natif** : `PianoSampler` maison + échantillons Salamander | Lecture, vélocité, sustain. Pas de Tone.js, qui masque `outputLatency` et casse sous Firefox (D17) |
 | Analyse MIDI | **@tonejs/midi** | Utilisé côté client et serveur via `packages/core` |
 | Hors-ligne | **vite-plugin-pwa** (Workbox) + **Dexie** (IndexedDB) | Cache et file d'attente de synchronisation |
 | Style | **Tailwind CSS** + composants maison | Thème sombre, cibles tactiles larges |

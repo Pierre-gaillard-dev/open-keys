@@ -39,7 +39,7 @@ flowchart TB
     UI[React UI<br/>catalogue, import, réglages]
     PL[Player engine<br/>Transport + Scheduler]
     RD[Renderer PixiJS]
-    AU[Audio Tone.js Sampler]
+    AU[Audio Web Audio natif<br/>PianoSampler]
     IN[InputSource<br/>V2 : Web MIDI / natif]
     IDB[(IndexedDB<br/>Dexie : MIDI, état, outbox)]
     SW[Service Worker<br/>shell + échantillons]
