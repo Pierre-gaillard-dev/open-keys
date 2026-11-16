@@ -6,7 +6,7 @@ Open Keys est une application *falling notes* personnelle. Elle lit des fichiers
 
 ![Lecteur sur PC](docs/maquettes/pc-05-lecteur.webp)
 
-> **Statut : en conception.** Le cadrage, l'architecture et les maquettes sont faits ; le développement commence par un spike technique ([roadmap](docs/05-roadmap.md)).
+> **Statut : fondations.** Le cadrage, l'architecture, les maquettes et l'outillage du monorepo sont en place ; le développement des fonctionnalités suit la [roadmap](docs/05-roadmap.md).
 
 ## Fonctionnalités
 
@@ -40,7 +40,7 @@ Toutes les maquettes : [`docs/maquettes`](docs/maquettes/README.md).
 | Rendu et audio | PixiJS (WebGL), Tone.js, échantillons Salamander Grand Piano |
 | Back | Hono, Drizzle ORM, SQLite, sharp |
 | Partagé | TypeScript strict, Zod, `@tonejs/midi` : un monorepo pnpm avec des types de bout en bout |
-| Qualité | Biome, Vitest, Playwright (Firefox et Chromium) |
+| Qualité | Biome, dependency-cruiser, Vitest, Playwright (Firefox et Chromium), lefthook + commitlint |
 | Déploiement | docker-compose (`web` nginx + `api` Node), Dokploy sur VPS |
 
 ## Architecture
@@ -86,7 +86,13 @@ docs/        Cadrage, cas d'utilisation, architecture, base de données, roadmap
 
 ## Démarrage
 
-Le code n'existe pas encore. Les commandes (`pnpm dev`, `docker compose up`) seront documentées ici à la fin de la phase 1 de la roadmap.
+Prérequis : [pnpm](https://pnpm.io) 12. pnpm télécharge lui-même la bonne version de Node (26 LTS).
+
+```bash
+pnpm install      # dépendances + hooks Git
+pnpm dev          # web (http://localhost:5173) + API (http://localhost:3000), /api proxifié
+pnpm verify       # lint, types, règles d'architecture, tests, build (comme la CI)
+```
 
 ## Crédits et licences
 

@@ -21,6 +21,8 @@ flowchart LR
 
 **Objectif** : valider la PWA (D7) sur la cible réelle avant d'écrire la vraie app.
 
+> **Ordre** : réalisé **après les tâches 1.1 et 1.2**, pour profiter de l'outillage (TypeScript strict, Biome, Vitest). Le code vit dans une branche `spike/falling-notes`, jamais mergée. Seuls les enseignements sont reportés dans la doc (décision GO/NO-GO, ajustements dans `03-architecture/04-lecteur.md`).
+
 - [ ] Page Vite unique : charger un MIDI dense (par exemple une étude de Chopin du domaine public, depuis Mutopia).
 - [ ] Rendu PixiJS des notes qui tombent et du clavier de 88 touches.
 - [ ] Son avec Tone.Sampler (Salamander allégé) et sustain.
@@ -37,14 +39,14 @@ flowchart LR
 
 ## Phase 1 — Fondations
 
-- [ ] **1.1** Monorepo pnpm : `apps/web`, `apps/server`, `packages/{core,contracts,config}`, TypeScript strict, Biome, Vitest.
-- [ ] **1.2** CI GitHub Actions : lint, vérification des types, tests, build.
+- [x] **1.1** Monorepo pnpm : `apps/web`, `apps/server`, `packages/{core,contracts,config}`, TypeScript strict, Biome, dependency-cruiser, lefthook, commitlint, Vitest.
+- [x] **1.2** CI GitHub Actions : lint, vérification des types, règles d'architecture, tests, build.
 - [ ] **1.3** Serveur Hono : configuration validée par zod, `/api/health`, erreurs typées, logs.
 - [ ] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
 - [ ] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
 - [ ] **1.6** Web : Vite, Tailwind, TanStack Router et Query, client `hc` typé, page de connexion, thème sombre.
 - [ ] **1.7** `web.Dockerfile` (nginx) + `api.Dockerfile` (Node) + `docker-compose.yml`. Application compose dans Dokploy : routage `/api` → api, `/` → web, HTTPS, volume `data`.
-- [ ] **1.8** README initial (présentation, stack, lancement en local) + LICENSE MIT.
+- [x] **1.8** README initial (présentation, stack, lancement en local) + LICENSE MIT.
 
 **Critères de fin**
 - [ ] Connexion fonctionnelle sur l'URL de production, depuis le Pixel 10 et un PC.

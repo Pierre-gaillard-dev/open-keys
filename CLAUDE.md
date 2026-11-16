@@ -11,6 +11,12 @@ Application d'apprentissage du piano en mode *falling notes* (PWA React + API Ho
 - `docs/05-roadmap.md` — phases et tâches (une tâche = une PR)
 - `docs/06-conventions.md` — **conventions de code, à respecter strictement**
 
+## Commandes
+
+- `pnpm dev` : web (5173) + API (3000), avec `/api` proxifié.
+- `pnpm verify` : lint, types, règles d'architecture, tests, build. **Doit passer avant toute PR.**
+- `pnpm check` : corrige le formatage et les imports (Biome).
+
 ## Règles clés
 
 - Découpage par feature ; un fichier = un rôle (`*.routes.ts`, `*.service.ts`, `*.queries.ts`, `*.schema.ts`…).

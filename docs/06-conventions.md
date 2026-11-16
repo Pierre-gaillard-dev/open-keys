@@ -24,12 +24,25 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 - **`index.ts` = API publique** d'une feature ou d'un package. Ce qu'il n'exporte pas est privé.
 - Règles d'import : voir `03-architecture/03-arborescence.md`. `core` est pur (pas de DOM, pas de Node, pas d'I/O).
 
+## 1 bis. Outils qui font respecter ces règles
+
+| Règle | Outil | Quand |
+|---|---|---|
+| Formatage, imports triés, règles de code (pas de `any`, pas de `!`, pas d'`enum`, pas d'export par défaut, `import type`, complexité limitée, noms de fichiers…) | Biome (`biome.json`) | Pre-commit (lefthook) + CI |
+| Frontières entre features, pureté de `core`, isolation des apps, absence de cycles | dependency-cruiser (`.dependency-cruiser.cjs`) | CI (`pnpm deps:check`) |
+| Rigueur des types (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `erasableSyntaxOnly`…) | TypeScript (`packages/config`) | CI (`pnpm typecheck`) |
+| Commits conventionnels | commitlint | Hook `commit-msg` |
+| Dépendances déclarées dans chaque package, versions alignées | Biome `noUndeclaredDependencies` + catalog pnpm | Pre-commit + CI |
+
+`pnpm verify` lance localement toute la chaîne de la CI.
+
 ## 2. Nommage
 
 - Fichiers en `kebab-case` (sauf composants React en `PascalCase.tsx`).
 - Fonctions nommées par un verbe (`suggestHandMapping`), booléens en `is`/`has`/`should`.
 - Unités dans les noms : `_ms`, `_pct`, `pitch` (numéro de note MIDI).
 - Pas d'abréviations obscures.
+- Imports relatifs **sans extension** (`./note-name`) ; un dossier s'importe par son `index.ts`.
 
 ## 3. TypeScript
 
