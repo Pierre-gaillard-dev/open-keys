@@ -13,119 +13,21 @@ SQLite avec Drizzle ORM. Chaque table est définie dans le `*.schema.ts` de la f
 - **Tables de données utilisateur** : une colonne `user_id` est obligatoire (préparation au multi-utilisateur, D3).
 - **Pragmas** : `journal_mode=WAL`, `foreign_keys=ON`, `busy_timeout=5000`.
 
-## 2. Diagramme
+## 2. Schéma
 
-```mermaid
-erDiagram
-  users ||--o{ auth_sessions : "a"
-  users ||--o{ songs : "importe"
-  users ||--o{ user_songs : "possède"
-  users ||--o{ loops : "crée"
-  users ||--o{ practice_sessions : "pratique"
-  songs ||--|{ song_tracks : "contient"
-  songs ||--o{ song_tags : ""
-  tags  ||--o{ song_tags : ""
-  songs ||--o{ user_songs : ""
-  songs ||--o{ loops : ""
-  songs ||--o{ practice_sessions : ""
-  loops |o--o{ practice_sessions : "pendant"
+Le schéma de référence est **[`database.dbml`](./database.dbml)**. Pour le voir sous forme de diagramme, colle-le dans [dbdiagram.io](https://dbdiagram.io).
 
-  users {
-    text id PK
-    text username UK
-    text password_hash
-    int created_at
-    int updated_at
-  }
-  auth_sessions {
-    text id PK
-    text user_id FK
-    text token_hash UK
-    int expires_at
-    int created_at
-  }
-  songs {
-    text id PK
-    text created_by FK
-    text state "draft|ready"
-    text title
-    text composer
-    int difficulty "1-5, nullable"
-    text source_type "upload|url|mutopia"
-    text source_url
-    text license
-    text midi_sha256 UK
-    int midi_size
-    int duration_ms
-    int note_count
-    int min_pitch
-    int max_pitch
-    text hand_mode "tracks|split"
-    int split_pitch "défaut 60"
-    int created_at
-    int updated_at
-    int deleted_at
-  }
-  song_tracks {
-    text id PK
-    text song_id FK
-    int track_index
-    int channel
-    text name
-    text instrument
-    int note_count
-    int min_pitch
-    int max_pitch
-    text hand "left|right|ignore"
-  }
-  tags {
-    text id PK
-    text name UK
-  }
-  song_tags {
-    text song_id PK,FK
-    text tag_id PK,FK
-  }
-  user_songs {
-    text user_id PK,FK
-    text song_id PK,FK
-    text status "to_learn|learning|mastered"
-    int is_favorite
-    int last_position_ms
-    int last_tempo_pct
-    text hands_settings "JSON"
-    text last_loop_id FK
-    int last_practiced_at
-    int updated_at
-  }
-  loops {
-    text id PK
-    text user_id FK
-    text song_id FK
-    text name
-    int start_ms
-    int end_ms
-    int target_tempo_pct "V1.3"
-    int best_tempo_pct "V1.3"
-    int created_at
-    int updated_at
-    int deleted_at
-  }
-  practice_sessions {
-    text id PK
-    text user_id FK
-    text song_id FK
-    text loop_id FK "nullable"
-    text mode "watch|midi"
-    int started_at
-    int ended_at
-    int active_ms
-    int min_tempo_pct
-    int max_tempo_pct
-    real accuracy "V2"
-    int score "V2"
-    int updated_at
-  }
+> Dès que le code existera, le DBML sera **généré à partir du schéma Drizzle** (`drizzle-dbml-generator`) et vérifié en CI, pour que la doc ne diverge jamais du code. D'ici là, le fichier est maintenu à la main.
+
+Résumé des relations :
+
+```
+users ─┬─< auth_sessions
+       ├─< songs ─┬─< song_tracks
+       │          ├─< song_tags >── tags
+       ├─< user_songs >── songs
+       ├─< loops >── songs
+       └─< practice_sessions >── songs, loops?
 ```
 
 ## 3. Détail des tables
@@ -152,6 +54,9 @@ Catalogue **commun** (D3 : un `created_by` permet un futur catalogue par utilisa
 | `hand_mode` | `tracks` : assignation par piste (`song_tracks.hand`). `split` : découpage par hauteur, `split_pitch` |
 | `split_pitch` | Note MIDI de séparation. Les notes ≥ `split_pitch` vont à droite. Utilisé seulement si `hand_mode = split` |
 | `license` | Texte libre (`Public Domain`, `CC-BY-SA 4.0`, `inconnue`…) |
+| `cover_sha256` | Couverture en WebP 720×720 dans `/data/covers/<sha256>.webp`. Nullable : sans couverture, le client affiche une couverture générée (dégradé calculé à partir de l'id, titre et compositeur) |
+| `cover_source` | `upload`, `url`, `musicbrainz` ou `wikidata` |
+| `cover_credit` | Attribution affichée sur la fiche du morceau (obligatoire pour les images Wikimedia sous licence CC) |
 
 Index : `(state, deleted_at)`, `(title)`, `(composer)`.
 Recherche texte : `LIKE` suffit dans le MVP. Table virtuelle FTS5 si le besoin apparaît.
@@ -209,7 +114,18 @@ Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tablea
 | `loops` | `id` | Copie des boucles |
 | `outbox` | `id` (ULID) | `{ method, url, body, createdAt, attempts, lastError }` |
 
-Les échantillons de piano et le shell de l'app sont gérés par le cache du Service Worker, pas par IndexedDB.
+Les échantillons de piano, le shell de l'app et les **couvertures** sont gérés par le cache du Service Worker, pas par IndexedDB. Les couvertures sont en cache-first, et leur URL contient le hash, donc elles ne changent jamais.
+
+## 5 bis. Fichiers sur disque
+
+```
+/data
+├── open-keys.db           # SQLite (WAL)
+├── midi/<sha256>.mid
+└── covers/<sha256>.webp   # 720×720, qualité 80, environ 40 à 90 Ko
+```
+
+Un fichier qu'aucune ligne de `songs` ne référence plus est purgé par une tâche différée.
 
 ## 6. Évolutions prévues
 

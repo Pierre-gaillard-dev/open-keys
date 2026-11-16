@@ -6,8 +6,8 @@ Application d'apprentissage du piano en mode *falling notes* (PWA React + API Ho
 
 - `docs/01-cadrage.md` — périmètre, décisions (D1…), risques
 - `docs/02-use-cases.md` — cas d'utilisation (UC-xx)
-- `docs/03-architecture.md` — stack, **arborescence**, règles d'import, moteur du lecteur, API
-- `docs/04-database.md` — schéma de base de données et règles de synchronisation
+- `docs/03-architecture/` — contexte, stack, **arborescence** et règles d'import, moteur du lecteur, flux, API, déploiement, sécurité, tests (sommaire dans `README.md`)
+- `docs/04-database.md` + `docs/database.dbml` — schéma de base de données et règles de synchronisation
 - `docs/05-roadmap.md` — phases et tâches (une tâche = une PR)
 - `docs/06-conventions.md` — **conventions de code, à respecter strictement**
 

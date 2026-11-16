@@ -43,6 +43,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 - **Ergonomie** : paysage sur mobile, plein écran, Wake Lock, contrôles qui disparaissent, raccourcis clavier sur PC, thème sombre, repère sur chaque C (C4 mis en évidence).
 - **Catalogue** : import par fichier ou par URL, écran de vérification (pistes, mains, métadonnées), liste avec recherche et filtres.
 - **Métadonnées** : titre, compositeur, difficulté (1 à 5), tags libres, favori, source, licence.
+- **Couverture** : WebP 720×720, suggérée automatiquement (pochette via MusicBrainz, portrait du compositeur via Wikidata), ou fournie à la main. Couverture générée si absente.
 - **Pratique** : réglages par morceau (vitesse, mains, position), boucles nommées, sessions et temps de pratique, statut (à apprendre / en cours / maîtrisé).
 - **Hors-ligne** : application installable (PWA), morceaux consultés et favoris disponibles sans réseau, file d'attente de synchronisation pour les données de pratique.
 - **Authentification** mono-utilisateur, avec un modèle de données prêt pour plusieurs utilisateurs.
@@ -83,6 +84,8 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D11 | Son | Salamander allégé (environ 3 à 6 Mo), deux vélocités, sustain | Son réaliste, compatible avec le cache hors-ligne |
 | D12 | Écran | Paysage, plein écran, Wake Lock, thème sombre ; zoom automatique remonté en V1.1 | Téléphone sur trépied à environ 50 cm |
 | D13 | Licence | Dépôt public, licence MIT, codé « open source ready » | Portfolio |
+| D14 | Couvertures | WebP 720×720 carré, sources MusicBrainz/CAA + Wikidata (gratuites, sans clé), choix validé par l'utilisateur à l'import | Les MIDI n'ont pas d'image ; le classique n'a pas d'album de référence → portrait du compositeur |
+| D15 | Doc de la base | `docs/database.dbml` comme référence, généré à partir de Drizzle dès que le code existe | Plus lisible que Mermaid ; on évite que la doc diverge du code |
 
 ## 8. Risques
 

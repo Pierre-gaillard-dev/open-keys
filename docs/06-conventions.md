@@ -4,7 +4,7 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 
 ## 1. Découpage
 
-- **Découpage par feature**, côté front comme côté back (voir `03-architecture.md` §3). Une feature contient tout ce qui la concerne.
+- **Découpage par feature**, côté front comme côté back (voir `03-architecture/03-arborescence.md`). Une feature contient tout ce qui la concerne.
 - **Un fichier = une responsabilité**. Le rôle apparaît dans le suffixe du nom :
 
 | Suffixe | Contenu | Côté |
@@ -22,7 +22,7 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 | `*.test.ts` | Tests, à côté du fichier testé | partout |
 
 - **`index.ts` = API publique** d'une feature ou d'un package. Ce qu'il n'exporte pas est privé.
-- Règles d'import : voir `03-architecture.md` §3. `core` est pur (pas de DOM, pas de Node, pas d'I/O).
+- Règles d'import : voir `03-architecture/03-arborescence.md`. `core` est pur (pas de DOM, pas de Node, pas d'I/O).
 
 ## 2. Nommage
 

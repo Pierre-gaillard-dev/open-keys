@@ -1,64 +1,80 @@
 # Open Keys — Cas d'utilisation
 
-## 1. Acteurs
+## 1. Acteur
 
 | Acteur | Description |
 |---|---|
-| **Pianiste** | L'utilisateur, connecté à l'application sur mobile ou sur PC |
-| **Serveur** | API Open Keys : stockage, analyse des MIDI, synchronisation |
-| **Source externe** | URL quelconque (MVP), Mutopia (V1.1) |
-| **Clavier MIDI** | Yamaha P-120 via interface USB-MIDI (V2) |
+| **Pianiste** | Seul utilisateur, sur mobile ou sur PC |
 
-## 2. Vue d'ensemble
+Le backend, les sources externes (URL, Mutopia, MusicBrainz, Wikidata) et le clavier MIDI (V2) font partie du système ou de son environnement technique, pas des acteurs. Ils apparaissent dans le **diagramme de contexte** de [`03-architecture/01-contexte.md`](./03-architecture/01-contexte.md).
+
+## 2. Diagramme des cas d'utilisation
+
+Notation :
+- le cadre délimite le système ;
+- une ligne pleine est une association avec l'acteur ;
+- `«include»` signifie que le cas est toujours exécuté par le cas appelant ;
+- `«extend»` signifie que le cas est optionnel à partir du cas étendu.
 
 ```mermaid
 flowchart LR
-  P((Pianiste))
-  S((Source externe))
-  K((Clavier MIDI - V2))
+  P(["🧑 Pianiste"])
 
-  subgraph Catalogue
-    UC02[UC-02 Importer un fichier]
-    UC03[UC-03 Importer par URL]
-    UC04[UC-04 Vérifier l'import]
-    UC05[UC-05 Parcourir et filtrer]
-    UC06[UC-06 Modifier un morceau]
-    UC07[UC-07 Supprimer un morceau]
-    UC20[UC-20 Importer depuis Mutopia - V1.1]
+  subgraph SYS["Open Keys"]
+    direction TB
+
+    UC01(["UC-01 Se connecter"])
+
+    subgraph CAT["Catalogue"]
+      UC02(["UC-02 Importer un fichier MIDI"])
+      UC03(["UC-03 Importer par URL"])
+      UC20(["UC-20 Importer depuis Mutopia (V1.1)"])
+      UC04(["UC-04 Vérifier l'import"])
+      UC17(["UC-17 Gérer la couverture"])
+      UC05(["UC-05 Parcourir et filtrer"])
+      UC06(["UC-06 Modifier un morceau"])
+      UC07(["UC-07 Supprimer un morceau"])
+    end
+
+    subgraph LEC["Lecteur"]
+      UC08(["UC-08 Regarder et écouter"])
+      UC09(["UC-09 Régler la vitesse"])
+      UC10(["UC-10 Boucle A-B"])
+      UC11(["UC-11 Isoler une main"])
+      UC12(["UC-12 Reprendre la lecture"])
+      UC31(["UC-31 Mode attente (V2)"])
+    end
+
+    subgraph PRA["Pratique"]
+      UC13(["UC-13 Statut et favori"])
+      UC16(["UC-16 Consulter le temps de pratique"])
+      UC14(["UC-14 Jouer hors-ligne"])
+      UC15(["UC-15 Synchroniser"])
+      UC30(["UC-30 Connecter un clavier MIDI (V2)"])
+    end
   end
 
-  subgraph Lecteur
-    UC08[UC-08 Regarder et écouter]
-    UC09[UC-09 Régler la vitesse]
-    UC10[UC-10 Boucle A-B]
-    UC11[UC-11 Isoler une main]
-    UC12[UC-12 Reprendre la lecture]
-  end
+  P --- UC01
+  P --- UC02 & UC03 & UC20 & UC05 & UC06 & UC07
+  P --- UC08 & UC13 & UC16 & UC14 & UC30
 
-  subgraph Pratique
-    UC13[UC-13 Statut et favori]
-    UC14[UC-14 Jouer hors-ligne]
-    UC15[UC-15 Synchroniser]
-    UC16[UC-16 Consulter le temps de pratique]
-  end
+  UC02 -.->|«include»| UC04
+  UC03 -.->|«include»| UC04
+  UC20 -.->|«include»| UC04
+  UC04 -.->|«include»| UC17
+  UC06 -.->|«include»| UC17
 
-  subgraph V2
-    UC30[UC-30 Connecter un clavier MIDI]
-    UC31[UC-31 Mode attente]
-    UC32[UC-32 Score]
-  end
+  UC08 -.->|«include»| UC12
+  UC09 -.->|«extend»| UC08
+  UC10 -.->|«extend»| UC08
+  UC11 -.->|«extend»| UC08
+  UC31 -.->|«extend»| UC08
 
-  P --> UC02 & UC03 & UC05 & UC06 & UC07 & UC20
-  UC02 --> UC04
-  UC03 --> UC04
-  UC20 --> UC04
-  S --> UC03 & UC20
-  P --> UC08 & UC13 & UC14 & UC16
-  UC08 --> UC09 & UC10 & UC11 & UC12
-  UC14 --> UC15
-  P --> UC30
-  K --> UC30 & UC31 & UC32
+  UC14 -.->|«include»| UC15
 ```
+
+> UC-15 (Synchroniser) n'est jamais déclenché directement par le pianiste : le système le lance automatiquement (au retour du réseau, au démarrage, toutes les 60 s).
+
 
 ## 3. Liste des cas d'utilisation
 
@@ -80,6 +96,7 @@ flowchart LR
 | UC-14 | Jouer hors-ligne | MVP |
 | UC-15 | Synchroniser les données de pratique | MVP |
 | UC-16 | Consulter le temps de pratique d'un morceau | MVP |
+| UC-17 | Gérer la couverture d'un morceau (suggestion automatique, fichier, URL) | MVP |
 | UC-20 | Rechercher et importer depuis Mutopia | V1.1 |
 | UC-21 | Zoom automatique du clavier | V1.1 |
 | UC-22 | Décompte avant le départ | V1.2 |
@@ -128,7 +145,8 @@ flowchart LR
      - passer en mode **découpage par hauteur** (une seule piste) et régler la note de séparation, C4 par défaut ;
      - **écouter un aperçu** (le lecteur en version réduite) avec les couleurs de main.
   3. Le pianiste complète les métadonnées : titre (pré-rempli depuis le MIDI ou le nom de fichier), compositeur, difficulté, tags, source, licence.
-  4. Il valide : le morceau passe à l'état `ready`.
+  4. **Couverture** (UC-17) : l'app propose des candidats trouvés automatiquement à partir du titre et du compositeur. Le pianiste en choisit un, en fournit un autre (fichier ou URL) ou n'en met aucun.
+  5. Il valide : le morceau passe à l'état `ready`.
 - **Alternatives** :
   - Abandon : le brouillon est purgé automatiquement après 24 h.
 - **Règles de la proposition automatique** :
@@ -142,6 +160,16 @@ flowchart LR
 ### UC-06 / UC-07 — Modifier / supprimer un morceau
 - La modification reprend l'écran UC-04 sur un morceau `ready`.
 - La suppression demande une confirmation. C'est une suppression logique (`deleted_at`) : le fichier est purgé par une tâche différée et les données de pratique liées sont conservées 30 jours.
+
+### UC-17 — Gérer la couverture d'un morceau
+- **Format** : WebP **720×720** (carré, comme une pochette d'album), recadré au centre, qualité 80.
+- **Suggestions automatiques**, lancées en parallèle avec un timeout de 5 s par fournisseur :
+  1. **MusicBrainz + Cover Art Archive** (gratuit, sans clé) : recherche d'un enregistrement ou d'un album à partir du titre et de l'artiste, puis récupération de la pochette. Pertinent pour la pop, les musiques de film et de jeu vidéo.
+  2. **Wikidata / Wikimedia Commons** : **portrait du compositeur** (propriété P18). C'est le bon choix pour le classique, où il n'existe pas « un » album de référence. Le crédit et la licence sont enregistrés dans `cover_credit`.
+- **Choix manuel** : upload d'une image ou URL. Ces images sont converties de la même façon.
+- **Sans couverture** : couverture générée par le client (dégradé calculé à partir de l'id, avec titre et compositeur). Aucun fichier n'est stocké.
+- Modifiable plus tard depuis la fiche du morceau (UC-06).
+- Le fichier MIDI ne contient jamais d'image : la couverture vient toujours d'une source externe ou de l'utilisateur.
 
 ### UC-08 — Regarder et écouter
 - **Précondition** : le morceau est en cache local, ou on est en ligne.

@@ -1,0 +1,218 @@
+// Open Keys — schéma de base de données (SQLite / Drizzle)
+// Visualisation : coller dans https://dbdiagram.io
+// Conventions : voir docs/04-database.md §1
+//   - ids : ULID (text), générables côté client
+//   - dates : integer, ms epoch UTC
+//   - *_ms : temps de partition (ms à 100 % de vitesse) ; *_pct : vitesse 25-100
+
+Project open_keys {
+  database_type: 'SQLite'
+  Note: 'Mono-utilisateur en MVP, modèle prêt pour le multi-utilisateur (user_id partout).'
+}
+
+// ───────────────────────── auth ─────────────────────────
+
+Table users {
+  id            text    [pk, note: 'ULID']
+  username      text    [not null, unique]
+  password_hash text    [not null, note: 'argon2id']
+  created_at    integer [not null]
+  updated_at    integer [not null]
+}
+
+Table auth_sessions {
+  id         text    [pk]
+  user_id    text    [not null, ref: > users.id]
+  token_hash text    [not null, unique, note: 'SHA-256 du jeton du cookie']
+  expires_at integer [not null, note: 'expiration glissante de 90 jours']
+  created_at integer [not null]
+
+  indexes {
+    user_id
+    expires_at
+  }
+}
+
+// ───────────────────────── catalogue ─────────────────────────
+
+Enum song_state {
+  draft  [note: 'import en cours de vérification, purgé après 24 h']
+  ready
+}
+
+Enum song_source_type {
+  upload
+  url
+  mutopia
+}
+
+Enum hand_mode {
+  tracks [note: 'assignation par piste (song_tracks.hand)']
+  split  [note: 'découpage par hauteur à split_pitch']
+}
+
+Enum cover_source {
+  upload      [note: 'fichier fourni par l’utilisateur']
+  url         [note: 'URL collée par l’utilisateur']
+  musicbrainz [note: 'Cover Art Archive (album)']
+  wikidata    [note: 'portrait du compositeur (Wikimedia Commons)']
+}
+
+Table songs {
+  id            text    [pk]
+  created_by    text    [not null, ref: > users.id]
+  state         song_state [not null, default: 'draft']
+  title         text    [not null]
+  composer      text    [note: 'compositeur ou artiste']
+  difficulty    integer [note: '1-5, nullable']
+  source_type   song_source_type [not null]
+  source_url    text
+  license       text    [note: 'Public Domain, CC-BY-SA 4.0, inconnue…']
+
+  midi_sha256   text    [not null, unique, note: 'dédoublonnage + /data/midi/<sha256>.mid']
+  midi_size     integer [not null]
+  duration_ms   integer [not null]
+  note_count    integer [not null]
+  min_pitch     integer [not null]
+  max_pitch     integer [not null]
+
+  hand_mode     hand_mode [not null, default: 'tracks']
+  split_pitch   integer [not null, default: 60, note: 'notes >= split_pitch → main droite']
+
+  cover_sha256  text    [note: 'nullable ; /data/covers/<sha256>.webp (720×720). Null → couverture générée côté client']
+  cover_source  cover_source [note: 'nullable']
+  cover_credit  text    [note: 'attribution : auteur / licence / URL d’origine']
+
+  created_at    integer [not null]
+  updated_at    integer [not null]
+  deleted_at    integer [note: 'suppression logique']
+
+  indexes {
+    (state, deleted_at)
+    title
+    composer
+  }
+}
+
+Enum hand {
+  left
+  right
+  ignore
+}
+
+Table song_tracks {
+  id          text    [pk]
+  song_id     text    [not null, ref: > songs.id]
+  track_index integer [not null]
+  channel     integer [not null, note: '0-15 ; le canal 9 correspond aux percussions']
+  name        text
+  instrument  text
+  note_count  integer [not null]
+  min_pitch   integer [not null]
+  max_pitch   integer [not null]
+  hand        hand    [not null]
+
+  indexes {
+    (song_id, track_index, channel) [unique]
+  }
+}
+
+Table tags {
+  id   text [pk]
+  name text [not null, unique, note: 'en minuscules, nettoyé']
+}
+
+Table song_tags {
+  song_id text [not null, ref: > songs.id]
+  tag_id  text [not null, ref: > tags.id]
+
+  indexes {
+    (song_id, tag_id) [pk]
+  }
+}
+
+// ───────────────────────── bibliothèque personnelle ─────────────────────────
+
+Enum song_status {
+  to_learn
+  learning
+  mastered
+}
+
+Table user_songs {
+  user_id           text    [not null, ref: > users.id]
+  song_id           text    [not null, ref: > songs.id]
+  status            song_status [not null, default: 'to_learn']
+  is_favorite       integer [not null, default: 0, note: 'booléen ; un favori est mis en cache hors-ligne']
+  last_position_ms  integer [not null, default: 0]
+  last_tempo_pct    integer [not null, default: 100]
+  hands_settings    text    [not null, note: 'JSON : { left: { audible, visible }, right: { audible, visible } }']
+  last_loop_id      text    [ref: > loops.id, note: 'ON DELETE SET NULL']
+  last_practiced_at integer
+  updated_at        integer [not null, note: 'arbitre : la dernière écriture l’emporte']
+
+  indexes {
+    (user_id, song_id) [pk]
+  }
+}
+
+// ───────────────────────── pratique ─────────────────────────
+
+Table loops {
+  id               text    [pk, note: 'ULID généré côté client']
+  user_id          text    [not null, ref: > users.id]
+  song_id          text    [not null, ref: > songs.id]
+  name             text
+  start_ms         integer [not null]
+  end_ms           integer [not null, note: 'CHECK end_ms > start_ms']
+  target_tempo_pct integer [note: 'V1.3']
+  best_tempo_pct   integer [note: 'V1.3']
+  created_at       integer [not null]
+  updated_at       integer [not null]
+  deleted_at       integer
+
+  indexes {
+    (user_id, song_id, deleted_at)
+  }
+}
+
+Enum practice_mode {
+  watch [note: 'MVP : regarder et écouter']
+  midi  [note: 'V2 : entrée clavier MIDI']
+}
+
+Table practice_sessions {
+  id            text    [pk, note: 'ULID généré côté client ; PUT idempotent']
+  user_id       text    [not null, ref: > users.id]
+  song_id       text    [not null, ref: > songs.id]
+  loop_id       text    [ref: > loops.id]
+  mode          practice_mode [not null, default: 'watch']
+  started_at    integer [not null]
+  ended_at      integer [not null]
+  active_ms     integer [not null, note: 'lecture effective, pauses exclues ; >= 10 000']
+  min_tempo_pct integer [not null]
+  max_tempo_pct integer [not null]
+  accuracy      real    [note: 'V2']
+  score         integer [note: 'V2']
+  updated_at    integer [not null]
+
+  indexes {
+    (user_id, song_id, started_at)
+    (user_id, started_at)
+  }
+}
+
+// ───────────────────────── V1.1 ─────────────────────────
+
+Table mutopia_pieces {
+  mutopia_id text    [pk]
+  title      text    [not null]
+  composer   text
+  opus       text
+  instrument text
+  license    text
+  midi_url   text    [not null]
+  synced_at  integer [not null]
+
+  Note: 'Index local du catalogue Mutopia (V1.1), avec une table virtuelle FTS5 pour la recherche.'
+}

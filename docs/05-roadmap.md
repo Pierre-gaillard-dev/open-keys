@@ -40,7 +40,7 @@ flowchart LR
 - [ ] **1.1** Monorepo pnpm : `apps/web`, `apps/server`, `packages/{core,contracts,config}`, TypeScript strict, Biome, Vitest.
 - [ ] **1.2** CI GitHub Actions : lint, vérification des types, tests, build.
 - [ ] **1.3** Serveur Hono : configuration validée par zod, `/api/health`, erreurs typées, logs.
-- [ ] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur.
+- [ ] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
 - [ ] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
 - [ ] **1.6** Web : Vite, Tailwind, TanStack Router et Query, client `hc` typé, page de connexion, thème sombre.
 - [ ] **1.7** Dockerfile multi-stage + `docker-compose.yml`. Déploiement Dokploy en HTTPS avec un volume `/data`.
@@ -61,12 +61,14 @@ flowchart LR
 - [ ] **2.5** `POST /imports` : upload et URL (protection SSRF, limites), dédoublonnage, brouillon.
 - [ ] **2.6** `POST /imports/:id/confirm`, `PATCH /songs/:id`, `DELETE /songs/:id`, purge des brouillons et des fichiers orphelins.
 - [ ] **2.7** `GET /songs` (filtres, tri), `GET /songs/:id`, `GET /songs/:id/midi` (ETag), `GET /tags`.
+- [ ] **2.7b** Couvertures : `safe-fetch` mutualisé, `image-processor` (sharp → WebP 720×720), fournisseurs MusicBrainz/CAA et Wikidata, routes `cover` / `cover-suggestions`, purge des images orphelines.
 - [ ] **2.8** Web : page d'import (fichier/URL) et écran de vérification (tableau des pistes, découpage par hauteur, formulaire de métadonnées). Aperçu audio simple, sans le lecteur complet.
-- [ ] **2.9** Web : catalogue (liste, recherche, filtres) et fiche d'un morceau.
+- [ ] **2.9** Web : catalogue (grille de couvertures, recherche, filtres) et fiche d'un morceau. Choix de la couverture dans l'écran de vérification et sur la fiche. Couverture générée en repli.
 
 **Critères de fin**
 - [ ] Import de 5 MIDI variés (dont un à une seule piste) avec une assignation des mains correcte ou corrigeable.
 - [ ] Un doublon est détecté. Une URL vers une IP privée est refusée.
+- [ ] Une couverture pertinente est proposée pour un morceau pop (pochette) et pour un morceau classique (portrait du compositeur).
 
 ---
 
