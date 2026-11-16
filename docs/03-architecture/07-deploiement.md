@@ -22,7 +22,7 @@ flowchart LR
 | Service | Image | Rôle | Exposé |
 |---|---|---|---|
 | `web` | `docker/web.Dockerfile` — build Vite puis `nginx:alpine` | Sert `apps/web/dist` | `/` via Traefik |
-| `api` | `docker/api.Dockerfile` — build tsup puis `node:22-slim` | API Hono, migrations, tâches différées | `/api` via Traefik |
+| `api` | `docker/api.Dockerfile` — build tsdown puis `node:26-slim` | API Hono, migrations, tâches différées | `/api` via Traefik |
 
 ### `web` (nginx)
 - **Build multi-stage** : installation pnpm, `pnpm --filter web build`, puis copie de `dist/` dans `nginx:alpine`.
@@ -34,7 +34,7 @@ flowchart LR
 - **En-têtes de sécurité** (CSP, `X-Content-Type-Options`, `Referrer-Policy`) posés ici pour les pages, et par Hono pour l'API.
 
 ### `api` (Node + Hono)
-- **Build multi-stage** : installation pnpm, build de `packages/*` et de `apps/server` (tsup), puis image `node:22-slim` avec les dépendances de production uniquement (`better-sqlite3` et `sharp` ont des binaires précompilés pour Debian slim).
+- **Build multi-stage** : installation pnpm, build de `packages/*` et de `apps/server` (tsdown), puis image `node:26-slim` avec les dépendances de production uniquement (`better-sqlite3` et `sharp` ont des binaires précompilés pour Debian slim).
 - **Volume** `data` monté sur `/data` : `open-keys.db` (SQLite en mode WAL), `midi/`, `covers/`.
 - **Au démarrage** : migrations Drizzle appliquées, puis création de l'utilisateur initial à partir de `ADMIN_USERNAME`/`ADMIN_PASSWORD` s'il n'existe pas.
 - **Healthcheck** : `GET /api/health`.

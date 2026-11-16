@@ -4,9 +4,10 @@
 
 | Couche | Choix | Rôle |
 |---|---|---|
-| Monorepo | **pnpm workspaces** + Turborepo (facultatif) | Applications et packages partagés |
-| Langage | **TypeScript strict** partout | Typage de bout en bout |
-| Front | **React 19 + Vite** | Interface (pas de rendu serveur : c'est une PWA) |
+| Runtime | **Node 26 LTS**, fourni par pnpm (`devEngines.runtime`) | Même version de Node pour tout le monde, sans gestionnaire de versions |
+| Monorepo | **pnpm 12 workspaces** + **catalog** (versions partagées dans `pnpm-workspace.yaml`) | Applications et packages partagés ; pas de Turborepo tant que les builds restent rapides |
+| Langage | **TypeScript 7** strict partout ; packages internes consommés en source (`exports` → `src/`) | Typage de bout en bout, sans étape de build intermédiaire |
+| Front | **React 19 + Vite 8** | Interface (pas de rendu serveur : c'est une PWA) |
 | Routage | **TanStack Router** | Routes typées |
 | État serveur | **TanStack Query** | Cache et invalidation des données de l'API |
 | État du lecteur | **Zustand** (store vanilla) | Lu par le renderer **hors du cycle de rendu React** |
@@ -20,5 +21,7 @@
 | Base de données | **SQLite** (`better-sqlite3`) + **Drizzle ORM / drizzle-kit** | Schéma, migrations, requêtes typées |
 | Images | **sharp** | Conversion des couvertures en WebP 720×720 |
 | Authentification | Sessions en base, cookie `httpOnly`, hash **argon2id** | Un seul utilisateur, prêt pour plusieurs |
-| Qualité | **Biome** (lint et formatage), `tsc --noEmit`, **Vitest**, **Playwright** (e2e) | CI stricte |
+| Build API | **tsdown** | Bundle de `apps/server`, avec les packages internes inclus |
+| Qualité | **Biome 2** (lint et formatage), `tsc --noEmit`, **dependency-cruiser** (règles d'architecture), **Vitest 5** (un projet par package), **Playwright** (e2e) | CI stricte |
+| Hooks Git | **lefthook** (Biome au pre-commit) + **commitlint** (commits conventionnels) | Rien de non formaté ni de mal nommé n'arrive dans l'historique |
 | Déploiement | docker-compose (`web` nginx + `api` Node), Dokploy (Traefik, HTTPS) | Deux conteneurs, un seul domaine, volume `/data` |
