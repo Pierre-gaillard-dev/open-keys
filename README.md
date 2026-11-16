@@ -37,7 +37,7 @@ Toutes les maquettes : [`docs/maquettes`](docs/maquettes/README.md).
 | Couche | Technologies |
 |---|---|
 | Front | React 19, Vite, TanStack Router et Query, Zustand, Tailwind CSS, PWA (Workbox, Dexie) |
-| Rendu et audio | PixiJS (WebGL), Tone.js, échantillons Salamander Grand Piano |
+| Rendu et audio | PixiJS (WebGL), Web Audio natif, échantillons Salamander Grand Piano |
 | Back | Hono, Drizzle ORM, SQLite, sharp |
 | Partagé | TypeScript strict, Zod, `@tonejs/midi` : un monorepo pnpm avec des types de bout en bout |
 | Qualité | Biome, dependency-cruiser, Vitest, Playwright (Firefox et Chromium), lefthook + commitlint |

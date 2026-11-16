@@ -23,17 +23,19 @@ flowchart LR
 
 > **Ordre** : réalisé **après les tâches 1.1 et 1.2**, pour profiter de l'outillage (TypeScript strict, Biome, Vitest). Le code vit dans une branche `spike/falling-notes`, jamais mergée. Seuls les enseignements sont reportés dans la doc (décision GO/NO-GO, ajustements dans `03-architecture/04-lecteur.md`).
 
-- [ ] Page Vite unique : charger un MIDI dense (par exemple une étude de Chopin du domaine public, depuis Mutopia).
-- [ ] Rendu PixiJS des notes qui tombent et du clavier de 88 touches.
-- [ ] Son avec Tone.Sampler (Salamander allégé) et sustain.
-- [ ] Vitesse à 50 % et boucle, pour vérifier que la synchro tient.
-- [ ] Mesure FPS / temps par image, affichée à l'écran.
+- [x] Page Vite unique : charger un MIDI dense (Étude op. 10 n°1 de Chopin, domaine public, Mutopia).
+- [x] Rendu PixiJS des notes qui tombent et du clavier de 88 touches.
+- [x] Son avec un sampler Salamander et sustain. Finalement en **Web Audio natif** : Tone.js est abandonné.
+- [x] Vitesse à 50 % et boucle, pour vérifier que la synchro tient.
+- [x] Mesure FPS / temps par image, affichée à l'écran.
 
-**Critères de fin** (Pixel 10, Firefox Android, puis Firefox Ubuntu/Windows)
-- [ ] ≥ 55 fps en continu sur le morceau dense.
-- [ ] Aucun décalage perceptible entre le son et l'image (test : métronome MIDI, notes très courtes).
-- [ ] Démarrage de la lecture < 2 s avec les échantillons en cache.
-- [ ] Décision consignée : **GO PWA** / **NO-GO → Flutter** (le backend n'est pas concerné).
+**Critères de fin**
+- [x] ≥ 55 fps en continu sur le morceau dense : **60–61 FPS** sur Chrome (PC et Pixel 10), limités par la fréquence de l'écran ; Firefox fluide (58–61 FPS mesurés en headless). Environ 0,1 ms de rendu par image.
+- [x] Aucun décalage perceptible entre le son et l'image : validé à l'écoute sur Chrome et Firefox.
+- [ ] Démarrage de la lecture < 2 s avec les échantillons en cache : pas chronométré au spike (aucun délai signalé). **À mesurer en phase 3**, avec les échantillons servis localement.
+- [x] Décision consignée : **GO PWA** (D17, 2026-11-16).
+
+**Enseignements reportés** : `03-architecture/04-lecteur.md` (horloge, sampler natif, pédale, scheduler, renderer).
 
 ---
 
@@ -76,8 +78,8 @@ flowchart LR
 
 ## Phase 3 — Lecteur
 
-- [ ] **3.1** `player/engine` : `clock`, `transport` (lecture, pause, seek, vitesse, boucle), `scheduler`, en reprenant les enseignements du spike.
-- [ ] **3.2** `player/audio` : sampler Salamander (deux vélocités), sustain, son par main.
+- [ ] **3.1** `player/engine` : `clock` (ancre audio ↔ partition, `currentTime − outputLatency − baseLatency`), `transport` (lecture, pause, seek, vitesse, boucle), `scheduler` (anticipation de 150 ms), en reprenant le spike.
+- [ ] **3.2** `player/audio` : `PianoSampler` en Web Audio natif (repris du spike), échantillons Salamander servis localement (deux vélocités), sustain sur le son uniquement, son par main.
 - [ ] **3.3** `player/renderer` : notes qui tombent, clavier, couleurs des mains, touches allumées, repères sur les C (C4 mis en évidence), objets réutilisés.
 - [ ] **3.4** `player.store` + `ControlsOverlay` : lecture/pause, barre de progression, vitesse 25–100 %, mains (son et affichage), boucle A-B. Contrôles masqués au bout de 3 s.
 - [ ] **3.5** Plein écran, paysage, Wake Lock, raccourcis clavier.
@@ -118,7 +120,7 @@ flowchart LR
 
 - [ ] Décompte avant le départ (et au retour en début de boucle).
 - [ ] Nom des notes en notation anglaise, sur les notes et/ou les touches.
-- [ ] Métronome (synchronisé sur le Transport, temps fort accentué).
+- [ ] Métronome (programmé sur l'horloge audio comme les notes, temps fort accentué).
 - [ ] Volume par main.
 
 ## V1.3 — Progression

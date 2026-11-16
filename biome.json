@@ -44,7 +44,8 @@
           }
         },
         "noUselessStringConcat": "error",
-        "useSimplifiedLogicExpression": "error"
+        "useSimplifiedLogicExpression": "error",
+        "useLiteralKeys": "off"
       },
       "correctness": {
         "noUnusedImports": "error",

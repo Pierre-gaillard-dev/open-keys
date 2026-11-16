@@ -36,7 +36,7 @@ open-keys/
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── player/
 │   │   │   │   │   ├── engine/
-│   │   │   │   │   │   ├── transport.ts      # horloge, vitesse, boucle (Tone.Transport)
+│   │   │   │   │   │   ├── transport.ts      # lecture, pause, seek, vitesse, boucle (déplace l'ancre de l'horloge)
 │   │   │   │   │   │   ├── scheduler.ts      # programmation des notes vers le sampler
 │   │   │   │   │   │   ├── clock.ts          # temps de partition ↔ temps audio, compensation de latence
 │   │   │   │   │   │   └── player-engine.ts  # façade : load / play / pause / seek / setTempo
