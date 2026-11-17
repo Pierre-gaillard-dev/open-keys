@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Music, Plus, Search } from "lucide-react";
+import { CloudOff, Music, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cx } from "../../../shared/lib/cx";
 import { useDebouncedValue } from "../../../shared/lib/use-debounced-value";
 import { buttonClasses, ErrorBanner } from "../../../shared/ui";
-import { useSongs } from "../api/catalog.queries";
+import { useCatalogSongs } from "../api/catalog.queries";
 import type { CatalogSearch } from "../catalog-search";
 import { CatalogFilters } from "../components/CatalogFilters";
 import { SongCard } from "../components/SongCard";
@@ -16,13 +16,32 @@ export interface CatalogPageProps {
   readonly onSearchChange: (search: CatalogSearch) => void;
 }
 
-function EmptyCatalog({ filtered }: { readonly filtered: boolean }) {
+function OfflineNotice() {
+  return (
+    <p
+      role="status"
+      className="flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3 text-sm"
+    >
+      <CloudOff aria-hidden="true" className="size-4 shrink-0 text-hand-right" />
+      <span>
+        <span className="font-semibold">Hors-ligne.</span>{" "}
+        <span className="text-fg-soft">Seuls les morceaux disponibles sur cet appareil sont affichés.</span>
+      </span>
+    </p>
+  );
+}
+
+function EmptyCatalog({ filtered, offline }: { readonly filtered: boolean; readonly offline: boolean }) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-3xl border border-dashed border-line-strong px-6 py-16 text-center">
       <Music aria-hidden="true" className="size-10 text-fg-muted" />
-      {filtered ? (
-        <p className="text-fg-soft">Aucun morceau ne correspond à ces filtres.</p>
-      ) : (
+      {offline && !filtered && (
+        <p className="text-fg-soft">
+          Aucun morceau sur cet appareil. Les morceaux ouverts et les favoris restent disponibles hors-ligne.
+        </p>
+      )}
+      {filtered && <p className="text-fg-soft">Aucun morceau ne correspond à ces filtres.</p>}
+      {!(offline || filtered) && (
         <>
           <p className="text-fg-soft">Ton catalogue est vide. Importe un premier morceau MIDI.</p>
           <Link to="/import" className={buttonClasses("primary")}>
@@ -37,7 +56,7 @@ function EmptyCatalog({ filtered }: { readonly filtered: boolean }) {
 export function CatalogPage({ search, onSearchChange }: CatalogPageProps) {
   const [text, setText] = useState(search.q ?? "");
   const debouncedText = useDebouncedValue(text, SEARCH_DEBOUNCE_MS);
-  const songs = useSongs(search);
+  const songs = useCatalogSongs(search);
   const isFiltered = Boolean(search.q || search.view || search.tags);
 
   useEffect(() => {
@@ -68,8 +87,11 @@ export function CatalogPage({ search, onSearchChange }: CatalogPageProps) {
 
       <CatalogFilters search={search} onChange={onSearchChange} />
 
+      {songs.offline && <OfflineNotice />}
       {songs.error && <ErrorBanner error={songs.error} title="Impossible de charger le catalogue" />}
-      {songs.data && songs.data.length === 0 && <EmptyCatalog filtered={isFiltered} />}
+      {songs.data && songs.data.length === 0 && (
+        <EmptyCatalog filtered={isFiltered} offline={songs.offline} />
+      )}
       {songs.data && songs.data.length > 0 && (
         <section aria-label="Morceaux" className="flex flex-col gap-3">
           <p className="text-xs font-semibold tracking-[0.08em] text-fg-muted uppercase">

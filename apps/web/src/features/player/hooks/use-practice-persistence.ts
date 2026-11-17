@@ -67,9 +67,9 @@ export function usePracticePersistence(
         status.current = patch.status;
       }
       if (session) {
-        void putPracticeSession(sessionId.current, sessionRequestFor(songId, state, session), {
-          keepalive: true,
-        }).catch(() => undefined);
+        void putPracticeSession(sessionId.current, sessionRequestFor(songId, state, session)).catch(
+          () => undefined,
+        );
       }
       void saveLibraryPatch(queryClient, songId, patch).catch(() => undefined);
     };

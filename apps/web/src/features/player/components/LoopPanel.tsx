@@ -22,7 +22,7 @@ export interface LoopPanelProps {
 export function LoopPanel({ songId, store, controller, savedLoops, onClose }: LoopPanelProps) {
   const loop = useStore(store, (state) => state.loop);
   const tempoPct = useStore(store, (state) => state.tempoPct);
-  const saveLoop = useSaveLoop(songId);
+  const saveLoop = useSaveLoop();
   const deleteLoop = useDeleteLoop(songId);
   const [name, setName] = useState("");
 

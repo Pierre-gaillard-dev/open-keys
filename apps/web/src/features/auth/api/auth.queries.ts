@@ -1,4 +1,5 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clearOfflineData } from "../../../shared/offline";
 import { fetchCurrentUser, login, logout } from "./auth.api";
 
 export const currentUserQuery = queryOptions({
@@ -23,10 +24,11 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: logout,
-    onSettled: () => {
-      // Nothing of the previous session may stay in memory.
+    onSettled: async () => {
+      // Nothing of the previous session may stay in memory nor on the device.
       queryClient.clear();
       queryClient.setQueryData(currentUserQuery.queryKey, null);
+      await clearOfflineData();
     },
   });
 }

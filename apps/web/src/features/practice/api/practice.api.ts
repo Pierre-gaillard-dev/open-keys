@@ -1,15 +1,14 @@
 import {
   type Loop,
   loopSchema,
-  type PracticeSession,
   type PracticeStats,
   type PutLoopRequest,
   type PutPracticeSessionRequest,
-  practiceSessionSchema,
   practiceStatsSchema,
 } from "@open-keys/contracts";
 import { z } from "zod";
 import { apiRequest } from "../../../shared/api";
+import { outbox } from "../../../shared/offline";
 
 export function fetchPracticeStats(songId: string): Promise<PracticeStats> {
   return apiRequest("GET", `/songs/${songId}/practice-stats`, { schema: practiceStatsSchema });
@@ -19,23 +18,16 @@ export function listLoops(songId: string): Promise<Loop[]> {
   return apiRequest("GET", `/songs/${songId}/loops`, { schema: z.array(loopSchema) });
 }
 
-export function putLoop(id: string, loop: PutLoopRequest): Promise<Loop> {
-  return apiRequest("PUT", `/loops/${id}`, { body: loop, schema: loopSchema });
+/*
+ * Writes go through the outbox (UC-15): sent now if possible, otherwise when the network comes back.
+ * Every write is an idempotent PUT; a loop is deleted with deletedAt (soft delete, last write wins).
+ */
+
+export function putLoop(id: string, loop: PutLoopRequest): Promise<void> {
+  return outbox.put(`/loops/${id}`, loop);
 }
 
-/** Idempotent: the same session id is sent again as the session grows (last write wins). */
-export function putPracticeSession(
-  id: string,
-  session: PutPracticeSessionRequest,
-  options: { keepalive?: boolean } = {},
-): Promise<PracticeSession> {
-  return apiRequest("PUT", `/practice-sessions/${id}`, {
-    body: session,
-    schema: practiceSessionSchema,
-    ...(options.keepalive ? { keepalive: true } : {}),
-  });
-}
-
-export function deleteLoop(id: string): Promise<void> {
-  return apiRequest("DELETE", `/loops/${id}`);
+/** The same session id is sent again as the session grows. */
+export function putPracticeSession(id: string, session: PutPracticeSessionRequest): Promise<void> {
+  return outbox.put(`/practice-sessions/${id}`, session);
 }

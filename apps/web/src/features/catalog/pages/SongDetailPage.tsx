@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Pencil, Play, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { difficultyDots, formatDuration } from "../../../shared/lib/format";
-import { Button, buttonClasses, ErrorBanner, SectionTitle } from "../../../shared/ui";
+import { Button, buttonClasses, ErrorBanner, OfflineUnavailable, SectionTitle } from "../../../shared/ui";
 import { FavoriteToggle, StatusControl, useLibraryEntry } from "../../library";
 import { PracticeSummary } from "../../practice";
 import { useDeleteSong, useSong } from "../api/catalog.queries";
@@ -59,10 +59,18 @@ export function SongDetailPage({ songId }: { readonly songId: string }) {
     }
   };
 
-  if (song.error) {
+  // Offline, the stored data is shown even if refreshing it failed.
+  if (song.error && !song.data) {
     return (
       <div className="mx-auto max-w-3xl p-4 md:p-10">
         <ErrorBanner error={song.error} title="Morceau introuvable" />
+      </div>
+    );
+  }
+  if (!song.data && song.fetchStatus === "paused") {
+    return (
+      <div className="mx-auto max-w-3xl p-4 md:p-10">
+        <OfflineUnavailable what="Ce morceau" />
       </div>
     );
   }
