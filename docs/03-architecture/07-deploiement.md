@@ -95,7 +95,7 @@ flowchart LR
 À faire une fois, dans l'interface de Dokploy :
 
 1. **Créer l'application** : *Create Service* → *Compose*, type *Docker Compose*, source GitHub (dépôt `open-keys`, branche `main`, chemin `./docker-compose.yml`).
-2. **Désactiver l'auto-deploy** de Dokploy : c'est la CI qui déclenche le déploiement, après les vérifications (voir plus bas).
+2. **Déploiement** : géré dans Dokploy (auto-deploy sur `main` ou déploiement manuel). Dokploy construit les images sur le VPS.
 3. **Variables** (onglet *Environment*) :
    ```dotenv
    PUBLIC_URL=https://keys.example.org
@@ -117,25 +117,10 @@ flowchart LR
    - `https://<domaine>/api/health` répond `{"status":"ok",…}` ;
    - la connexion fonctionne depuis le PC et le Pixel 10.
 7. **Sauvegardes** (onglet *Volume Backups*) : volume `data`, vers un stockage S3 (voir plus bas).
-8. **Déploiement depuis la CI** : créer une clé d'API (*Settings* → *Profile* → *API/CLI*), puis ajouter trois secrets au dépôt GitHub (*Settings* → *Secrets and variables* → *Actions*) :
 
-   | Secret | Valeur |
-   |---|---|
-   | `DOKPLOY_URL` | URL du panneau Dokploy, sans `/` final |
-   | `DOKPLOY_API_KEY` | Clé d'API Dokploy |
-   | `DOKPLOY_COMPOSE_ID` | Identifiant de l'application compose (dans l'URL de sa page) |
+## Intégration continue
 
-## Déploiement continu
-
-`.github/workflows/ci.yml` :
-
-| Job | Quand | Rôle |
-|---|---|---|
-| `verify` | PR et `main` | Lint, types, architecture, schéma, tests, build |
-| `images` | PR et `main` | Build des deux images Docker : une erreur de Dockerfile est vue avant le merge |
-| `deploy` | Push sur `main`, après `verify` et `images` | `POST /api/compose.deploy` sur Dokploy. Sans les secrets, le job est ignoré (avec une notice) |
-
-Dokploy reconstruit les images sur le VPS et redémarre les services. Le volume `data` est conservé.
+`.github/workflows/ci.yml` vérifie le code sur chaque PR et sur `main` : lint, types, architecture, schéma, tests et build. Le build des images Docker et le déploiement sont gérés par Dokploy, pas par la CI.
 
 ## Développement local
 

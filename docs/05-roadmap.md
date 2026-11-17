@@ -52,7 +52,7 @@ flowchart LR
 
 **Critères de fin**
 - [ ] Connexion fonctionnelle sur l'URL de production, depuis le Pixel 10 et un PC.
-- [ ] Un push sur `main` → CI verte → redéploiement Dokploy.
+- [ ] Un push sur `main` → redéploiement par Dokploy.
 
 ---
 

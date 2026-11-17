@@ -151,7 +151,7 @@ open-keys/
 │   └── Caddyfile                             # reverse proxy local (rôle de Traefik)
 ├── docker-compose.yml                        # production (Dokploy) : web + api + volume data
 ├── .dockerignore
-├── .github/workflows/ci.yml                  # vérifications, build des images, déploiement Dokploy
+├── .github/workflows/ci.yml                  # lint, types, architecture, tests, build
 ├── .env.example
 ├── .nvmrc                                    # 26 (pour les outils qui le lisent : CI, éditeurs)
 ├── .dependency-cruiser.cjs                   # règles d'architecture (voir plus bas)

@@ -97,7 +97,7 @@ pnpm verify       # lint, types, règles d'architecture, tests, build (comme la 
 
 ### Production
 
-Deux images Docker (`web` nginx, `api` Node) et un `docker-compose.yml`, déployés avec Dokploy. La CI déclenche le déploiement quand `main` est vert. Mise en place et variables : [déploiement](docs/03-architecture/07-deploiement.md).
+Deux images Docker (`web` nginx, `api` Node) et un `docker-compose.yml`, déployés avec Dokploy. Build et déploiement sont gérés par Dokploy. Mise en place et variables : [déploiement](docs/03-architecture/07-deploiement.md).
 
 ```bash
 # les images de production en local, sur http://localhost:8080
