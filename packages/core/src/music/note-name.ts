@@ -22,6 +22,12 @@ export function midiToNoteName(pitch: number): string {
   return `${name}${octave}`;
 }
 
+/** English name without octave ("C", "C#"): what is written on falling notes and keys (UC-23). */
+export function pitchClassName(pitch: number): string {
+  assertMidiPitch(pitch);
+  return PITCH_CLASS_NAMES[pitchClassOf(pitch)] ?? "";
+}
+
 export function isBlackKey(pitch: number): boolean {
   assertMidiPitch(pitch);
   return BLACK_PITCH_CLASSES.has(pitchClassOf(pitch));

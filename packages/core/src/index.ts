@@ -10,6 +10,7 @@ export {
 export { createUlidGenerator, isUlid, type RandomBytes } from "./ids";
 export {
   analyzeMidi,
+  type Beat,
   hasMidiHeader,
   InvalidMidiError,
   type MidiAnalysis,
@@ -18,9 +19,12 @@ export {
   type ParsedNotes,
   parseMidiNotes,
 } from "./midi";
-export { isBlackKey, MAX_MIDI_PITCH, MIN_MIDI_PITCH, midiToNoteName } from "./music";
+export { isBlackKey, MAX_MIDI_PITCH, MIN_MIDI_PITCH, midiToNoteName, pitchClassName } from "./music";
 export {
   buildTimeline,
+  type CountIn,
+  countInAt,
+  firstBeatIndexAtOrAfter,
   firstNoteIndexAtOrAfter,
   notesInWindow,
   type PlayableNote,

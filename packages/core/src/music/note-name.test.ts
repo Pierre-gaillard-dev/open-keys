@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isBlackKey, midiToNoteName } from "./note-name";
+import { isBlackKey, midiToNoteName, pitchClassName } from "./note-name";
 
 describe("midiToNoteName", () => {
   it.each([
@@ -28,5 +28,16 @@ describe("isBlackKey", () => {
     expect(isBlackKey(60)).toBe(false);
     expect(isBlackKey(64)).toBe(false);
     expect(isBlackKey(65)).toBe(false);
+  });
+});
+
+describe("pitchClassName", () => {
+  it.each([
+    [60, "C"],
+    [61, "C#"],
+    [71, "B"],
+    [21, "A"],
+  ])("%i → %s", (pitch, name) => {
+    expect(pitchClassName(pitch)).toBe(name);
   });
 });

@@ -13,10 +13,22 @@ export interface FixtureTrack {
   readonly notes: readonly FixtureNote[];
 }
 
+export interface FixtureMeter {
+  readonly bpm?: number;
+  /** [beats in a bar, beat unit], e.g. [3, 4]. */
+  readonly timeSignature?: readonly [number, number];
+}
+
 /** Builds a MIDI file in memory (test helper, no binary fixtures in the repo). */
-export function buildMidi(tracks: readonly FixtureTrack[], title = ""): Uint8Array {
+export function buildMidi(tracks: readonly FixtureTrack[], title = "", meter: FixtureMeter = {}): Uint8Array {
   const midi = new Midi();
   midi.header.name = title;
+  if (meter.bpm !== undefined) {
+    midi.header.setTempo(meter.bpm);
+  }
+  if (meter.timeSignature) {
+    midi.header.timeSignatures.push({ ticks: 0, timeSignature: [...meter.timeSignature] });
+  }
   for (const spec of tracks) {
     const track = midi.addTrack();
     track.name = spec.name ?? "";
