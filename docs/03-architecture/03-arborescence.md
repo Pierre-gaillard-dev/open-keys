@@ -34,10 +34,11 @@ open-keys/
 │   │   │   │   │   ├── pages/                # CatalogPage, SongDetailPage
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── import/
-│   │   │   │   │   ├── api/                  # import.api.ts, import.queries.ts (import, validation, couvertures)
+│   │   │   │   │   ├── api/                  # import.*.ts (import, validation, couvertures), mutopia.*.ts (recherche, import)
 │   │   │   │   │   ├── song-form.ts          # modèle du formulaire, validé par les contrats
 │   │   │   │   │   ├── components/           # SongEditor, TrackHandsEditor, CoverPicker, TagsInput
-│   │   │   │   │   ├── pages/                # ImportPage, ImportReviewPage, SongEditPage (même éditeur)
+│   │   │   │   │   ├── pages/                # ImportPage, ImportReviewPage, SongEditPage (même éditeur), MutopiaSearchPage
+│   │   │   │   │   ├── lazy-pages.ts         # pages chargées à la demande (hors du bundle de démarrage)
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── library/                  # statut et favori (mise à jour optimiste)
 │   │   │   │   ├── player/
@@ -53,10 +54,12 @@ open-keys/
 │   │   │   │   │   ├── controller/player-controller.ts # seul point d'action de l'UI : moteur + rendu + store
 │   │   │   │   │   ├── stores/player.store.ts         # état affiché (Zustand vanilla, ≤ 10 mises à jour/s)
 │   │   │   │   │   ├── practice/session-tracker.ts    # temps de lecture effective, plage de vitesses
-│   │   │   │   │   ├── runtime/browser-runtime.ts     # AudioContext + WebGL (remplacé par des faux en test)
+│   │   │   │   │   ├── runtime/                       # audio-runtime (AudioContext + piano), browser-runtime (+ WebGL)
+│   │   │   │   │   ├── preview/                       # écoute d'un MIDI avant import : moteur sans rendu, chargé au 1er clic
 │   │   │   │   │   ├── hooks/                # runtime, session, sauvegarde, masquage auto, wake lock, plein écran, raccourcis
 │   │   │   │   │   ├── components/           # PlayerView, ControlsOverlay, ProgressBar, HandControl, LoopPanel
 │   │   │   │   │   ├── pages/PlayerPage.tsx
+│   │   │   │   │   ├── lazy-player-page.ts   # PlayerPage chargée à la demande (PixiJS hors du bundle de démarrage)
 │   │   │   │   │   ├── input/                # V2 : InputSource, WebMidiInput, ScreenKeyboardInput
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── practice/
@@ -112,7 +115,11 @@ open-keys/
 │       │   │   ├── library/                  # user_songs (statut, favori, réglages), dernière écriture l'emporte
 │       │   │   ├── practice/                 # loops, practice_sessions, statistiques
 │       │   │   ├── maintenance/              # purges : brouillons, morceaux supprimés, sessions, tags, fichiers orphelins
-│       │   │   └── mutopia/                  # V1.1 : index local + synchronisation
+│       │   │   └── mutopia/                  # V1.1 : index local du Mutopia Project
+│       │   │       ├── mutopia.listing.ts    # lecture des pages de liste du site (HTML)
+│       │   │       ├── mutopia.source.ts     # téléchargement des pages (injecté : faux en test)
+│       │   │       ├── mutopia.service.ts    # synchronisation hebdomadaire, recherche, écoute, import
+│       │   │       └── mutopia.queries.ts, .schema.ts, .routes.ts
 │       │   ├── shared/
 │       │   │   ├── http/                     # app-env, errors, error-handler, validation, request-logger,
 │       │   │   │                             # client-ip, safe-fetch (SSRF : IP vérifiée à la connexion)

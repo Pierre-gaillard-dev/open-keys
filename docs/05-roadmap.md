@@ -32,7 +32,7 @@ flowchart LR
 **Critères de fin**
 - [x] ≥ 55 fps en continu sur le morceau dense : **60–61 FPS** sur Chrome (PC et Pixel 10), limités par la fréquence de l'écran ; Firefox fluide (58–61 FPS mesurés en headless). Environ 0,1 ms de rendu par image.
 - [x] Aucun décalage perceptible entre le son et l'image : validé à l'écoute sur Chrome et Firefox.
-- [ ] Démarrage de la lecture < 2 s avec les échantillons en cache : pas chronométré au spike (aucun délai signalé). **À mesurer en phase 3**, avec les échantillons servis localement.
+- [x] Démarrage de la lecture < 2 s avec les échantillons en cache : validé sur le Pixel 10 avec l'app déployée (échantillons servis localement, mis en cache par le Service Worker).
 - [x] Décision consignée : **GO PWA** (D17, 2026-11-16).
 
 **Enseignements reportés** : `03-architecture/04-lecteur.md` (horloge, sampler natif, pédale, scheduler, renderer).
@@ -51,8 +51,8 @@ flowchart LR
 - [x] **1.8** README initial (présentation, stack, lancement en local) + LICENSE MIT.
 
 **Critères de fin**
-- [ ] Connexion fonctionnelle sur l'URL de production, depuis le Pixel 10 et un PC.
-- [ ] Un push sur `main` → redéploiement par Dokploy.
+- [x] Connexion fonctionnelle sur l'URL de production, depuis le Pixel 10 et un PC.
+- [x] Un push sur `main` → redéploiement par Dokploy.
 
 ---
 
@@ -86,9 +86,9 @@ flowchart LR
 - [x] **3.6** Tests : `clock`/`transport` (unitaires), e2e Playwright de lecture (Firefox et Chromium). *Unitaires (horloge, scheduler, moteur, contrôleur, clavier), parcours sur l'app complète (runtime simulé) et e2e Playwright sur le build de production : lecture depuis la fiche, vitesse et boucle.*
 
 **Critères de fin**
-- [ ] Critères de performance du spike tenus sur le Pixel 10 dans la vraie app.
-- [ ] Une boucle à 50 % tourne 10 fois sans dérive de synchro.
-- [ ] Checklist manuelle ergonomie (téléphone sur trépied) validée.
+- [x] Critères de performance du spike tenus sur le Pixel 10 dans la vraie app.
+- [x] Une boucle à 50 % tourne 10 fois sans dérive de synchro.
+- [x] Checklist manuelle ergonomie (téléphone sur trépied) validée.
 
 ---
 
@@ -105,16 +105,16 @@ flowchart LR
 - [ ] **4.9** README portfolio : captures d'écran, GIF, schéma d'architecture, choix techniques.
 
 **Critères de fin du MVP**
-- [ ] Apprendre un morceau de bout en bout uniquement avec l'app, sur le téléphone.
-- [ ] Hors-ligne vérifié en mode avion sur le Pixel 10.
-- [ ] Données cohérentes entre le Pixel 10, Windows et Ubuntu.
+- [x] Apprendre un morceau de bout en bout uniquement avec l'app, sur le téléphone.
+- [x] Hors-ligne vérifié en mode avion sur le Pixel 10.
+- [x] Données cohérentes entre le Pixel 10, Windows et Ubuntu.
 
 ---
 
 ## V1.1 — Zoom automatique et Mutopia
 
 - [x] **Zoom automatique du clavier** : cadrage sur la plage `min_pitch`–`max_pitch`, avec une marge. Option : suivi glissant de la section en cours (fenêtre de N secondes), avec transitions douces.
-- [ ] **Mutopia** : synchronisation de l'index (dépôt GitHub ou RSS) dans `mutopia_pieces`, tâche planifiée, recherche FTS5, import en un clic qui passe par l'écran de vérification. Licence renseignée automatiquement.
+- [x] **Mutopia** : synchronisation de l'index (dépôt GitHub ou RSS) dans `mutopia_pieces`, tâche planifiée, recherche FTS5, import en un clic qui passe par l'écran de vérification. Licence renseignée automatiquement. *Index lu sur les pages de liste du site (le RSS s'arrête en 2019, pas d'API), recherche sur une colonne normalisée au lieu de FTS5, écoute avant import (D24).*
 
 ## V1.2 — Confort
 
