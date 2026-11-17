@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import { createStore, useStore } from "zustand";
 import { ApiError, apiRequest, isNetworkError } from "../api";
 import { newId } from "../lib/ids";
@@ -87,14 +88,21 @@ export class Outbox {
     return this.#flushing;
   }
 
-  /** Flushes at startup, when the browser comes back online and every 60 s. Returns a stop function. */
+  /**
+   * Flushes at startup, as soon as the app is back online (browser event or API probe, see
+   * connectivity.ts) and every 60 s. Returns a stop function.
+   */
   start(intervalMs = OUTBOX_RETRY_INTERVAL_MS): () => void {
     const flush = () => void this.flush();
-    window.addEventListener("online", flush);
+    const unsubscribe = onlineManager.subscribe((online) => {
+      if (online) {
+        flush();
+      }
+    });
     const timer = setInterval(flush, intervalMs);
     void this.#refreshCount().then(flush);
     return () => {
-      window.removeEventListener("online", flush);
+      unsubscribe();
       clearInterval(timer);
     };
   }

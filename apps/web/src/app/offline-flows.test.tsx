@@ -89,10 +89,8 @@ describe("offline (UC-14, UC-15)", () => {
     expect(outbox.state.getState().pending).toBe(1);
 
     reachable = true;
-    act(() => {
-      onlineManager.setOnline(true);
-      window.dispatchEvent(new Event("online"));
-    });
+    // Back online (browser event or API probe): the outbox is sent at once.
+    act(() => onlineManager.setOnline(true));
 
     await waitFor(() => expect(api.calls("PUT", `/api/library/${song.id}`)).toHaveLength(1));
     expect(api.calls("PUT", `/api/library/${song.id}`)[0]?.body).toMatchObject({ isFavorite: true });
