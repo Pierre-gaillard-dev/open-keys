@@ -4,7 +4,7 @@ import { ChevronLeft, Pencil, Play, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { difficultyDots, formatDuration } from "../../../shared/lib/format";
 import { Button, buttonClasses, ErrorBanner, SectionTitle } from "../../../shared/ui";
-import { FavoriteToggle, StatusControl } from "../../library";
+import { FavoriteToggle, StatusControl, useLibraryEntry } from "../../library";
 import { PracticeSummary } from "../../practice";
 import { useDeleteSong, useSong } from "../api/catalog.queries";
 import { SongCover } from "../components/SongCover";
@@ -48,6 +48,8 @@ function SongInfo({ song }: { readonly song: SongDetail }) {
 
 export function SongDetailPage({ songId }: { readonly songId: string }) {
   const song = useSong(songId);
+  const library = useLibraryEntry(songId);
+  const resumeAtMs = library.data?.lastPositionMs ?? 0;
   const deletion = useDeleteSong(songId);
   const navigate = useNavigate();
 
@@ -106,9 +108,10 @@ export function SongDetailPage({ songId }: { readonly songId: string }) {
             <p className="text-fg-soft md:text-lg">{data.composer ?? "Compositeur inconnu"}</p>
           </header>
           <section className="col-span-2 flex flex-col gap-4 md:col-span-1 md:col-start-1 md:row-start-3 md:self-start">
-            <Button variant="primary" size="lg" disabled title="Le lecteur arrive dans la prochaine version">
-              <Play aria-hidden="true" className="size-4 fill-current" /> Jouer (bientôt)
-            </Button>
+            <Link to="/songs/$songId/play" params={{ songId }} className={buttonClasses("primary", "lg")}>
+              <Play aria-hidden="true" className="size-4 fill-current" />
+              {resumeAtMs > 0 ? `Reprendre à ${formatDuration(resumeAtMs)}` : "Jouer"}
+            </Link>
             <StatusControl songId={songId} />
           </section>
 
