@@ -1,9 +1,12 @@
-import type {
-  Loop,
-  PracticeSession,
-  PracticeStats,
-  PutLoopRequest,
-  PutPracticeSessionRequest,
+import {
+  type ListPracticeSessionsQuery,
+  type Loop,
+  MAX_HISTORY_DAYS,
+  type PracticeHistory,
+  type PracticeSession,
+  type PracticeStats,
+  type PutLoopRequest,
+  type PutPracticeSessionRequest,
 } from "@open-keys/contracts";
 import type { Database } from "../../db";
 import { AppError } from "../../shared/http";
@@ -14,6 +17,7 @@ import {
   findPracticeSession,
   type LoopRow,
   listActiveLoops,
+  listSessionsBetween,
   type PracticeSessionRow,
   practiceTotals,
   upsertLoop,
@@ -97,6 +101,21 @@ export function createPracticeService({ db, clock, songs }: PracticeServiceDeps)
         throw new AppError("INTERNAL_ERROR", "Practice session was not stored");
       }
       return toPracticeSession(stored);
+    },
+
+    /** Practice dashboard (UC-27): sessions of a period, grouped by day on the client (its time zone). */
+    history(userId: string, query: ListPracticeSessionsQuery): PracticeHistory {
+      const to = query.to ?? clock() + 1;
+      if (to - query.from > MAX_HISTORY_DAYS * 24 * 60 * 60_000) {
+        throw new AppError("VALIDATION_ERROR", `The history is limited to ${MAX_HISTORY_DAYS} days`);
+      }
+      return {
+        sessions: listSessionsBetween(db, userId, query.from, to).map((row) => ({
+          ...toPracticeSession(row.session),
+          songTitle: row.songTitle,
+          songComposer: row.songComposer,
+        })),
+      };
     },
 
     stats(userId: string, songId: string): PracticeStats {

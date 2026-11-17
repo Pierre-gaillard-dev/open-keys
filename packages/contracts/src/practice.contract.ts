@@ -61,3 +61,35 @@ export const practiceStatsSchema = z.object({
 });
 
 export type PracticeStats = z.infer<typeof practiceStatsSchema>;
+
+/** Longest history the API returns at once (UC-27). */
+export const MAX_HISTORY_DAYS = 400;
+
+export const listPracticeSessionsQuerySchema = z
+  .object({
+    /** Sessions started at or after this time. */
+    from: z.coerce.number().int().nonnegative(),
+    /** Sessions started before this time (now by default). */
+    to: z.coerce.number().int().positive().optional(),
+  })
+  .refine((query) => query.to === undefined || query.to > query.from, {
+    message: "to must be after from",
+    path: ["to"],
+  });
+
+export type ListPracticeSessionsQuery = z.infer<typeof listPracticeSessionsQuerySchema>;
+
+/** A session of the history, with the song it was about. */
+export const practiceHistoryEntrySchema = practiceSessionSchema.extend({
+  songTitle: z.string(),
+  songComposer: z.string().nullable(),
+});
+
+export type PracticeHistoryEntry = z.infer<typeof practiceHistoryEntrySchema>;
+
+export const practiceHistorySchema = z.object({
+  /** Most recent first. */
+  sessions: z.array(practiceHistoryEntrySchema),
+});
+
+export type PracticeHistory = z.infer<typeof practiceHistorySchema>;

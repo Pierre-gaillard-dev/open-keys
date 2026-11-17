@@ -1,6 +1,8 @@
 import {
   idParamSchema,
   type Loop,
+  listPracticeSessionsQuerySchema,
+  type PracticeHistory,
   type PracticeSession,
   type PracticeStats,
   putLoopRequestSchema,
@@ -34,15 +36,15 @@ export function createLoopsRoutes(service: PracticeService) {
     });
 }
 
-/** /practice-sessions/:id */
+/** /practice-sessions and /practice-sessions/:id */
 export function createPracticeSessionsRoutes(service: PracticeService) {
-  return new Hono<AuthedEnv>().put(
-    "/:id",
-    validate("param", idParamSchema),
-    validate("json", putPracticeSessionRequestSchema),
-    (c) =>
+  return new Hono<AuthedEnv>()
+    .get("/", validate("query", listPracticeSessionsQuerySchema), (c) =>
+      c.json<PracticeHistory>(service.history(c.var.user.id, c.req.valid("query"))),
+    )
+    .put("/:id", validate("param", idParamSchema), validate("json", putPracticeSessionRequestSchema), (c) =>
       c.json<PracticeSession>(
         service.putSession(c.var.user.id, c.req.valid("param").id, c.req.valid("json")),
       ),
-  );
+    );
 }

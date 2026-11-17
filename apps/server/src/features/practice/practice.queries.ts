@@ -1,5 +1,6 @@
-import { and, asc, count, eq, isNull, max, sql, sum } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, lt, max, sql, sum } from "drizzle-orm";
 import type { Executor } from "../../db";
+import { songs } from "../songs/songs.schema";
 import { loops, practiceSessions } from "./practice.schema";
 
 export type LoopRow = typeof loops.$inferSelect;
@@ -59,4 +60,27 @@ export function practiceTotals(db: Executor, userId: string, songId: string) {
     .from(practiceSessions)
     .where(and(eq(practiceSessions.userId, userId), eq(practiceSessions.songId, songId)))
     .get();
+}
+
+export interface HistoryRow {
+  readonly session: PracticeSessionRow;
+  readonly songTitle: string;
+  readonly songComposer: string | null;
+}
+
+/** Sessions of a user started in [from, to), most recent first, with their song (even deleted). */
+export function listSessionsBetween(db: Executor, userId: string, from: number, to: number): HistoryRow[] {
+  return db
+    .select({ session: practiceSessions, songTitle: songs.title, songComposer: songs.composer })
+    .from(practiceSessions)
+    .innerJoin(songs, eq(songs.id, practiceSessions.songId))
+    .where(
+      and(
+        eq(practiceSessions.userId, userId),
+        gte(practiceSessions.startedAt, from),
+        lt(practiceSessions.startedAt, to),
+      ),
+    )
+    .orderBy(desc(practiceSessions.startedAt))
+    .all();
 }
