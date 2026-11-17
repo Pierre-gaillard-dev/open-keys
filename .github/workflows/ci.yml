@@ -42,3 +42,40 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  images:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the web image
+        run: docker build --file docker/web.Dockerfile --tag open-keys-web .
+
+      - name: Build the API image
+        run: docker build --file docker/api.Dockerfile --tag open-keys-api .
+
+  deploy:
+    name: Deploy (Dokploy)
+    needs: [verify, images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Never two deployments at the same time; a newer push waits for the current one.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Trigger the Dokploy deployment
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+        run: |
+          if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_API_KEY" ] || [ -z "$DOKPLOY_COMPOSE_ID" ]; then
+            echo "::notice::Dokploy secrets not configured: deployment skipped"
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --request POST "$DOKPLOY_URL/api/compose.deploy" \
+            --header "x-api-key: $DOKPLOY_API_KEY" \
+            --header "Content-Type: application/json" \
+            --data "{\"composeId\": \"$DOKPLOY_COMPOSE_ID\"}"
