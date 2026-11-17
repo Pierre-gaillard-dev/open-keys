@@ -69,8 +69,18 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
   - un tap, un mouvement de souris ou une touche les réaffiche. Pendant la lecture, ils se masquent à nouveau après 3 s sans interaction ;
   - la partie basse se place juste au-dessus du clavier, selon la même règle de hauteur que le rendu (20 % de l'écran, entre 56 et 170 px).
 - **Zoom automatique** : activé par défaut quand le plus petit côté de l'écran fait moins de 600 px (téléphone, quelle que soit l'orientation). Le clavier cadre alors la plage du morceau, avec 2 touches de marge.
-- **Raccourcis (PC)** : `Espace` lecture/pause, `←`/`→` ±5 s, `↑`/`↓` vitesse ±5 %, `A`/`B` bornes de boucle, `L` boucle on/off, `1`/`2` son de la main gauche/droite, `Z` zoom, `F` plein écran, `Échap` quitter.
+- **Raccourcis (PC)** : `Espace` lecture/pause, `←`/`→` ±5 s, `↑`/`↓` vitesse ±5 %, `A`/`B` bornes de boucle, `L` boucle on/off, `1`/`2` son de la main gauche/droite, `Z` zoom, `M` métronome, `C` décompte, `N` nom des notes (aucun → notes → touches → les deux), `F` plein écran, `Échap` quitter.
+- **Réglages** (bouton de la barre du haut) : décompte, métronome, nom des notes, volume de chaque main.
 - **Plein écran** avec verrouillage en paysage quand le navigateur le permet, et **Wake Lock** pendant la lecture.
+
+## Confort (V1.2, D25)
+
+- **Grille de temps** (`core`, `beatGrid`) : calculée depuis la carte des tempos et les signatures rythmiques du MIDI (4/4 par défaut). Une pulsation par unité de la signature : noire en 4/4 ou 3/4, croche en 6/8. Un fichier enregistré sans clic (interprétation libre, MAESTRO) a une grille qui ne suit pas la musique.
+- **Métronome** (`audio/metronome.ts`) : clics synthétisés (oscillateur, 35 ms, aucun échantillon), programmés par le scheduler sur l'horloge audio comme les notes, avec la même anticipation. Le premier temps de la mesure est plus aigu et plus fort.
+- **Décompte** : une mesure de clics de la signature et du tempo à la position, à la vitesse courante. L'horloge démarre une mesure plus tard (`SongClock.play(delay)`), et le temps du morceau court aussi avant l'ancre : **les notes descendent déjà pendant le décompte**. Au retour en début de boucle, même principe (`seek(start, delay)`). Le grand chiffre « 3, 2, 1 » suit les clics : une mise à jour du store par temps.
+- **Nom des notes** (notation anglaise, dièses) : sur les notes qui tombent (étiquettes réutilisées comme les notes, seulement quand elles tiennent) et/ou sur les touches (les C gardent leur octave).
+- **Volume par main** : appliqué à la vélocité des notes de la main. Enregistré avec les réglages des mains du morceau (`hands_settings.volume`).
+- **Préférences de l'appareil** : décompte, métronome et nom des notes, gardés dans le `localStorage` (illisibles ou absents : valeurs par défaut). Pas synchronisés : un téléphone sur trépied et un PC ne s'utilisent pas de la même façon.
 
 ## Reprise et pratique (`hooks/use-practice-persistence.ts`)
 

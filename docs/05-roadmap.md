@@ -119,10 +119,10 @@ flowchart LR
 
 ## V1.2 — Confort
 
-- [ ] Décompte avant le départ (et au retour en début de boucle).
-- [ ] Nom des notes en notation anglaise, sur les notes et/ou les touches.
-- [ ] Métronome (programmé sur l'horloge audio comme les notes, temps fort accentué).
-- [ ] Volume par main.
+- [x] Décompte avant le départ (et au retour en début de boucle).
+- [x] Nom des notes en notation anglaise, sur les notes et/ou les touches.
+- [x] Métronome (programmé sur l'horloge audio comme les notes, temps fort accentué).
+- [x] Volume par main.
 
 ## V1.3 — Progression
 

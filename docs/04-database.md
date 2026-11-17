@@ -77,7 +77,7 @@ Relation entre un utilisateur et un morceau : statut, favori et **réglages du l
 
 | Colonne | Note |
 |---|---|
-| `hands_settings` | JSON validé par zod : `{ left: { audible, visible }, right: { audible, visible } }` |
+| `hands_settings` | JSON validé par zod : `{ left: { audible, visible, volume }, right: { … } }`. `volume` (0–1, V1.2) vaut 1 s'il est absent (réglages enregistrés avant) |
 | `last_loop_id` | Dernière boucle active, nullable, `ON DELETE SET NULL` |
 | `updated_at` | Arbitre la règle « la dernière écriture l'emporte » |
 

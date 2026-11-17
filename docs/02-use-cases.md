@@ -220,6 +220,13 @@ flowchart LR
 - **Importer** passe par l'écran de vérification, avec titre, compositeur, licence et **crédit** pré-remplis. La fiche du morceau affiche ensuite la bibliothèque (lien vers la page d'origine) et le crédit. Un morceau déjà importé affiche « Dans le catalogue ».
 - Les index sont copiés sur le serveur et mis à jour régulièrement : la recherche ne dépend pas de la disponibilité des sites.
 
+### UC-22 à UC-25 — Confort (V1.2)
+- **Décompte** (UC-22) : une mesure de clics avant de jouer et à chaque retour en début de boucle, avec un grand chiffre au centre de l'écran. Les notes descendent déjà pendant le décompte.
+- **Nom des notes** (UC-23) : en notation anglaise (C, D, E…, dièses), sur les notes qui tombent, sur les touches, ou les deux.
+- **Métronome** (UC-24) : un clic par temps, calé sur la mesure du fichier, temps fort accentué.
+- **Volume par main** (UC-25) : de 0 à 100 %, mémorisé avec les autres réglages des mains du morceau.
+- Décompte, métronome et nom des notes sont des réglages de l'appareil, valables pour tous les morceaux. Ils s'activent depuis le bouton « Réglages » du lecteur, ou au clavier (`C`, `M`, `N`).
+
 ### UC-16 — Temps de pratique
 - Sur la fiche d'un morceau : temps total, nombre de sessions, date de la dernière pratique.
 
