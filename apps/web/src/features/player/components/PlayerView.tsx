@@ -1,7 +1,7 @@
 import type { LibraryEntry, Loop, SongDetail } from "@open-keys/contracts";
 import type { Timeline } from "@open-keys/core";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef } from "react";
+import { type PointerEvent, useEffect, useMemo, useRef } from "react";
 import { useStore } from "zustand";
 import { ErrorBanner } from "../../../shared/ui";
 import { useAutoHide } from "../hooks/use-auto-hide";
@@ -42,6 +42,16 @@ function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPl
   };
 }
 
+/** Elements that react to a tap: a tap inside them never dismisses the controls. */
+const INTERACTIVE = "a, button, input, label, fieldset, form, [role='region']";
+
+/** True when the nearest meaningful ancestor of the tapped element is a background, not a control. */
+function isBackground(target: EventTarget): boolean {
+  const nearest =
+    target instanceof Element ? target.closest(`${INTERACTIVE}, [data-player-background]`) : null;
+  return nearest?.hasAttribute("data-player-background") ?? false;
+}
+
 export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, samples }: PlayerViewProps) {
   const host = useRef<HTMLDivElement>(null);
   // Read once: the store is created from it on mount (later library updates come from this player).
@@ -75,13 +85,22 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
     }
   }, [controller, savedLoops, lastLoopId, store]);
 
+  // A tap on an empty area dismisses the controls (to watch the notes, even on pause); anything else shows them.
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (autoHide.visible && isBackground(event.target)) {
+      autoHide.hide();
+    } else {
+      autoHide.poke();
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 overflow-hidden bg-bg"
       onPointerMove={autoHide.poke}
-      onPointerDown={autoHide.poke}
+      onPointerDown={onPointerDown}
     >
-      <div ref={host} className="absolute inset-0" data-testid="player-canvas" />
+      <div ref={host} data-player-background className="absolute inset-0" data-testid="player-canvas" />
       <ControlsOverlay
         songId={song.id}
         title={song.title}
