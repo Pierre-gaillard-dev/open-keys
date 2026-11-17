@@ -3,6 +3,9 @@ import { z } from "zod";
 
 export const ulidSchema = z.string().refine(isUlid, "Invalid id");
 
+/** Route parameter `:id`. */
+export const idParamSchema = z.object({ id: ulidSchema });
+
 /** Milliseconds since epoch (UTC). */
 export const timestampSchema = z.number().int().nonnegative();
 

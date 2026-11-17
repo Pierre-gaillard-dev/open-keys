@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   csvSchema,
   difficultySchema,
+  idParamSchema,
   pianoPitchSchema,
   timestampSchema,
   ulidSchema,
@@ -101,4 +102,4 @@ export const updateSongRequestSchema = songEditableFieldsSchema.partial();
 
 export type UpdateSongRequest = z.infer<typeof updateSongRequestSchema>;
 
-export const songIdParamSchema = z.object({ id: ulidSchema });
+export const songIdParamSchema = idParamSchema;
