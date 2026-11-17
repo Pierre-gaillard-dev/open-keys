@@ -1,4 +1,4 @@
 {
   "extends": "@open-keys/config/tsconfig.node.json",
-  "include": ["src", "vitest.config.ts", "tsdown.config.ts"]
+  "include": ["src", "scripts", "vitest.config.ts", "tsdown.config.ts", "drizzle.config.ts"]
 }

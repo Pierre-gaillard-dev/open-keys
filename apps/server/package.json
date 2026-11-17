@@ -6,7 +6,9 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsdown",
     "start": "node dist/index.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:dbml": "tsx scripts/generate-dbml.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.8",
