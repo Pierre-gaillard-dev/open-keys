@@ -10,30 +10,34 @@ open-keys/
 │   │   │   ├── samples/salamander/           # échantillons OGG + LICENSE (CC-BY)
 │   │   │   └── icons/
 │   │   ├── src/
+│   │   │   ├── main.tsx                      # point d'entrée : CSS global + createApp()
 │   │   │   ├── app/                          # assemblage de l'application
-│   │   │   │   ├── providers.tsx             # QueryClient, thème…
-│   │   │   │   ├── router.tsx
-│   │   │   │   └── routes/                   # fichiers de route fins → pages des features
+│   │   │   │   ├── create-app.ts             # QueryClient + routeur ; un 401 n'importe où renvoie à la connexion
+│   │   │   │   ├── query-client.ts           # pas de nouvel essai sur 4xx, gestion du 401
+│   │   │   │   ├── router.tsx                # routes typées (TanStack Router), garde d'authentification
+│   │   │   │   ├── layout/AppShell.tsx       # barre du haut (pas de barre latérale) + page courante
+│   │   │   │   ├── global.css                # Tailwind v4 : jetons de couleurs et polices
+│   │   │   │   └── app-flows.test.tsx        # parcours complets : app réelle + API simulée
 │   │   │   ├── features/
 │   │   │   │   ├── auth/
 │   │   │   │   │   ├── api/
-│   │   │   │   │   │   ├── auth.api.ts       # appels du client RPC
+│   │   │   │   │   │   ├── auth.api.ts       # appels HTTP (client fetch typé par les contrats)
 │   │   │   │   │   │   └── auth.queries.ts   # hooks TanStack Query
-│   │   │   │   │   ├── components/
 │   │   │   │   │   ├── pages/LoginPage.tsx
 │   │   │   │   │   └── index.ts              # API publique de la feature
 │   │   │   │   ├── catalog/
-│   │   │   │   │   ├── api/                  # catalog.api.ts, catalog.queries.ts
-│   │   │   │   │   ├── components/           # SongCard, SongFilters, StatusBadge…
-│   │   │   │   │   ├── hooks/                # useSongFilters.ts
+│   │   │   │   │   ├── api/                  # catalog.api.ts, catalog.queries.ts (clés « songs »)
+│   │   │   │   │   ├── catalog-search.ts     # état du catalogue dans l'URL → paramètres d'API
+│   │   │   │   │   ├── components/           # SongCard, SongCover (couverture générée), CatalogFilters
 │   │   │   │   │   ├── pages/                # CatalogPage, SongDetailPage
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── import/
-│   │   │   │   │   ├── api/
-│   │   │   │   │   ├── components/           # TrackMappingTable, SplitPitchPicker, MetadataForm
-│   │   │   │   │   ├── schemas/              # import-form.schema.ts (zod du formulaire)
-│   │   │   │   │   ├── pages/                # ImportPage, ImportReviewPage
+│   │   │   │   │   ├── api/                  # import.api.ts, import.queries.ts (import, validation, couvertures)
+│   │   │   │   │   ├── song-form.ts          # modèle du formulaire, validé par les contrats
+│   │   │   │   │   ├── components/           # SongEditor, TrackHandsEditor, CoverPicker, TagsInput
+│   │   │   │   │   ├── pages/                # ImportPage, ImportReviewPage, SongEditPage (même éditeur)
 │   │   │   │   │   └── index.ts
+│   │   │   │   ├── library/                  # statut et favori (mise à jour optimiste)
 │   │   │   │   ├── player/
 │   │   │   │   │   ├── engine/
 │   │   │   │   │   │   ├── transport.ts      # lecture, pause, seek, vitesse, boucle (déplace l'ancre de l'horloge)
@@ -56,18 +60,19 @@ open-keys/
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── practice/
 │   │   │   │   │   ├── api/                  # practice.api.ts, practice.queries.ts
-│   │   │   │   │   ├── session-tracker.ts    # calcul du temps de lecture effective
-│   │   │   │   │   ├── components/           # LoopList, PracticeStats, StatusSelect
+│   │   │   │   │   ├── session-tracker.ts    # (phase 4) calcul du temps de lecture effective
+│   │   │   │   │   ├── components/           # PracticeSummary (statistiques, boucles)
 │   │   │   │   │   └── index.ts
 │   │   │   │   └── settings/
 │   │   │   └── shared/
-│   │   │       ├── api/client.ts             # instance hc<AppType>
+│   │   │       ├── api/http-client.ts        # apiRequest() : /api, réponses validées par zod, ApiError
 │   │   │       ├── offline/
 │   │   │       │   ├── db.ts                 # schéma Dexie
 │   │   │       │   ├── midi-cache.ts
 │   │   │       │   └── outbox.ts             # file d'attente + rejeu idempotent
-│   │   │       ├── ui/                       # Button, Dialog, Slider… (sans logique métier)
-│   │   │       └── lib/                      # utilitaires génériques
+│   │   │       ├── ui/                       # Button, Chip, SegmentedControl, TextField… (sans logique métier)
+│   │   │       ├── lib/                      # cx (tailwind-merge), format, use-debounced-value
+│   │   │       └── test/                     # (dans src/test) fake-api, fixtures, render-app
 │   │   ├── index.html
 │   │   └── vite.config.ts
 │   │

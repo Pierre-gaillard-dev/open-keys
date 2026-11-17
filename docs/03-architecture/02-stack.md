@@ -15,8 +15,8 @@
 | Audio | **Web Audio natif** : `PianoSampler` maison + échantillons Salamander | Lecture, vélocité, sustain. Pas de Tone.js, qui masque `outputLatency` et casse sous Firefox (D17) |
 | Analyse MIDI | **@tonejs/midi** | Utilisé côté client et serveur via `packages/core` |
 | Hors-ligne | **vite-plugin-pwa** (Workbox) + **Dexie** (IndexedDB) | Cache et file d'attente de synchronisation |
-| Style | **Tailwind CSS** + composants maison | Thème sombre, cibles tactiles larges |
-| API | **Hono** + `@hono/zod-validator` + client RPC `hc` | API typée, sans génération de code |
+| Style | **Tailwind CSS 4** (jetons dans `global.css`) + **tailwind-merge** (`cx`) + composants maison, icônes **lucide-react**, polices **Fontsource** auto-hébergées | Thème sombre, cibles tactiles larges, aucun appel à Google Fonts (vie privée, hors-ligne) |
+| API | **Hono** + `@hono/zod-validator` ; côté web, **client `fetch` typé par les contrats zod** (`apiRequest`) | API typée de bout en bout, réponses validées à l'exécution (D20) |
 | Validation | **Zod** (schémas dans `packages/contracts`) | Schémas partagés entre le front et le back |
 | Base de données | **SQLite** (`better-sqlite3`, binaires précompilés) + **Drizzle ORM 0.45 / drizzle-kit** | Schéma, migrations, requêtes typées. `node:sqlite` n'est supporté que par Drizzle 1.0 (RC) : à reconsidérer à sa sortie (D18) |
 | Images | **sharp** | Conversion des couvertures en WebP 720×720 |
