@@ -60,6 +60,9 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 - Pas de fetch dans les composants : on passe par les hooks `*.queries.ts`.
 - **Lecteur** : aucun état qui change à chaque image dans React. Le renderer lit le store et l'horloge directement.
 - Composants réutilisables sans logique métier dans `shared/ui`.
+- Classes : toujours via `cx()` (`shared/lib/cx.ts`, tailwind-merge) quand des classes se combinent. Une classe passée en `className` doit pouvoir écraser celle d'un composant (`w-24` contre `w-full`), sinon le résultat dépend de l'ordre de la feuille CSS.
+- Les pages ne connaissent pas le routeur pour leurs données d'entrée : `app/router.tsx` leur passe les paramètres et l'état de l'URL en props.
+- Web : un test de parcours par fonctionnalité (`app/app-flows.test.tsx`), avec l'app complète et l'API simulée (`src/test/fake-api.ts`). Les fixtures doivent respecter les contrats (un ULID invalide fait échouer la validation des réponses).
 
 ## 5. Base de données
 

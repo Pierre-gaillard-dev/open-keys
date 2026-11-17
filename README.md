@@ -6,7 +6,7 @@ Open Keys est une application *falling notes* personnelle. Elle lit des fichiers
 
 ![Lecteur sur PC](docs/maquettes/pc-05-lecteur.webp)
 
-> **Statut : fondations.** Le cadrage, l'architecture, les maquettes et l'outillage du monorepo sont en place ; le développement des fonctionnalités suit la [roadmap](docs/05-roadmap.md).
+> **Statut : catalogue utilisable.** API complète, connexion, catalogue, import (fichier, URL) avec vérification et couvertures. Prochaine étape : le lecteur falling notes ([roadmap](docs/05-roadmap.md)).
 
 ## Fonctionnalités
 
@@ -90,6 +90,7 @@ Prérequis : [pnpm](https://pnpm.io) 12. pnpm télécharge lui-même la bonne ve
 
 ```bash
 pnpm install      # dépendances + hooks Git
+cp .env.example .env   # puis choisir ADMIN_USERNAME / ADMIN_PASSWORD (compte créé au premier démarrage)
 pnpm dev          # web (http://localhost:5173) + API (http://localhost:3000), /api proxifié
 pnpm verify       # lint, types, règles d'architecture, tests, build (comme la CI)
 ```

@@ -90,6 +90,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D17 | Spike falling notes | **GO PWA**. Audio en Web Audio natif (sans Tone.js) ; synchro sur `currentTime − outputLatency − baseLatency` ; la pédale prolonge le son mais pas l'affichage | 60 FPS sur Chrome (PC et Pixel 10) et sur Firefox, synchro validée à l'écoute sur les deux. Tone.js plantait sous Firefox et masquait la latence, et `getOutputTimestamp()` ignore la latence sous Firefox |
 | D18 | Pilote SQLite | `better-sqlite3` + Drizzle 0.45 stable | `node:sqlite` n'est supporté que par Drizzle 1.0, encore en RC. `better-sqlite3` fournit des binaires précompilés pour Node 26. À reconsidérer à la sortie de Drizzle 1.0 |
 | D19 | Hachage des mots de passe | argon2id natif de `node:crypto` (Node 26) | Aucune dépendance native, paramètres conformes OWASP |
+| D20 | Client HTTP du web | `fetch` typé par les schémas de `packages/contracts` (validation des réponses à l'exécution), au lieu du client RPC `hc` de Hono | `hc` importe le type de l'app serveur dans le web : violation de l'isolation des apps, et TypeScript devrait typer le code serveur (Node, Drizzle) dans un projet DOM. Les contrats couvrent déjà toutes les réponses |
 
 ## 8. Risques
 
