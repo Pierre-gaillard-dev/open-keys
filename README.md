@@ -20,7 +20,7 @@ Open Keys est une application *falling notes* personnelle. Elle lit des fichiers
 - **Hors-ligne** : les morceaux favoris et déjà ouverts restent jouables sans réseau, et la synchronisation se fait au retour du réseau.
 
 ### Ensuite
-- Zoom automatique du clavier et recherche dans la bibliothèque libre [Mutopia](https://www.mutopiaproject.org/) (V1.1)
+- Zoom automatique du clavier et **recherche multi-sources** (V1.1) : [Mutopia](https://www.mutopiaproject.org/), [MAESTRO](https://magenta.tensorflow.org/datasets/maestro), [xivmidi](https://xivmidi.com/), avec écoute avant import
 - Décompte, nom des notes, métronome (V1.2)
 - **Entrée MIDI** depuis un vrai piano : vérification des notes, mode attente, score (V2)
 
@@ -49,7 +49,7 @@ Toutes les maquettes : [`docs/maquettes`](docs/maquettes/README.md).
 flowchart LR
   U(["Pianiste"]) --> APP["PWA<br/>Android · Windows · Ubuntu"]
   APP -->|"HTTPS /api"| API["API Hono<br/>SQLite + fichiers"]
-  API --> EXT["Sources externes<br/>MIDI · Mutopia · MusicBrainz · Wikidata"]
+  API --> EXT["Sources externes<br/>MIDI · Mutopia · MAESTRO · xivmidi · MusicBrainz · Wikidata"]
 ```
 
 Quelques choix structurants :
@@ -110,7 +110,7 @@ ADMIN_USERNAME=pierre ADMIN_PASSWORD='mot-de-passe-local' \
 
 - Code : [MIT](LICENSE).
 - Échantillons de piano : [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3), par Alexander Holm, sous licence CC-BY 3.0.
-- Partitions MIDI libres : [Mutopia Project](https://www.mutopiaproject.org/). La licence de chaque morceau est conservée avec lui.
+- Bibliothèques MIDI : [Mutopia Project](https://www.mutopiaproject.org/) (domaine public, Creative Commons), [MAESTRO](https://magenta.tensorflow.org/datasets/maestro) (Google Magenta, CC BY-NC-SA 4.0), [xivmidi](https://xivmidi.com/) (arrangements de la communauté). La source, la licence et le crédit de chaque morceau importé sont conservés avec lui et affichés dans l'app.
 - Couvertures : [MusicBrainz](https://musicbrainz.org/) / [Cover Art Archive](https://coverartarchive.org/) et [Wikimedia Commons](https://commons.wikimedia.org/). L'attribution est affichée dans l'app.
 
-Aucun fichier MIDI sous droits d'auteur n'est distribué avec ce dépôt.
+Aucun fichier MIDI n'est distribué avec ce dépôt : ils sont importés par chaque instance.

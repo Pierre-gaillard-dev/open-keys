@@ -9,7 +9,7 @@ flowchart LR
   P2 --> P3[Phase 3<br/>Lecteur]
   P3 --> P4[Phase 4<br/>Pratique + hors-ligne]
   P4 --> MVP{{MVP}}
-  MVP --> V11[V1.1<br/>Zoom auto + Mutopia]
+  MVP --> V11[V1.1<br/>Zoom auto + bibliothèques en ligne]
   V11 --> V12[V1.2<br/>Confort]
   V12 --> V13[V1.3<br/>Progression]
   V13 --> V2[V2<br/>Entrée MIDI]
@@ -111,10 +111,11 @@ flowchart LR
 
 ---
 
-## V1.1 — Zoom automatique et Mutopia
+## V1.1 — Zoom automatique et bibliothèques en ligne
 
 - [x] **Zoom automatique du clavier** : cadrage sur la plage `min_pitch`–`max_pitch`, avec une marge. Option : suivi glissant de la section en cours (fenêtre de N secondes), avec transitions douces.
-- [x] **Mutopia** : synchronisation de l'index (dépôt GitHub ou RSS) dans `mutopia_pieces`, tâche planifiée, recherche FTS5, import en un clic qui passe par l'écran de vérification. Licence renseignée automatiquement. *Index lu sur les pages de liste du site (le RSS s'arrête en 2019, pas d'API), recherche sur une colonne normalisée au lieu de FTS5, écoute avant import (D24).*
+- [x] **Mutopia** : synchronisation de l'index (dépôt GitHub ou RSS) dans `mutopia_pieces`, tâche planifiée, recherche FTS5, import en un clic qui passe par l'écran de vérification. Licence renseignée automatiquement. *Devenu une recherche **multi-sources** (D24) : Mutopia (pages de liste, le RSS s'arrête en 2019), MAESTRO et xivmidi, dans `source_pieces` ; recherche sur une colonne normalisée au lieu de FTS5 ; écoute avant import ; crédit de chaque fichier.*
+- [ ] **MuseScore** : source de plus par l'API officielle (clé à demander à api@musescore.com, compte Pro pour les téléchargements). Interrogée en direct plutôt qu'indexée.
 
 ## V1.2 — Confort
 

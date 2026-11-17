@@ -54,7 +54,7 @@ flowchart LR
 
 ### `api` (Node + Hono)
 - **Build multi-stage** : tsdown embarque `packages/*` dans `dist/index.mjs`, puis `pnpm deploy --prod` produit les seules dépendances de production. `better-sqlite3` et `sharp` utilisent leurs binaires précompilés (glibc), d'où l'image Debian slim et non Alpine.
-- **Volume** `data` monté sur `/data` : `open-keys.db` (SQLite en mode WAL), `midi/`, `covers/`. Le dossier appartient à l'utilisateur `node` dans l'image, et le volume nommé hérite de ces droits à sa création.
+- **Volume** `data` monté sur `/data` : `open-keys.db` (SQLite en mode WAL), `midi/`, `covers/`, `sources/` (archive MAESTRO extraite, environ 85 Mo). Le dossier appartient à l'utilisateur `node` dans l'image, et le volume nommé hérite de ces droits à sa création.
 - **Au démarrage** : migrations Drizzle appliquées, puis création de l'utilisateur initial à partir de `ADMIN_USERNAME`/`ADMIN_PASSWORD` s'il n'existe pas.
 - **Healthcheck** : `GET /api/health`.
 - **Arrêt propre** : sur `SIGTERM` (redéploiement Dokploy), le serveur arrête d'accepter des connexions et termine les requêtes en cours. Il est forcé au bout de 10 s (`stop_grace_period: 15s` dans le compose).
@@ -84,8 +84,8 @@ flowchart LR
 | `COOKIE_SECURE` | `true` en production | Cookie de session HTTPS uniquement |
 | `TRUST_PROXY` | `false` (`true` dans le compose) | `true` derrière Traefik : l'IP cliente vient de `X-Forwarded-For` |
 | `MAX_MIDI_SIZE` / `MAX_COVER_SIZE` | 2 Mo / 10 Mo | Limites d'upload et de téléchargement |
-| `MUSICBRAINZ_CONTACT` | URL du dépôt | Contact dans le `User-Agent` envoyé à MusicBrainz, Wikimedia et Mutopia (exigé par leurs règles) |
-| `MUTOPIA_SYNC` | `true` | Synchronisation hebdomadaire de l'index Mutopia (vérifiée toutes les 6 h, environ 90 s). `false` dans les tests e2e |
+| `MUSICBRAINZ_CONTACT` | URL du dépôt | Contact dans le `User-Agent` envoyé à MusicBrainz, Wikimedia et aux bibliothèques en ligne (exigé par leurs règles) |
+| `SOURCES_SYNC` | `true` | Synchronisation des bibliothèques en ligne (vérifiée toutes les 6 h ; Mutopia et xivmidi chaque semaine, MAESTRO chaque mois). `false` dans les tests e2e |
 
 - Elles sont toutes validées par zod au démarrage (`config/env.ts`) : une valeur invalide empêche l'API de démarrer.
 - **Une valeur vide compte comme absente** : le compose passe `${VAR:-}` sous forme de chaîne vide quand la variable n'est pas définie.

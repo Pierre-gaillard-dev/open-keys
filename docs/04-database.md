@@ -54,11 +54,15 @@ Catalogue **commun** (D3 : un `created_by` permet un futur catalogue par utilisa
 | `hand_mode` | `tracks` : assignation par piste (`song_tracks.hand`). `split` : découpage par hauteur, `split_pitch` |
 | `split_pitch` | Note MIDI de séparation. Les notes ≥ `split_pitch` vont à droite. Utilisé seulement si `hand_mode = split` |
 | `license` | Texte libre (`Public Domain`, `CC-BY-SA 4.0`, `inconnue`…) |
+| `source_type` | `upload` ou `url` (une bibliothèque en ligne télécharge aussi le fichier). `mutopia` est une valeur historique de la contrainte, inutilisée |
+| `source_library` | Bibliothèque en ligne d'origine (UC-20), sinon null. **Sans contrainte CHECK** : en ajouter une imposerait de reconstruire la table (D24) |
+| `source_piece_id` | `source_pieces.id` du morceau d'origine : affiche « Dans le catalogue » dans la recherche |
+| `credit` | Arrangeur ou interprète, tel que la bibliothèque le crédite. Affiché sur la fiche |
 | `cover_sha256` | Couverture en WebP 720×720 dans `/data/covers/<sha256>.webp`. Nullable : sans couverture, le client affiche une couverture générée (dégradé calculé à partir de l'id, titre et compositeur) |
 | `cover_source` | `upload`, `url`, `musicbrainz` ou `wikidata` |
 | `cover_credit` | Attribution affichée sur la fiche du morceau (obligatoire pour les images Wikimedia sous licence CC) |
 
-Index : `(state, deleted_at)`, `(title)`, `(composer)`.
+Index : `(state, deleted_at)`, `(title)`, `(composer)`, `(source_piece_id)`.
 Recherche texte : `LIKE` suffit dans le MVP. Table virtuelle FTS5 si le besoin apparaît.
 
 ### `song_tracks` — feature `songs`
@@ -95,20 +99,24 @@ Une ligne par session de lecture d'au moins 10 s effectives.
 
 Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tableau de bord.
 
-### `mutopia_pieces` — feature `mutopia` (V1.1)
-Copie locale de l'index du Mutopia Project : les morceaux avec une partie de piano et **un seul fichier MIDI** (D24). Reconstruite chaque semaine, jamais modifiée par l'utilisateur.
+### `source_pieces` — feature `sources` (V1.1)
+Copie locale des index des **bibliothèques en ligne** (D24) : Mutopia Project, MAESTRO, xivmidi. Seulement les morceaux à **un seul fichier MIDI**. Chaque bibliothèque est reconstruite selon son propre rythme, jamais modifiée par l'utilisateur.
 
 | Colonne | Note |
 |---|---|
-| `mutopia_id` | PK : l'identifiant de Mutopia (`piece-info.cgi?id=…`) |
-| `composer` | Tel que Mutopia l'écrit (« E. Satie ») |
-| `instrument` | Instrumentation de Mutopia (« Piano », « Voice and Piano »…) |
-| `keyboard_solo` | Uniquement des claviers (piano, clavecin, clavicorde) : jouable tel quel. Filtre « Piano seul » par défaut |
-| `license` | Forme courte (« Public Domain », « CC BY-SA 4.0 »), reprise dans `songs.license` à l'import |
-| `search_text` | Titre, compositeur et opus en minuscules sans accents : « gymnopedie » trouve « Gymnopédie » |
-| `synced_at` | Synchronisation qui a vu la ligne. Les lignes plus anciennes que la dernière synchronisation complète sont supprimées |
+| `id` | PK : `<source>:<id dans la bibliothèque>` (`mutopia:37`, `xivmidi:<uuid>`, `maestro:<fichier>`) |
+| `source` | `mutopia`, `maestro` ou `xivmidi` |
+| `composer` | Compositeur, ou artiste pour un arrangement (tel que la bibliothèque l'écrit) |
+| `instrument` | Instrumentation de la bibliothèque (« Piano », « Voice and Piano », « Cello, Piano »…) |
+| `solo` | Jouable par un seul musicien tel quel : claviers seuls (Mutopia, MAESTRO), arrangement solo (xivmidi). Filtre par défaut |
+| `license` | Forme courte (« Public Domain », « CC BY-SA 4.0 »), null quand la bibliothèque ne la donne pas. Reprise dans `songs.license` |
+| `credit` | Arrangeur ou interprète, repris dans `songs.credit` |
+| `midi_ref` | Où le fournisseur prend le fichier : une URL, ou un fichier de l'archive téléchargée (MAESTRO) |
+| `page_url` | Page publique du morceau, reprise dans `songs.source_url` |
+| `search_text` | Titre, compositeur, opus et crédit en minuscules, sans accents ni ponctuation : « gymnopedie » trouve « Gymnopédie ». Sert aussi au tri |
+| `synced_at` | Synchronisation qui a vu la ligne. Les lignes d'une bibliothèque plus anciennes que sa dernière synchronisation complète sont supprimées |
 
-Index : `midi_url` (jointure avec `songs.source_url` pour afficher « Dans le catalogue »).
+Index : `(source, synced_at)`.
 
 ## 4. Règles de synchronisation
 

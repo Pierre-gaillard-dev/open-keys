@@ -33,9 +33,9 @@ Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les s
 | PUT | `/practice-sessions/:id` | Enregistrer une session (idempotent) |
 | GET | `/songs/:id/practice-stats` | Temps total, nombre de sessions, dernière pratique |
 | GET | `/health` | Sonde Dokploy |
-| GET | `/mutopia/pieces` | Recherche dans l'index Mutopia (`q`, `solo` = `true` par défaut) : 100 résultats au plus, `total`, date de synchronisation, morceau déjà importé |
-| GET | `/mutopia/pieces/:id/midi` | Le MIDI du morceau, pour l'écouter avant l'import (la page ne peut pas joindre Mutopia : CSP) |
-| POST | `/mutopia/pieces/:id/import` | Brouillon avec titre, compositeur et licence pré-remplis (mêmes réponses que `/imports/url`) |
+| GET | `/sources/pieces` | Recherche dans les bibliothèques en ligne (`q`, `source` facultatif, `solo` = `true` par défaut) : 100 résultats au plus, `total`, état de chaque index, morceau déjà importé |
+| GET | `/sources/pieces/:id/midi` | Le MIDI du morceau, pour l'écouter avant l'import (la page ne peut pas joindre les bibliothèques : CSP) |
+| POST | `/sources/pieces/:id/import` | Brouillon avec titre, compositeur, licence et crédit pré-remplis (mêmes réponses que `/imports/url`) |
 
 ## Format des erreurs
 
