@@ -29,3 +29,43 @@ Toutes les routes sont sous `/api` et exigent une session, sauf `POST /auth/logi
 | PUT | `/practice-sessions/:id` | Enregistrer une session (idempotent) |
 | GET | `/songs/:id/practice-stats` | Temps total, nombre de sessions, dernière pratique |
 | GET | `/health` | Sonde Dokploy |
+
+## Format des erreurs
+
+Toute réponse non 2xx a le même corps, défini par `errorResponseSchema` (`packages/contracts`) :
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid json",
+    "requestId": "5fbe1cc2-89f9-4630-a8c7-c1a010d7c97a",
+    "details": [{ "path": "title", "message": "Too small: expected string to have >=1 characters" }]
+  }
+}
+```
+
+| Code | Statut | Quand |
+|---|---|---|
+| `BAD_REQUEST` | 400 | Requête mal formée (hors validation de schéma) |
+| `VALIDATION_ERROR` | 400 | Entrée refusée par un schéma zod : `details` liste les champs invalides |
+| `UNAUTHORIZED` | 401 | Pas de session valide |
+| `FORBIDDEN` | 403 | Session valide, action interdite (par exemple un `Origin` invalide) |
+| `NOT_FOUND` | 404 | Ressource ou route inconnue |
+| `CONFLICT` | 409 | Doublon (par exemple un MIDI déjà importé) |
+| `PAYLOAD_TOO_LARGE` | 413 | Fichier ou corps trop gros |
+| `RATE_LIMITED` | 429 | Trop de tentatives (connexion) |
+| `INTERNAL_ERROR` | 500 | Erreur inattendue : message générique, détail uniquement dans les logs |
+
+- **Côté serveur** : on lève une `AppError(code, message, { details?, cause? })`. Le statut HTTP est déduit du code à un seul endroit (`shared/http/errors.ts`), et le gestionnaire global (`shared/http/error-handler.ts`) produit le corps de la réponse.
+- **Le `message` d'une `AppError` est montré au client.** Une erreur non prévue ne l'est jamais : on la logue avec sa pile, et le client reçoit « An unexpected error occurred ».
+- **Validation** : `validate("json" | "query" | "param" | …, schema)` (`shared/http/validation.ts`) enveloppe `@hono/zod-validator` et produit un `VALIDATION_ERROR`.
+- **`requestId`** : il est repris de l'en-tête `X-Request-Id` s'il est fourni, sinon généré. Il est renvoyé dans cet en-tête et présent dans tous les logs de la requête : c'est lui qui relie un retour utilisateur à une ligne de log.
+
+## Logs
+
+- Une ligne JSON par événement : `level`, `time`, `message`, `service`, plus le contexte. Les erreurs sont sérialisées avec leur pile.
+- Un **log d'accès** par requête : `method`, `path`, `status`, `durationMs`, `requestId`. Niveau `info`, `warn` pour un 4xx, `error` pour un 5xx, et `debug` pour `/api/health` (sondé en continu par Dokploy).
+- Le niveau minimal se règle avec `LOG_LEVEL` (`debug` | `info` | `warn` | `error`, `info` par défaut).
+- Dans un handler, `c.var.logger` est le logger lié à la requête.
+

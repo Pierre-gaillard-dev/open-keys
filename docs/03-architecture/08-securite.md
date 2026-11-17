@@ -8,4 +8,5 @@
 - Les URL de couverture passent par le même `safe-fetch`, avec 10 Mo maximum en entrée. sharp valide le format (JPEG, PNG, WebP, AVIF) et **ré-encode** toujours l'image : aucun fichier d'origine n'est servi, et les métadonnées EXIF sont supprimées.
 - Appels à MusicBrainz : `User-Agent` identifiant l'app (`OpenKeys/<version> ( <MUSICBRAINZ_CONTACT> )`, contact fourni par variable d'environnement), 1 requête par seconde maximum, résultats mis en cache.
 - Fichiers stockés sous le nom de leur hash : aucun chemin fourni par l'utilisateur n'est utilisé.
-- En-têtes de sécurité : CSP stricte, `X-Content-Type-Options`.
+- En-têtes de sécurité : CSP stricte (nginx, pour les pages), et `secureHeaders()` de Hono sur l'API (`X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`, etc.).
+- Les erreurs inattendues ne renvoient jamais leur message ni leur pile au client. Le détail ne figure que dans les logs, retrouvable grâce au `requestId`.

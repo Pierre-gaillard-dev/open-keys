@@ -43,7 +43,7 @@ flowchart LR
 
 - [x] **1.1** Monorepo pnpm : `apps/web`, `apps/server`, `packages/{core,contracts,config}`, TypeScript strict, Biome, dependency-cruiser, lefthook, commitlint, Vitest.
 - [x] **1.2** CI GitHub Actions : lint, vérification des types, règles d'architecture, tests, build.
-- [ ] **1.3** Serveur Hono : configuration validée par zod, `/api/health`, erreurs typées, logs.
+- [x] **1.3** Serveur Hono : configuration validée par zod, `/api/health`, erreurs typées, logs.
 - [ ] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
 - [ ] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
 - [ ] **1.6** Web : Vite, Tailwind, TanStack Router et Query, client `hc` typé, page de connexion, thème sombre.

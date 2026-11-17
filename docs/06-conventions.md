@@ -49,7 +49,9 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 - `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`.
 - Pas de `any` ni de `as` non justifiés (un commentaire est obligatoire s'il le faut vraiment).
 - Les types des données de l'API sont dérivés des schémas zod (`z.infer`), sans duplication.
-- Erreurs métier typées (classes d'erreur ou union `Result`), converties en codes HTTP à un seul endroit (`shared/http/errors.ts`).
+- Erreurs métier : `throw new AppError(code, message)` (codes dans `packages/contracts`), converties en statut HTTP à un seul endroit (`shared/http/errors.ts`). Jamais de `c.json(…, 4xx)` construit à la main dans une route. Le format est décrit dans `03-architecture/06-api.md`.
+- Validation des entrées : toujours `validate(cible, schéma)`, avec un schéma de `packages/contracts`.
+- Logs : `c.var.logger` dans une requête, jamais `console`.
 
 ## 4. React
 

@@ -38,11 +38,13 @@ flowchart LR
 - **Volume** `data` monté sur `/data` : `open-keys.db` (SQLite en mode WAL), `midi/`, `covers/`.
 - **Au démarrage** : migrations Drizzle appliquées, puis création de l'utilisateur initial à partir de `ADMIN_USERNAME`/`ADMIN_PASSWORD` s'il n'existe pas.
 - **Healthcheck** : `GET /api/health`.
+- **Arrêt propre** : sur `SIGTERM` (redéploiement Dokploy), le serveur arrête d'accepter des connexions et termine les requêtes en cours. Il est forcé au bout de 10 s.
 - **Une seule instance** : SQLite n'accepte qu'un seul processus qui écrit. On ne passe pas l'API à l'échelle horizontalement, et ce n'est pas un besoin.
 
 ## Variables d'environnement (`api`)
 
-`DATA_DIR`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `PUBLIC_URL`, `MAX_MIDI_SIZE`, `MUSICBRAINZ_CONTACT`.
+`NODE_ENV`, `PORT`, `APP_VERSION`, `LOG_LEVEL` (en place), puis `DATA_DIR`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `PUBLIC_URL`, `MAX_MIDI_SIZE`, `MUSICBRAINZ_CONTACT` (au fil des tâches).
+Elles sont toutes validées par zod au démarrage (`config/env.ts`) : une valeur invalide empêche l'API de démarrer.
 Elles sont gérées dans Dokploy et jamais commitées. Le dépôt fournit un `.env.example`.
 
 ## Développement local
