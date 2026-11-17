@@ -8,6 +8,7 @@ import { createCoversRoutes } from "./features/covers";
 import { createHealthRoutes } from "./features/health";
 import { createImportsRoutes } from "./features/imports";
 import { createLibraryRoutes } from "./features/library";
+import { createMutopiaRoutes } from "./features/mutopia";
 import {
   createLoopsRoutes,
   createPracticeSessionsRoutes,
@@ -27,6 +28,7 @@ export const PROTECTED_PREFIXES = [
   "/library",
   "/loops",
   "/practice-sessions",
+  "/mutopia",
 ] as const;
 
 export interface AppDependencies {
@@ -65,7 +67,8 @@ export function createApp({ env, logger, services }: AppDependencies) {
     .route("/tags", createTagsRoutes(services.tags))
     .route("/library", createLibraryRoutes(services.library))
     .route("/loops", createLoopsRoutes(services.practice))
-    .route("/practice-sessions", createPracticeSessionsRoutes(services.practice));
+    .route("/practice-sessions", createPracticeSessionsRoutes(services.practice))
+    .route("/mutopia", createMutopiaRoutes(services.mutopia));
 }
 
 export type AppType = ReturnType<typeof createApp>;

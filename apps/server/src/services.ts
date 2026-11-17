@@ -10,6 +10,7 @@ import { type CoverProvider, createCoversService } from "./features/covers";
 import { createImportsService } from "./features/imports";
 import { createLibraryService } from "./features/library";
 import { createMaintenanceService } from "./features/maintenance";
+import { createMutopiaService, type MutopiaSource } from "./features/mutopia";
 import { createPracticeService } from "./features/practice";
 import { createSongsService } from "./features/songs";
 import { createTagsService } from "./features/tags";
@@ -29,6 +30,9 @@ export interface Infrastructure {
   readonly safeFetch: SafeFetch;
   readonly hasher: PasswordHasher;
   readonly coverProviders: readonly CoverProvider[];
+  readonly mutopiaSource: MutopiaSource;
+  /** Pause between two pages of the Mutopia listing (0 in tests). */
+  readonly mutopiaPageDelayMs?: number;
   readonly loginPolicy?: RateLimitPolicy;
 }
 
@@ -71,6 +75,14 @@ export function createServices(infra: Infrastructure) {
   const practice = createPracticeService({ db, clock, songs });
   const library = createLibraryService({ db, songs, practice });
   const maintenance = createMaintenanceService({ db, storage, clock, logger, auth, tags });
+  const mutopia = createMutopiaService({
+    db,
+    source: infra.mutopiaSource,
+    imports,
+    clock,
+    logger,
+    ...(infra.mutopiaPageDelayMs === undefined ? {} : { pageDelayMs: infra.mutopiaPageDelayMs }),
+  });
 
-  return { auth, tags, songs, covers, imports, practice, library, maintenance };
+  return { auth, tags, songs, covers, imports, practice, library, maintenance, mutopia };
 }

@@ -9,7 +9,15 @@ import type { SongsService } from "../songs";
 
 export type ImportSource =
   | { readonly type: "upload"; readonly filename: string }
-  | { readonly type: "url"; readonly url: string };
+  | { readonly type: "url"; readonly url: string }
+  | { readonly type: "mutopia"; readonly url: string; readonly metadata: KnownMetadata };
+
+/** What the source already knows (Mutopia index): pre-filled on the review screen. */
+export interface KnownMetadata {
+  readonly title: string;
+  readonly composer: string;
+  readonly license: string;
+}
 
 export interface ImportsServiceDeps {
   readonly songs: SongsService;
@@ -43,6 +51,9 @@ export function titleFromName(name: string): string {
 }
 
 function suggestedTitle(analysis: MidiAnalysis, source: ImportSource): string {
+  if (source.type === "mutopia") {
+    return source.metadata.title.slice(0, MAX_TITLE_LENGTH);
+  }
   if (analysis.title) {
     return analysis.title.slice(0, MAX_TITLE_LENGTH);
   }
@@ -51,6 +62,18 @@ function suggestedTitle(analysis: MidiAnalysis, source: ImportSource): string {
   }
   const lastSegment = new URL(source.url).pathname.split("/").filter(Boolean).at(-1) ?? "";
   return titleFromName(decodeURIComponent(lastSegment));
+}
+
+/** Fields of the draft that depend on where the file comes from. */
+function draftOrigin(analysis: MidiAnalysis, source: ImportSource) {
+  const known = source.type === "mutopia" ? source.metadata : null;
+  return {
+    title: suggestedTitle(analysis, source),
+    composer: known?.composer ?? null,
+    license: known?.license ?? null,
+    sourceType: source.type,
+    sourceUrl: source.type === "upload" ? null : source.url,
+  };
 }
 
 function analyze(bytes: Uint8Array): MidiAnalysis {
@@ -66,6 +89,14 @@ function analyze(bytes: Uint8Array): MidiAnalysis {
 
 export function createImportsService(deps: ImportsServiceDeps) {
   const { songs, covers, storage, safeFetch, clock, newId, logger, maxMidiSize } = deps;
+
+  const downloadMidi = async (url: string): Promise<Uint8Array> => {
+    const { bytes } = await safeFetch(url, {
+      maxBytes: maxMidiSize,
+      accept: "audio/midi, audio/x-midi, */*",
+    });
+    return bytes;
+  };
 
   const importBytes = async (
     userId: string,
@@ -101,9 +132,7 @@ export function createImportsService(deps: ImportsServiceDeps) {
         id: songId,
         createdBy: userId,
         state: "draft",
-        title: suggestedTitle(analysis, source),
-        sourceType: source.type,
-        sourceUrl: source.type === "url" ? source.url : null,
+        ...draftOrigin(analysis, source),
         midiSha256: sha256,
         midiSize: bytes.byteLength,
         durationMs: analysis.durationMs,
@@ -138,12 +167,15 @@ export function createImportsService(deps: ImportsServiceDeps) {
     },
 
     async importUrl(userId: string, url: string): Promise<ImportResult> {
-      const { bytes } = await safeFetch(url, {
-        maxBytes: maxMidiSize,
-        accept: "audio/midi, audio/x-midi, */*",
-      });
-      return importBytes(userId, bytes, { type: "url", url });
+      return importBytes(userId, await downloadMidi(url), { type: "url", url });
     },
+
+    /** A piece of a known library (Mutopia): its metadata is pre-filled for the review (UC-20). */
+    async importFromLibrary(userId: string, url: string, metadata: KnownMetadata): Promise<ImportResult> {
+      return importBytes(userId, await downloadMidi(url), { type: "mutopia", url, metadata });
+    },
+
+    downloadMidi,
 
     async confirm(userId: string, songId: string, request: ConfirmImportRequest): Promise<SongDetail> {
       const { coverSuggestionId, ...fields } = request;

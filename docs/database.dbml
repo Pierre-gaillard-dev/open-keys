@@ -34,6 +34,25 @@ table loops {
   }
 }
 
+table mutopia_pieces {
+  mutopia_id integer [pk, not null]
+  title text [not null]
+  composer text [not null]
+  opus text
+  instrument text [not null]
+  keyboard_solo integer [not null]
+  style text
+  license text [not null]
+  midi_url text [not null]
+  published_at integer
+  search_text text [not null]
+  synced_at integer [not null]
+
+  indexes {
+    midi_url [name: 'mutopia_pieces_midi_url_idx']
+  }
+}
+
 table practice_sessions {
   id text [pk, not null]
   user_id text [not null]

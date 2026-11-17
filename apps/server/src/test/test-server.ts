@@ -22,6 +22,8 @@ export interface TestServerOptions {
   readonly remoteFiles?: Readonly<Record<string, Uint8Array>>;
   readonly coverProviders?: readonly CoverProvider[];
   readonly loginPolicy?: RateLimitPolicy;
+  /** Fake Mutopia listing, page by page (startat 0, 10, 20…). */
+  readonly mutopiaPages?: readonly string[];
 }
 
 /** A complete API wired like production, with in-memory SQLite, a temp data dir and a controllable clock. */
@@ -59,6 +61,13 @@ export async function createTestServer(options: TestServerOptions = {}) {
     safeFetch,
     hasher,
     coverProviders: options.coverProviders ?? [],
+    mutopiaSource: {
+      listingPage: (startAt) => {
+        const page = options.mutopiaPages?.[startAt / 10];
+        return page === undefined ? Promise.reject(new Error("No such page")) : Promise.resolve(page);
+      },
+    },
+    mutopiaPageDelayMs: 0,
     ...(options.loginPolicy ? { loginPolicy: options.loginPolicy } : {}),
   });
   const app = createApp({ env, logger, services });
