@@ -1,6 +1,6 @@
 import { DEFAULT_HANDS_SETTINGS, type LibraryEntry } from "@open-keys/contracts";
 import { buildMidi, scale } from "@open-keys/core/testing";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installFakeApi } from "../../test/fake-api";
@@ -12,6 +12,7 @@ vi.mock("./runtime/browser-runtime", () => ({
   createBrowserRuntime: () => ({
     audio: { currentTime: 0, baseLatency: 0, outputLatency: 0, resume: () => Promise.resolve() },
     output: { play: () => undefined, stopAll: () => undefined },
+    clicks: { click: () => undefined, stopAll: () => undefined },
     loadSamples: () => Promise.resolve(),
     createRenderer: () => ({
       init: () => Promise.resolve(),
@@ -54,7 +55,7 @@ describe("player", () => {
       isFavorite: false,
       lastPositionMs: 12_000,
       lastTempoPct: 75,
-      handsSettings: { ...DEFAULT_HANDS_SETTINGS, left: { audible: false, visible: true } },
+      handsSettings: { ...DEFAULT_HANDS_SETTINGS, left: { audible: false, visible: true, volume: 1 } },
       lastLoopId: null,
       lastPracticedAt: null,
       updatedAt: 1,
@@ -115,6 +116,39 @@ describe("player", () => {
 
     await userEvent.click(play);
     await waitFor(() => expect(controls.dataset["visible"]).toBe("false"));
+  });
+
+  it("keeps count-in, metronome and note names on the device, the hand volume with the song", async () => {
+    localStorage.clear();
+    const { song, api } = playerApi(null);
+    renderApp(`/songs/${song.id}/play`);
+    const play = await screen.findByRole("button", { name: "Lecture" });
+    await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
+
+    await userEvent.click(screen.getByRole("button", { name: "Réglages du lecteur" }));
+    const panel = screen.getByRole("region", { name: "Réglages du lecteur" });
+    await userEvent.click(within(panel).getByRole("button", { name: /^Métronome/ }));
+    await userEvent.click(within(panel).getByRole("radio", { name: "Touches" }));
+    fireEvent.change(within(panel).getByRole("slider", { name: "Volume main gauche" }), {
+      target: { value: "40" },
+    });
+
+    expect(
+      within(panel)
+        .getByRole("button", { name: /^Métronome/ })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(JSON.parse(localStorage.getItem("open-keys:player-preferences") ?? "{}")).toEqual({
+      countIn: false,
+      metronome: true,
+      noteNames: "keys",
+    });
+
+    await userEvent.click(screen.getByRole("link", { name: "Quitter le lecteur" }));
+    await waitFor(() => expect(api.calls("PUT", `/api/library/${song.id}`).length).toBeGreaterThan(0));
+    expect(api.calls("PUT", `/api/library/${song.id}`).at(-1)?.body).toMatchObject({
+      handsSettings: { left: { volume: 0.4 }, right: { volume: 1 } },
+    });
   });
 
   it("creates an A-B loop from the controls", async () => {

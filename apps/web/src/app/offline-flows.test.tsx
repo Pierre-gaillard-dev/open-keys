@@ -12,6 +12,7 @@ vi.mock("../features/player/runtime/browser-runtime", () => ({
   createBrowserRuntime: () => ({
     audio: { currentTime: 0, baseLatency: 0, outputLatency: 0, resume: () => Promise.resolve() },
     output: { play: () => undefined, stopAll: () => undefined },
+    clicks: { click: () => undefined, stopAll: () => undefined },
     loadSamples: () => Promise.resolve(),
     createRenderer: () => ({
       init: () => Promise.resolve(),

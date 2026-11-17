@@ -1,5 +1,11 @@
-import type { Hand, Timeline } from "@open-keys/core";
-import { type LoopRange, type NoteOutput, NoteScheduler } from "./note-scheduler";
+import { countInAt, type Hand, type Timeline } from "@open-keys/core";
+import {
+  type ClickOutput,
+  countInDuration,
+  type LoopRange,
+  type NoteOutput,
+  NoteScheduler,
+} from "./note-scheduler";
 import { type AudioClockSource, SongClock } from "./song-clock";
 
 export interface PlayerAudio extends AudioClockSource {
@@ -13,17 +19,26 @@ export class PlayerEngine {
   readonly clock: SongClock;
   readonly #scheduler: NoteScheduler;
   readonly #audio: PlayerAudio;
+  /** One bar of clicks before playing (UC-22). */
+  countIn = false;
   onEnd: () => void = () => undefined;
+  /** A count-in started (play or back to the start of the loop): audio times of its clicks. */
+  onCountIn: (clicks: readonly number[]) => void = () => undefined;
 
-  constructor(timeline: Timeline, audio: PlayerAudio, output: NoteOutput) {
+  constructor(timeline: Timeline, audio: PlayerAudio, output: NoteOutput, clicks: ClickOutput) {
     this.timeline = timeline;
     this.#audio = audio;
     this.clock = new SongClock(audio);
-    this.#scheduler = new NoteScheduler(timeline, this.clock, output, audio);
+    this.#scheduler = new NoteScheduler(timeline, this.clock, output, clicks, audio);
     this.#scheduler.onEnd = () => {
       this.pause();
       this.seek(0);
       this.onEnd();
+    };
+    this.#scheduler.onLoop = (_start, countInClicks) => {
+      if (countInClicks.length > 0) {
+        this.onCountIn(countInClicks);
+      }
     };
   }
 
@@ -36,14 +51,28 @@ export class PlayerEngine {
     return Math.min(this.timeline.durationS, Math.max(0, this.clock.scheduledSongTime()));
   }
 
+  /** Now on the audio clock (for UI timers that follow the clicks). */
+  get audioTime(): number {
+    return this.#audio.currentTime;
+  }
+
   async play(): Promise<void> {
     await this.#audio.resume();
     if (this.position >= this.timeline.durationS) {
       this.clock.seek(this.#scheduler.loop?.start ?? 0);
     }
-    this.#scheduler.reset(this.clock.scheduledSongTime());
-    this.clock.play();
+    const from = this.clock.scheduledSongTime();
+    this.#scheduler.reset(from);
+    if (!this.countIn) {
+      this.clock.play();
+      this.#scheduler.start();
+      return;
+    }
+    const countIn = countInAt(this.timeline.beats, from);
+    const duration = countInDuration(countIn, this.clock.rate);
+    const musicStart = this.clock.play(duration);
     this.#scheduler.start();
+    this.onCountIn(this.#scheduler.playCountIn(musicStart - duration, countIn));
   }
 
   pause(): void {
@@ -73,6 +102,20 @@ export class PlayerEngine {
 
   setHandAudible(hand: Hand, audible: boolean): void {
     this.#scheduler.audibleHands[hand] = audible;
+  }
+
+  setHandVolume(hand: Hand, volume: number): void {
+    this.#scheduler.handVolumes[hand] = Math.min(1, Math.max(0, volume));
+  }
+
+  setMetronome(on: boolean): void {
+    this.#scheduler.metronome = on;
+  }
+
+  /** Count-in before playing and before each return to the start of the loop. */
+  setCountIn(on: boolean): void {
+    this.countIn = on;
+    this.#scheduler.loopCountIn = on;
   }
 
   dispose(): void {

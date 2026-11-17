@@ -1,8 +1,15 @@
-import { firstNoteIndexAtOrAfter, type Hand, type PlayableNote, type Timeline } from "@open-keys/core";
+import {
+  firstNoteIndexAtOrAfter,
+  type Hand,
+  type PlayableNote,
+  pitchClassName,
+  type Timeline,
+} from "@open-keys/core";
 import { Application, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
 // Shaders and uniforms without eval(): the CSP of the pages forbids 'unsafe-eval' (07-deploiement.md).
 import "pixi.js/unsafe-eval";
 import type { SongClock } from "../engine/song-clock";
+import type { NoteNamesMode } from "../stores/player-preferences";
 import {
   computeKeyboardLayout,
   type KeyboardLayout,
@@ -28,10 +35,29 @@ const COLORS = {
 const VISIBLE_REAL_SECONDS = 2.5;
 const MIDDLE_C = 60;
 const BLACK_KEY_HEIGHT_RATIO = 0.62;
+const FONT_FAMILY = "Inter Variable, system-ui, sans-serif";
+/** Note names are only written where they fit (narrow keys when the whole keyboard is shown). */
+const MIN_NAMED_KEY_WIDTH = 11;
+const NOTE_NAME_COLOR = 0x0b0e13;
+
+const namesOnKeys = (mode: NoteNamesMode) => mode === "keys" || mode === "both";
+
+/** Pooled display objects not used this frame. */
+function hideFrom(pool: readonly { visible: boolean }[], used: number): void {
+  for (let i = used; i < pool.length; i++) {
+    const item = pool[i];
+    if (item) {
+      item.visible = false;
+    }
+  }
+}
+const namesOnNotes = (mode: NoteNamesMode) => mode === "notes" || mode === "both";
 
 export interface RendererOptions {
   readonly visibleHands: Readonly<Record<Hand, boolean>>;
   readonly zoom: boolean;
+  /** Note names on the falling notes and/or the keys (UC-23). */
+  readonly noteNames: NoteNamesMode;
 }
 
 /** Draws the falling notes and the keyboard. Reads the clock every frame: React never drives it. */
@@ -43,7 +69,11 @@ export class FallingNotesRenderer {
   readonly #notes = new Container();
   readonly #keyboard = new Container();
   readonly #notePool: Sprite[] = [];
+  readonly #noteNames = new Container();
+  readonly #namePool: Text[] = [];
   readonly #keyGlows = new Map<number, Sprite>();
+  /** Same glows as a list: hidden every frame without allocating. */
+  #glowList: Sprite[] = [];
   #layout: KeyboardLayout | undefined;
   #noteAreaHeight = 0;
   #options: RendererOptions;
@@ -65,7 +95,7 @@ export class FallingNotesRenderer {
       preference: "webgl",
     });
     host.appendChild(this.app.canvas);
-    this.app.stage.addChild(this.#lanes, this.#notes, this.#keyboard);
+    this.app.stage.addChild(this.#lanes, this.#notes, this.#noteNames, this.#keyboard);
     this.app.renderer.on("resize", () => this.#relayout());
     this.app.ticker.add(() => this.#renderFrame());
     this.#initialized = true;
@@ -73,9 +103,10 @@ export class FallingNotesRenderer {
   }
 
   setOptions(options: RendererOptions): void {
-    const zoomChanged = options.zoom !== this.#options.zoom;
+    const layoutChanged =
+      options.zoom !== this.#options.zoom || options.noteNames !== this.#options.noteNames;
     this.#options = options;
-    if (zoomChanged && this.#initialized) {
+    if (layoutChanged && this.#initialized) {
       this.#relayout();
     }
   }
@@ -116,6 +147,7 @@ export class FallingNotesRenderer {
       child.destroy();
     }
     this.#keyGlows.clear();
+    this.#glowList = [];
     const whites = new Graphics();
     const whiteGlows = new Container();
     const blacks = new Graphics();
@@ -132,8 +164,10 @@ export class FallingNotesRenderer {
           .rect(key.x + 0.5, top, key.width - 1, keyHeight)
           .fill(key.pitch === MIDDLE_C ? COLORS.middleC : COLORS.whiteKey);
       }
-      if (key.pitch % 12 === 0 && key.width >= 14) {
-        labels.addChild(this.#octaveLabel(key, top + keyHeight));
+      const label = this.#keyLabel(key, top + keyHeight);
+      if (label) {
+        // Above the black keys for their names, between white and black keys otherwise.
+        (key.isBlack ? blackGlows : labels).addChild(label);
       }
       const glow = new Sprite(Texture.WHITE);
       glow.position.set(key.x + 1, top);
@@ -142,7 +176,19 @@ export class FallingNotesRenderer {
       glow.visible = false;
       (key.isBlack ? blackGlows : whiteGlows).addChild(glow);
       this.#keyGlows.set(key.pitch, glow);
+      this.#glowList.push(glow);
     }
+  }
+
+  /** Octave label of the Cs, letter of the other keys when names are shown on keys (UC-23). */
+  #keyLabel(key: KeyGeometry, bottom: number): Text | null {
+    if (key.pitch % 12 === 0 && key.width >= 14) {
+      return this.#octaveLabel(key, bottom);
+    }
+    if (namesOnKeys(this.#options.noteNames) && key.width >= MIN_NAMED_KEY_WIDTH) {
+      return this.#keyName(key, bottom);
+    }
+    return null;
   }
 
   /** "C4" under every C, so the screen maps to the real keyboard. */
@@ -150,7 +196,7 @@ export class FallingNotesRenderer {
     const label = new Text({
       text: `C${Math.floor(key.pitch / 12) - 1}`,
       style: {
-        fontFamily: "Inter Variable, system-ui, sans-serif",
+        fontFamily: FONT_FAMILY,
         fontSize: Math.min(12, key.width * 0.45),
         fontWeight: key.pitch === MIDDLE_C ? "700" : "500",
         fill: key.pitch === MIDDLE_C ? COLORS.blackKey : COLORS.label,
@@ -161,19 +207,39 @@ export class FallingNotesRenderer {
     return label;
   }
 
+  /** Letter of a key (UC-23); the Cs keep their octave label. */
+  #keyName(key: KeyGeometry, bottom: number): Text {
+    const label = new Text({
+      text: pitchClassName(key.pitch),
+      style: {
+        fontFamily: FONT_FAMILY,
+        fontSize: Math.min(12, key.width * (key.isBlack ? 0.5 : 0.45)),
+        fontWeight: "600",
+        fill: key.isBlack ? COLORS.whiteKey : COLORS.label,
+      },
+    });
+    label.anchor.set(0.5, 1);
+    label.position.set(key.x + key.width / 2, bottom - 6);
+    return label;
+  }
+
+  /** Key of a note still on screen (not released yet) of a visible hand. */
+  #visibleKey(note: PlayableNote, now: number, layout: KeyboardLayout): KeyGeometry | undefined {
+    return note.end > now && this.#options.visibleHands[note.hand] ? layout.keys.get(note.pitch) : undefined;
+  }
+
   #renderFrame(): void {
     const layout = this.#layout;
     if (!layout) {
       return;
     }
-    for (const glow of this.#keyGlows.values()) {
-      glow.visible = false;
-    }
+    hideFrom(this.#glowList, 0);
     const now = this.#clock.heardSongTime();
     const pixelsPerSongSecond = this.#noteAreaHeight / VISIBLE_REAL_SECONDS / this.#clock.rate;
     const horizon = now + this.#noteAreaHeight / pixelsPerSongSecond;
     const notes = this.#timeline.notes;
     let used = 0;
+    let named = 0;
     for (
       let i = firstNoteIndexAtOrAfter(notes, now - this.#timeline.maxNoteDuration);
       i < notes.length;
@@ -183,28 +249,57 @@ export class FallingNotesRenderer {
       if (note === undefined || note.start > horizon) {
         break;
       }
-      const key =
-        note.end > now && this.#options.visibleHands[note.hand] ? layout.keys.get(note.pitch) : undefined;
-      if (key && this.#drawNote(note, key, now, pixelsPerSongSecond, used)) {
+      const key = this.#visibleKey(note, now, layout);
+      const sprite = key ? this.#drawNote(note, key, now, pixelsPerSongSecond, used) : null;
+      if (sprite && key) {
         used++;
+        named += this.#nameNote(note, key, sprite, named) ? 1 : 0;
       }
     }
-    for (let i = used; i < this.#notePool.length; i++) {
-      const sprite = this.#notePool[i];
-      if (sprite) {
-        sprite.visible = false;
-      }
-    }
+    hideFrom(this.#notePool, used);
+    hideFrom(this.#namePool, named);
   }
 
-  /** Returns true when a sprite was used. */
+  /** Name at the bottom of a falling note, when shown and when it fits. Returns true when a label was used. */
+  #nameNote(note: PlayableNote, key: KeyGeometry, sprite: Sprite, index: number): boolean {
+    const fontSize = Math.min(13, Math.floor(key.width * 0.5));
+    if (
+      !namesOnNotes(this.#options.noteNames) ||
+      key.width < MIN_NAMED_KEY_WIDTH ||
+      sprite.height < fontSize + 6
+    ) {
+      return false;
+    }
+    let label = this.#namePool[index];
+    if (!label) {
+      label = new Text({
+        text: "",
+        style: { fontFamily: FONT_FAMILY, fontWeight: "700", fill: NOTE_NAME_COLOR },
+      });
+      label.anchor.set(0.5, 1);
+      this.#namePool.push(label);
+      this.#noteNames.addChild(label);
+    }
+    const name = pitchClassName(note.pitch);
+    if (label.text !== name) {
+      label.text = name;
+    }
+    if (label.style.fontSize !== fontSize) {
+      label.style.fontSize = fontSize;
+    }
+    label.position.set(key.x + key.width / 2, sprite.y + sprite.height - 3);
+    label.visible = true;
+    return true;
+  }
+
+  /** Returns the sprite used, or null when the note is not visible. */
   #drawNote(
     note: PlayableNote,
     key: KeyGeometry,
     now: number,
     pixelsPerSongSecond: number,
     index: number,
-  ): boolean {
+  ): Sprite | null {
     const color = note.hand === "left" ? COLORS.left : COLORS.right;
     const sounding = note.start <= now;
     if (sounding) {
@@ -218,7 +313,7 @@ export class FallingNotesRenderer {
     const bottom = Math.min(area, area - (note.start - now) * pixelsPerSongSecond);
     const top = Math.max(0, area - (note.end - now) * pixelsPerSongSecond);
     if (bottom - top < 1) {
-      return false;
+      return null;
     }
     const sprite = this.#noteSprite(index);
     sprite.position.set(key.x + 1, top);
@@ -226,7 +321,7 @@ export class FallingNotesRenderer {
     sprite.height = Math.max(1, bottom - top - 1);
     sprite.tint = color;
     sprite.alpha = sounding ? 1 : 0.88;
-    return true;
+    return sprite;
   }
 
   #noteSprite(index: number): Sprite {

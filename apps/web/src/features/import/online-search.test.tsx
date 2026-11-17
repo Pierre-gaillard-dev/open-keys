@@ -18,6 +18,7 @@ vi.mock("../player/runtime/audio-runtime", () => ({
       },
       stopAll: () => undefined,
     },
+    clicks: { click: () => undefined, stopAll: () => undefined },
     loadSamples: () => Promise.resolve(),
     close: () => undefined,
   }),

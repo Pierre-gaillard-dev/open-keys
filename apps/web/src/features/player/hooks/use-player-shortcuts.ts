@@ -27,6 +27,9 @@ export function usePlayerShortcuts(controller: PlayerController | null, handlers
       ["1", () => controller.toggleHand("left", "audible")],
       ["2", () => controller.toggleHand("right", "audible")],
       ["z", () => controller.toggleZoom()],
+      ["m", () => controller.toggleMetronome()],
+      ["c", () => controller.toggleCountIn()],
+      ["n", () => controller.cycleNoteNames()],
       ["f", handlers.onFullscreen],
       ["Escape", handlers.onExit],
     ]);

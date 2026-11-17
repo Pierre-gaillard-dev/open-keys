@@ -15,7 +15,8 @@ export function createPreviewSession(): PreviewSession {
   const runtime = createAudioRuntime();
   return {
     ready: runtime.loadSamples(),
-    engineFor: (bytes) => new PlayerEngine(previewTimeline(bytes), runtime.audio, runtime.output),
+    engineFor: (bytes) =>
+      new PlayerEngine(previewTimeline(bytes), runtime.audio, runtime.output, runtime.clicks),
     close: () => runtime.close(),
   };
 }

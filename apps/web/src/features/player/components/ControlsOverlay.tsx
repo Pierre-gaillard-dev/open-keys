@@ -1,6 +1,17 @@
 import type { Loop } from "@open-keys/contracts";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ListMusic, Maximize, Minimize, Minus, Pause, Play, Plus, ScanSearch } from "lucide-react";
+import {
+  ArrowLeft,
+  ListMusic,
+  Maximize,
+  Minimize,
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  ScanSearch,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useState } from "react";
 import { useStore } from "zustand";
 import { cx } from "../../../shared/lib/cx";
@@ -10,6 +21,7 @@ import { SEEK_STEP_MS } from "../hooks/use-player-shortcuts";
 import type { PlayerStore } from "../stores/player.store";
 import { HandControl } from "./HandControl";
 import { LoopPanel } from "./LoopPanel";
+import { PlayerOptionsPanel } from "./PlayerOptionsPanel";
 import { ProgressBar } from "./ProgressBar";
 
 export interface ControlsOverlayProps {
@@ -30,6 +42,58 @@ const PILL_BUTTON =
 
 /** Rows spanning the screen: only their children catch taps, the gaps let them through to the background. */
 const ROW = "pointer-events-none *:pointer-events-auto";
+
+interface PanelButtonsProps {
+  readonly songId: string;
+  readonly store: PlayerStore;
+  readonly controller: PlayerController | null;
+  readonly savedLoops: readonly Loop[];
+}
+
+/** Options and loops, one panel at a time, opened from the top bar. */
+function PanelButtons({ songId, store, controller, savedLoops }: PanelButtonsProps) {
+  const [panel, setPanel] = useState<"loops" | "options" | null>(null);
+  const togglePanel = (next: "loops" | "options") => setPanel((open) => (open === next ? null : next));
+  return (
+    <div className="relative flex gap-3">
+      <IconButton
+        label="Réglages du lecteur"
+        aria-expanded={panel === "options"}
+        onClick={() => togglePanel("options")}
+        className="border-0 bg-surface-2"
+      >
+        <SlidersHorizontal aria-hidden="true" className="size-5" />
+      </IconButton>
+      <button
+        type="button"
+        aria-label={`Boucles (${savedLoops.length})`}
+        aria-expanded={panel === "loops"}
+        onClick={() => togglePanel("loops")}
+        className="flex h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 text-sm font-semibold"
+      >
+        <ListMusic aria-hidden="true" className="size-4" />
+        <span aria-hidden="true" className="hidden sm:inline">
+          Boucles ({savedLoops.length})
+        </span>
+      </button>
+      {panel !== null && (
+        <div className="absolute top-13 right-0 z-10">
+          {panel === "loops" ? (
+            <LoopPanel
+              songId={songId}
+              store={store}
+              controller={controller}
+              savedLoops={savedLoops}
+              onClose={() => setPanel(null)}
+            />
+          ) : (
+            <PlayerOptionsPanel store={store} controller={controller} onClose={() => setPanel(null)} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * Controls drawn over the falling notes (mockups: mobile landscape and PC). The bottom part sits just
@@ -53,7 +117,6 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
   const loopEnabled = useStore(store, (state) => state.loopEnabled);
   const pendingStart = useStore(store, (state) => state.pendingLoopStartMs);
   const zoom = useStore(store, (state) => state.zoom);
-  const [loopsOpen, setLoopsOpen] = useState(false);
   const playing = status === "playing";
   const ready = controller !== null && status !== "loading" && status !== "error";
 
@@ -105,28 +168,7 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
             <Maximize aria-hidden="true" className="size-5" />
           )}
         </IconButton>
-        <div className="relative">
-          <button
-            type="button"
-            aria-expanded={loopsOpen}
-            onClick={() => setLoopsOpen((open) => !open)}
-            className="flex h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 text-sm font-semibold"
-          >
-            <ListMusic aria-hidden="true" className="size-4" />
-            <span className="hidden sm:inline">Boucles ({savedLoops.length})</span>
-          </button>
-          {loopsOpen && (
-            <div className="absolute top-13 right-0 z-10">
-              <LoopPanel
-                songId={songId}
-                store={store}
-                controller={controller}
-                savedLoops={savedLoops}
-                onClose={() => setLoopsOpen(false)}
-              />
-            </div>
-          )}
-        </div>
+        <PanelButtons songId={songId} store={store} controller={controller} savedLoops={savedLoops} />
       </header>
 
       <div
