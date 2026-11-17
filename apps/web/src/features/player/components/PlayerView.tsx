@@ -6,6 +6,7 @@ import { useStore } from "zustand";
 import { ErrorBanner } from "../../../shared/ui";
 import { useAutoHide } from "../hooks/use-auto-hide";
 import { useFullscreen } from "../hooks/use-fullscreen";
+import { useLoopProgress } from "../hooks/use-loop-progress";
 import type { SamplesStatus } from "../hooks/use-player-runtime";
 import { usePlayerSession } from "../hooks/use-player-session";
 import { usePlayerShortcuts } from "../hooks/use-player-shortcuts";
@@ -13,10 +14,11 @@ import { usePracticePersistence } from "../hooks/use-practice-persistence";
 import { useSavePreferences } from "../hooks/use-save-preferences";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import type { PlayerRuntime } from "../runtime/browser-runtime";
-import type { InitialPlayerState } from "../stores/player.store";
+import { type InitialPlayerState, loopSelectionOf } from "../stores/player.store";
 import { loadPlayerPreferences } from "../stores/player-preferences";
 import { ControlsOverlay } from "./ControlsOverlay";
 import { CountInBadge } from "./CountInBadge";
+import { SpeedUpOffer } from "./SpeedUpOffer";
 
 /** Resuming within the last second would immediately end: start over instead. */
 const RESUME_MARGIN_MS = 1000;
@@ -63,6 +65,7 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
   const { store, tracker, controller } = usePlayerSession(timeline, initial, host, runtime, samples);
   usePracticePersistence(song.id, store, tracker, libraryEntry);
   useSavePreferences(store);
+  useLoopProgress(store, savedLoops);
   const status = useStore(store, (state) => state.status);
   const error = useStore(store, (state) => state.error);
   const playing = status === "playing";
@@ -86,7 +89,7 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
   useEffect(() => {
     const saved = savedLoops.find((loop) => loop.id === lastLoopId);
     if (controller && saved && store.getState().loop === null) {
-      controller.selectLoop({ startMs: saved.startMs, endMs: saved.endMs, id: saved.id, name: saved.name });
+      controller.selectLoop(loopSelectionOf(saved));
     }
   }, [controller, savedLoops, lastLoopId, store]);
 
@@ -118,6 +121,7 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
         onToggleFullscreen={() => void fullscreen.toggle()}
       />
       <CountInBadge store={store} />
+      <SpeedUpOffer store={store} controller={controller} />
       {status === "loading" && (
         <p role="status" className="absolute inset-x-0 bottom-1/3 text-center text-sm text-fg-soft">
           Chargement du piano…

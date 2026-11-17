@@ -7,8 +7,19 @@ import { formatDuration } from "../../../shared/lib/format";
 import { newId } from "../../../shared/lib/ids";
 import { Button, ErrorBanner, IconButton } from "../../../shared/ui";
 import { useDeleteLoop, useSaveLoop } from "../../practice";
-import type { PlayerController } from "../controller/player-controller";
-import type { PlayerStore } from "../stores/player.store";
+import {
+  MAX_TEMPO_PCT,
+  MIN_TEMPO_PCT,
+  type PlayerController,
+  TEMPO_STEP_PCT,
+} from "../controller/player-controller";
+import { loopSelectionOf, type PlayerStore } from "../stores/player.store";
+
+/** Speeds that can be aimed at: 25 % to 100 %, by 5 %. */
+const TARGET_OPTIONS = Array.from(
+  { length: (MAX_TEMPO_PCT - MIN_TEMPO_PCT) / TEMPO_STEP_PCT + 1 },
+  (_, index) => MAX_TEMPO_PCT - index * TEMPO_STEP_PCT,
+);
 
 export interface LoopPanelProps {
   readonly songId: string;
@@ -21,7 +32,6 @@ export interface LoopPanelProps {
 /** Save the current A-B loop with a name, or recall a saved one (UC-10). */
 export function LoopPanel({ songId, store, controller, savedLoops, onClose }: LoopPanelProps) {
   const loop = useStore(store, (state) => state.loop);
-  const tempoPct = useStore(store, (state) => state.tempoPct);
   const saveLoop = useSaveLoop();
   const deleteLoop = useDeleteLoop(songId);
   const [name, setName] = useState("");
@@ -42,8 +52,8 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
           name: trimmed,
           startMs: loop.startMs,
           endMs: loop.endMs,
-          targetTempoPct: null,
-          bestTempoPct: tempoPct,
+          targetTempoPct: loop.targetTempoPct,
+          bestTempoPct: loop.bestTempoPct,
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
@@ -99,6 +109,32 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
       {!loop && (
         <p className="text-sm text-fg-muted">Pose A puis B pendant la lecture pour créer une boucle.</p>
       )}
+      {loop && (
+        <label className="flex items-center justify-between gap-3 text-sm text-fg-soft">
+          <span className="flex flex-col">
+            <span>Vitesse cible</span>
+            <span className="text-xs text-fg-muted">
+              {loop.bestTempoPct === null
+                ? "Pas encore de meilleure vitesse"
+                : `Meilleure : ${loop.bestTempoPct} %`}
+            </span>
+          </span>
+          <select
+            value={loop.targetTempoPct ?? MAX_TEMPO_PCT}
+            onChange={(event) => {
+              const target = Number(event.target.value);
+              controller?.setLoopTarget(target === MAX_TEMPO_PCT ? null : target);
+            }}
+            className="h-10 rounded-xl border border-line bg-bg px-2"
+          >
+            {TARGET_OPTIONS.map((pct) => (
+              <option key={pct} value={pct}>
+                {pct} %
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {savedLoops.length > 0 && (
         <ul className="flex max-h-56 flex-col divide-y divide-line overflow-y-auto rounded-xl border border-line">
@@ -106,14 +142,7 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
             <li key={saved.id} className="flex items-center">
               <button
                 type="button"
-                onClick={() =>
-                  controller?.selectLoop({
-                    startMs: saved.startMs,
-                    endMs: saved.endMs,
-                    id: saved.id,
-                    name: saved.name,
-                  })
-                }
+                onClick={() => controller?.selectLoop(loopSelectionOf(saved))}
                 className={cx(
                   "flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-2",
                   loop?.id === saved.id && "bg-surface-2",
@@ -124,6 +153,8 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
                   <span className="text-sm font-medium">{saved.name ?? "Boucle sans nom"}</span>
                   <span className="text-xs text-fg-muted">
                     {formatDuration(saved.startMs)} – {formatDuration(saved.endMs)}
+                    {saved.bestTempoPct !== null && ` · meilleure ${saved.bestTempoPct} %`}
+                    {` · objectif ${saved.targetTempoPct ?? MAX_TEMPO_PCT} %`}
                   </span>
                 </span>
               </button>

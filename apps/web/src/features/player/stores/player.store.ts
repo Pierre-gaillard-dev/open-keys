@@ -1,4 +1,4 @@
-import { DEFAULT_HANDS_SETTINGS, type HandsSettings } from "@open-keys/contracts";
+import { DEFAULT_HANDS_SETTINGS, type HandsSettings, type Loop } from "@open-keys/contracts";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "./player-preferences";
 
@@ -8,6 +8,21 @@ export interface LoopSelection {
   /** Saved loop id (null until saved). */
   readonly id: string | null;
   readonly name: string | null;
+  /** Speed to reach (UC-26); 100 % when not set. */
+  readonly targetTempoPct: number | null;
+  /** Highest speed at which the loop was played several times in a row. */
+  readonly bestTempoPct: number | null;
+}
+
+export function loopSelectionOf(loop: Loop): LoopSelection {
+  return {
+    startMs: loop.startMs,
+    endMs: loop.endMs,
+    id: loop.id,
+    name: loop.name,
+    targetTempoPct: loop.targetTempoPct,
+    bestTempoPct: loop.bestTempoPct,
+  };
 }
 
 /**
@@ -29,6 +44,10 @@ export interface PlayerState {
   readonly preferences: PlayerPreferences;
   /** Clicks left before the music starts (count-in), null otherwise. Changes once per beat. */
   readonly countInBeatsLeft: number | null;
+  /** Full turns of the loop in a row at the current speed (UC-26). */
+  readonly loopRuns: number;
+  /** Speed proposed after enough turns in a row (+5 %, up to the target), null otherwise. */
+  readonly speedUpOffer: number | null;
 }
 
 export type PlayerStore = StoreApi<PlayerState>;
@@ -56,5 +75,7 @@ export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
     zoom: initial.zoom ?? false,
     preferences: initial.preferences ?? DEFAULT_PLAYER_PREFERENCES,
     countInBeatsLeft: null,
+    loopRuns: 0,
+    speedUpOffer: null,
   }));
 }

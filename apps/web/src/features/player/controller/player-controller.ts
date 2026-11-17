@@ -11,6 +11,11 @@ export const TEMPO_STEP_PCT = 5;
 const POSITION_REFRESH_MS = 100;
 /** A loop shorter than this is almost certainly a mis-click. */
 const MIN_LOOP_MS = 500;
+/** Turns in a row at a speed for it to become the best speed of the loop (UC-26). */
+export const RUNS_FOR_BEST = 3;
+/** Turns in a row before proposing to speed up. */
+export const RUNS_FOR_SPEED_UP = 5;
+export const SPEED_UP_STEP_PCT = 5;
 
 export interface RendererPort {
   setOptions(options: RendererOptions): void;
@@ -99,11 +104,31 @@ export function createPlayerController(
     );
   };
   engine.onCountIn = showCountIn;
+  const resetRuns = () => store.setState({ loopRuns: 0, speedUpOffer: null });
   const enableLoop = (loop: LoopSelection) => {
     engine.setLoop({ start: toSeconds(loop.startMs), end: toSeconds(loop.endMs) });
     store.setState({ loop, loopEnabled: true, pendingLoopStartMs: null });
+    resetRuns();
     syncPosition();
   };
+
+  /** One more full turn: best speed, then a proposal to speed up (UC-26). */
+  const loopRestarted = () => {
+    const { loop, tempoPct, loopRuns, speedUpOffer } = store.getState();
+    if (!loop) {
+      return;
+    }
+    const runs = loopRuns + 1;
+    const best = runs >= RUNS_FOR_BEST && tempoPct > (loop.bestTempoPct ?? 0) ? tempoPct : loop.bestTempoPct;
+    const target = loop.targetTempoPct ?? MAX_TEMPO_PCT;
+    const offer =
+      speedUpOffer ??
+      (runs >= RUNS_FOR_SPEED_UP && tempoPct < target
+        ? Math.min(target, tempoPct + SPEED_UP_STEP_PCT)
+        : null);
+    store.setState({ loopRuns: runs, speedUpOffer: offer, loop: { ...loop, bestTempoPct: best } });
+  };
+  engine.onLoopRestart = loopRestarted;
 
   const pause = () => {
     if (!engine.isPlaying) {
@@ -121,6 +146,7 @@ export function createPlayerController(
     const clamped = Math.min(MAX_TEMPO_PCT, Math.max(MIN_TEMPO_PCT, Math.round(tempoPct)));
     engine.setRate(clamped / 100);
     store.setState({ tempoPct: clamped });
+    resetRuns();
     listener?.tempo(clamped);
   };
 
@@ -189,7 +215,7 @@ export function createPlayerController(
       const startMs = store.getState().pendingLoopStartMs ?? store.getState().loop?.startMs ?? 0;
       const endMs = toMs(engine.position);
       if (endMs - startMs >= MIN_LOOP_MS) {
-        enableLoop({ startMs, endMs, id: null, name: null });
+        enableLoop({ startMs, endMs, id: null, name: null, targetTempoPct: null, bestTempoPct: null });
       }
     },
 
@@ -221,6 +247,27 @@ export function createPlayerController(
     clearLoop() {
       engine.setLoop(null);
       store.setState({ loop: null, loopEnabled: false, pendingLoopStartMs: null });
+      resetRuns();
+    },
+
+    /** Speed to reach on the current loop, null for 100 % (UC-26). */
+    setLoopTarget(targetTempoPct: number | null) {
+      const loop = store.getState().loop;
+      if (loop) {
+        store.setState({ loop: { ...loop, targetTempoPct } });
+      }
+    },
+
+    acceptSpeedUp() {
+      const offer = store.getState().speedUpOffer;
+      if (offer !== null) {
+        setTempo(offer);
+      }
+    },
+
+    /** "Later": proposed again after as many turns. */
+    dismissSpeedUp() {
+      resetRuns();
     },
 
     toggleHand(hand: Hand, aspect: "audible" | "visible") {
