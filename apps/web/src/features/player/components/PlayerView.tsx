@@ -1,0 +1,104 @@
+import type { LibraryEntry, Loop, SongDetail } from "@open-keys/contracts";
+import type { Timeline } from "@open-keys/core";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef } from "react";
+import { useStore } from "zustand";
+import { ErrorBanner } from "../../../shared/ui";
+import { useAutoHide } from "../hooks/use-auto-hide";
+import { useFullscreen } from "../hooks/use-fullscreen";
+import { usePlayerSession } from "../hooks/use-player-session";
+import { usePlayerShortcuts } from "../hooks/use-player-shortcuts";
+import { usePracticePersistence } from "../hooks/use-practice-persistence";
+import { useWakeLock } from "../hooks/use-wake-lock";
+import type { InitialPlayerState } from "../stores/player.store";
+import { ControlsOverlay } from "./ControlsOverlay";
+
+/** Resuming within the last second would immediately end: start over instead. */
+const RESUME_MARGIN_MS = 1000;
+/** Smallest side of a phone, in any orientation (a phone in landscape is ~844 px wide). */
+const PHONE_SHORT_SIDE_PX = 600;
+
+export interface PlayerViewProps {
+  readonly song: SongDetail;
+  readonly timeline: Timeline;
+  readonly libraryEntry: LibraryEntry | null;
+  readonly savedLoops: readonly Loop[];
+}
+
+function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPlayerState {
+  const durationMs = Math.round(timeline.durationS * 1000);
+  const position = entry?.lastPositionMs ?? 0;
+  return {
+    durationMs,
+    positionMs: position < durationMs - RESUME_MARGIN_MS ? position : 0,
+    tempoPct: entry?.lastTempoPct ?? 100,
+    ...(entry ? { hands: entry.handsSettings } : {}),
+    // On a phone, 88 keys are tiny: frame the piece's range (docs: zoom auto, priority 1).
+    zoom: Math.min(window.innerWidth, window.innerHeight) < PHONE_SHORT_SIDE_PX,
+  };
+}
+
+export function PlayerView({ song, timeline, libraryEntry, savedLoops }: PlayerViewProps) {
+  const host = useRef<HTMLDivElement>(null);
+  // Read once: the store is created from it on mount (later library updates come from this player).
+  const initial = useMemo(() => initialState(timeline, libraryEntry), [timeline, libraryEntry]);
+  const { store, tracker, controller } = usePlayerSession(timeline, initial, host);
+  usePracticePersistence(song.id, store, tracker, libraryEntry);
+  const status = useStore(store, (state) => state.status);
+  const error = useStore(store, (state) => state.error);
+  const playing = status === "playing";
+  useWakeLock(playing);
+  const autoHide = useAutoHide(playing);
+  const fullscreen = useFullscreen();
+  const navigate = useNavigate();
+
+  const shortcutHandlers = useMemo(
+    () => ({
+      onExit: () => void navigate({ to: "/songs/$songId", params: { songId: song.id } }),
+      onFullscreen: () => void fullscreen.toggle(),
+      onActivity: autoHide.poke,
+    }),
+    [navigate, song.id, fullscreen.toggle, autoHide.poke],
+  );
+  usePlayerShortcuts(controller, shortcutHandlers);
+
+  // Resume with the loop that was active last time.
+  const lastLoopId = libraryEntry?.lastLoopId;
+  useEffect(() => {
+    const saved = savedLoops.find((loop) => loop.id === lastLoopId);
+    if (controller && saved && store.getState().loop === null) {
+      controller.selectLoop({ startMs: saved.startMs, endMs: saved.endMs, id: saved.id, name: saved.name });
+    }
+  }, [controller, savedLoops, lastLoopId, store]);
+
+  return (
+    <div
+      className="fixed inset-0 overflow-hidden bg-bg"
+      onPointerMove={autoHide.poke}
+      onPointerDown={autoHide.poke}
+    >
+      <div ref={host} className="absolute inset-0" data-testid="player-canvas" />
+      <ControlsOverlay
+        songId={song.id}
+        title={song.title}
+        composer={song.composer}
+        store={store}
+        controller={controller}
+        savedLoops={savedLoops}
+        visible={autoHide.visible}
+        isFullscreen={fullscreen.isFullscreen}
+        onToggleFullscreen={() => void fullscreen.toggle()}
+      />
+      {status === "loading" && (
+        <p role="status" className="absolute inset-x-0 bottom-1/3 text-center text-sm text-fg-soft">
+          Chargement du piano…
+        </p>
+      )}
+      {error && (
+        <div className="absolute inset-x-4 top-20 mx-auto max-w-md">
+          <ErrorBanner error={null} title={error} />
+        </div>
+      )}
+    </div>
+  );
+}

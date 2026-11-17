@@ -37,6 +37,8 @@ export interface RequestOptions<Schema extends z.ZodType | undefined> {
   /** Expected response; omit for 204 responses. */
   readonly schema?: Schema;
   readonly signal?: AbortSignal;
+  /** Let the request finish even if the page is being closed (saving on exit). */
+  readonly keepalive?: boolean;
 }
 
 type Result<Schema> = Schema extends z.ZodType ? z.infer<Schema> : undefined;
@@ -71,7 +73,7 @@ export async function apiRequest<Schema extends z.ZodType | undefined = undefine
   path: string,
   options: RequestOptions<Schema> = {},
 ): Promise<Result<Schema>> {
-  const { body, query, schema, signal } = options;
+  const { body, query, schema, signal, keepalive } = options;
   const isForm = body instanceof FormData;
   let response: Response;
   try {
@@ -81,6 +83,7 @@ export async function apiRequest<Schema extends z.ZodType | undefined = undefine
       headers: body === undefined || isForm ? {} : { "Content-Type": "application/json" },
       ...(body === undefined ? {} : { body: isForm ? body : JSON.stringify(body) }),
       ...(signal ? { signal } : {}),
+      ...(keepalive ? { keepalive } : {}),
     });
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === "AbortError") {

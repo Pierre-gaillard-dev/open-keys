@@ -78,12 +78,12 @@ flowchart LR
 
 ## Phase 3 — Lecteur
 
-- [ ] **3.1** `player/engine` : `clock` (ancre audio ↔ partition, `currentTime − outputLatency − baseLatency`), `transport` (lecture, pause, seek, vitesse, boucle), `scheduler` (anticipation de 150 ms), en reprenant le spike.
-- [ ] **3.2** `player/audio` : `PianoSampler` en Web Audio natif (repris du spike), échantillons Salamander servis localement (deux vélocités), sustain sur le son uniquement, son par main.
-- [ ] **3.3** `player/renderer` : notes qui tombent, clavier, couleurs des mains, touches allumées, repères sur les C (C4 mis en évidence), objets réutilisés.
-- [ ] **3.4** `player.store` + `ControlsOverlay` : lecture/pause, barre de progression, vitesse 25–100 %, mains (son et affichage), boucle A-B. Contrôles masqués au bout de 3 s.
-- [ ] **3.5** Plein écran, paysage, Wake Lock, raccourcis clavier.
-- [ ] **3.6** Tests : `clock`/`transport` (unitaires), e2e Playwright de lecture (Firefox et Chromium).
+- [x] **3.1** `player/engine` : `clock` (ancre audio ↔ partition, `currentTime − outputLatency − baseLatency`), `transport` (lecture, pause, seek, vitesse, boucle), `scheduler` (anticipation de 150 ms), en reprenant le spike.
+- [x] **3.2** `player/audio` : `PianoSampler` en Web Audio natif (repris du spike), échantillons Salamander servis localement (deux vélocités), sustain sur le son uniquement, son par main. *Fait avec une seule couche de vélocité (jeu d'échantillons Salamander allégé).*
+- [x] **3.3** `player/renderer` : notes qui tombent, clavier, couleurs des mains, touches allumées, repères sur les C (C4 mis en évidence), objets réutilisés.
+- [x] **3.4** `player.store` + `ControlsOverlay` : lecture/pause, barre de progression, vitesse 25–100 %, mains (son et affichage), boucle A-B. Contrôles masqués au bout de 3 s.
+- [x] **3.5** Plein écran, paysage, Wake Lock, raccourcis clavier.
+- [ ] **3.6** Tests : `clock`/`transport` (unitaires), e2e Playwright de lecture (Firefox et Chromium). *Fait : tests unitaires (horloge, scheduler, moteur, contrôleur, clavier) et tests de parcours sur l'app complète (runtime simulé). Reste : e2e Playwright en vrai navigateur (lecture vérifiée pour l'instant par scripts Chrome/Firefox headless).*
 
 **Critères de fin**
 - [ ] Critères de performance du spike tenus sur le Pixel 10 dans la vraie app.
@@ -95,9 +95,9 @@ flowchart LR
 ## Phase 4 — Pratique et hors-ligne → **MVP**
 
 - [x] **4.1** Tables `user_songs`, `loops`, `practice_sessions` + routes `PUT` idempotentes (la dernière écriture l'emporte).
-- [ ] **4.2** Web : statut et favori (catalogue et fiche), reprise de la lecture (UC-12).
-- [ ] **4.3** Boucles : sauvegarde, nommage, liste, rappel, suppression.
-- [ ] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau.
+- [x] **4.2** Web : statut et favori (catalogue et fiche), reprise de la lecture (UC-12).
+- [x] **4.3** Boucles : sauvegarde, nommage, liste, rappel, suppression.
+- [x] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau. *Fait en ligne. La file d'attente hors-ligne arrive avec 4.7.*
 - [ ] **4.5** PWA : manifeste, icônes, Service Worker (shell + échantillons), installation sur Android.
 - [ ] **4.6** Dexie : cache des MIDI (morceaux ouverts + favoris), catalogue hors-ligne avec badge.
 - [ ] **4.7** Outbox : file d'attente, rejeu (événement online, démarrage, toutes les 60 s), indicateur de synchronisation en attente.
@@ -113,7 +113,7 @@ flowchart LR
 
 ## V1.1 — Zoom automatique et Mutopia
 
-- [ ] **Zoom automatique du clavier** : cadrage sur la plage `min_pitch`–`max_pitch`, avec une marge. Option : suivi glissant de la section en cours (fenêtre de N secondes), avec transitions douces.
+- [x] **Zoom automatique du clavier** : cadrage sur la plage `min_pitch`–`max_pitch`, avec une marge. Option : suivi glissant de la section en cours (fenêtre de N secondes), avec transitions douces.
 - [ ] **Mutopia** : synchronisation de l'index (dépôt GitHub ou RSS) dans `mutopia_pieces`, tâche planifiée, recherche FTS5, import en un clic qui passe par l'écran de vérification. Licence renseignée automatiquement.
 
 ## V1.2 — Confort

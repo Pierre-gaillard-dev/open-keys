@@ -9,7 +9,7 @@ import {
   redirect,
   useNavigate,
 } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { lazy, Suspense, useCallback } from "react";
 import { z } from "zod";
 import { currentUserQuery, LoginPage } from "../features/auth";
 import { CatalogPage, type CatalogSearch, catalogSearchSchema, SongDetailPage } from "../features/catalog";
@@ -67,11 +67,31 @@ const appRoute = createRoute({
       throw redirect({ to: "/login", search: { redirect: location.href } });
     }
   },
-  component: AppShell,
+  component: Outlet,
+});
+
+/** Pages with the top bar (everything but the full-screen player). */
+const shellRoute = createRoute({ getParentRoute: () => appRoute, id: "shell", component: AppShell });
+
+/** The player (PixiJS, audio engine) is loaded on demand: the catalogue never downloads it. */
+const PlayerPage = lazy(() =>
+  import("../features/player").then((module) => ({ default: module.PlayerPage })),
+);
+
+const playerRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/songs/$songId/play",
+  component: function PlayerRoute() {
+    return (
+      <Suspense fallback={<p className="p-10 text-center text-fg-soft">Ouverture du lecteur…</p>}>
+        <PlayerPage songId={playerRoute.useParams().songId} />
+      </Suspense>
+    );
+  },
 });
 
 const catalogRoute = createRoute({
-  getParentRoute: () => appRoute,
+  getParentRoute: () => shellRoute,
   path: "/",
   validateSearch: catalogSearchSchema,
   component: function CatalogRoute() {
@@ -86,7 +106,7 @@ const catalogRoute = createRoute({
 });
 
 const songRoute = createRoute({
-  getParentRoute: () => appRoute,
+  getParentRoute: () => shellRoute,
   path: "/songs/$songId",
   component: function SongRoute() {
     return <SongDetailPage songId={songRoute.useParams().songId} />;
@@ -94,17 +114,17 @@ const songRoute = createRoute({
 });
 
 const songEditRoute = createRoute({
-  getParentRoute: () => appRoute,
+  getParentRoute: () => shellRoute,
   path: "/songs/$songId/edit",
   component: function SongEditRoute() {
     return <SongEditPage songId={songEditRoute.useParams().songId} />;
   },
 });
 
-const importRoute = createRoute({ getParentRoute: () => appRoute, path: "/import", component: ImportPage });
+const importRoute = createRoute({ getParentRoute: () => shellRoute, path: "/import", component: ImportPage });
 
 const importReviewRoute = createRoute({
-  getParentRoute: () => appRoute,
+  getParentRoute: () => shellRoute,
   path: "/import/$songId",
   component: function ImportReviewRoute() {
     return <ImportReviewPage songId={importReviewRoute.useParams().songId} />;
@@ -113,7 +133,10 @@ const importReviewRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([catalogRoute, songRoute, songEditRoute, importRoute, importReviewRoute]),
+  appRoute.addChildren([
+    shellRoute.addChildren([catalogRoute, songRoute, songEditRoute, importRoute, importReviewRoute]),
+    playerRoute,
+  ]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient, history?: RouterHistory) {

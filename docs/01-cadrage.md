@@ -91,6 +91,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D18 | Pilote SQLite | `better-sqlite3` + Drizzle 0.45 stable | `node:sqlite` n'est supporté que par Drizzle 1.0, encore en RC. `better-sqlite3` fournit des binaires précompilés pour Node 26. À reconsidérer à la sortie de Drizzle 1.0 |
 | D19 | Hachage des mots de passe | argon2id natif de `node:crypto` (Node 26) | Aucune dépendance native, paramètres conformes OWASP |
 | D20 | Client HTTP du web | `fetch` typé par les schémas de `packages/contracts` (validation des réponses à l'exécution), au lieu du client RPC `hc` de Hono | `hc` importe le type de l'app serveur dans le web : violation de l'isolation des apps, et TypeScript devrait typer le code serveur (Node, Drizzle) dans un projet DOM. Les contrats couvrent déjà toutes les réponses |
+| D21 | Lecteur | Contrôleur unique entre l'UI et le moteur, état affiché dans un store Zustand, runtime navigateur isolé (testable). Échantillons commités dans le dépôt (≈ 2 Mo, CC-BY). Zoom automatique par défaut sur téléphone (avancé de la V1.1). Un morceau pratiqué passe « en cours » | Testabilité sans Web Audio ni WebGL, aucune dépendance à un CDN, lisibilité sur un écran de 6 pouces |
 
 ## 8. Risques
 

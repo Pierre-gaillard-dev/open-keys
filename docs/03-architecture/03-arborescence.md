@@ -7,7 +7,7 @@ open-keys/
 ├── apps/
 │   ├── web/                                  # PWA React
 │   │   ├── public/
-│   │   │   ├── samples/salamander/           # échantillons OGG + LICENSE (CC-BY)
+│   │   │   ├── samples/salamander/           # 30 échantillons MP3 (≈ 2 Mo) + LICENSE.md (CC-BY 3.0)
 │   │   │   └── icons/
 │   │   ├── src/
 │   │   │   ├── main.tsx                      # point d'entrée : CSS global + createApp()
@@ -39,28 +39,26 @@ open-keys/
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── library/                  # statut et favori (mise à jour optimiste)
 │   │   │   │   ├── player/
+│   │   │   │   │   ├── api/player.queries.ts # MIDI → timeline (parsing core + répartition des mains), en cache
 │   │   │   │   │   ├── engine/
-│   │   │   │   │   │   ├── transport.ts      # lecture, pause, seek, vitesse, boucle (déplace l'ancre de l'horloge)
-│   │   │   │   │   │   ├── scheduler.ts      # programmation des notes vers le sampler
-│   │   │   │   │   │   ├── clock.ts          # temps de partition ↔ temps audio, compensation de latence
-│   │   │   │   │   │   └── player-engine.ts  # façade : load / play / pause / seek / setTempo
-│   │   │   │   │   ├── audio/
-│   │   │   │   │   │   ├── piano-sampler.ts
-│   │   │   │   │   │   └── sustain.ts        # gestion du CC64
+│   │   │   │   │   │   ├── song-clock.ts     # horloge unique : ancre audio ↔ partition, compensation de latence
+│   │   │   │   │   │   ├── note-scheduler.ts # programmation anticipée (150 ms), boucle, mains muettes
+│   │   │   │   │   │   └── player-engine.ts  # façade : play / pause / seek / setRate / setLoop
+│   │   │   │   │   ├── audio/piano-sampler.ts # Web Audio natif, échantillons Salamander (D17)
 │   │   │   │   │   ├── renderer/
-│   │   │   │   │   │   ├── falling-notes.renderer.ts
-│   │   │   │   │   │   ├── keyboard.renderer.ts
-│   │   │   │   │   │   ├── layout.ts         # géométrie des 88 touches, plage visible
-│   │   │   │   │   │   └── theme.ts          # couleurs des mains, repères de C
-│   │   │   │   │   ├── input/                # V2 : InputSource, WebMidiInput, ScreenKeyboardInput
-│   │   │   │   │   ├── stores/player.store.ts
-│   │   │   │   │   ├── components/           # PlayerCanvas, ControlsOverlay, LoopBar, SpeedControl
-│   │   │   │   │   ├── hooks/                # useWakeLock, useFullscreen, usePlayerShortcuts
+│   │   │   │   │   │   ├── falling-notes-renderer.ts # PixiJS : notes, clavier, repères C, mains masquables, zoom
+│   │   │   │   │   │   └── keyboard-layout.ts        # géométrie des touches, plage visible (zoom)
+│   │   │   │   │   ├── controller/player-controller.ts # seul point d'action de l'UI : moteur + rendu + store
+│   │   │   │   │   ├── stores/player.store.ts         # état affiché (Zustand vanilla, ≤ 10 mises à jour/s)
+│   │   │   │   │   ├── practice/session-tracker.ts    # temps de lecture effective, plage de vitesses
+│   │   │   │   │   ├── runtime/browser-runtime.ts     # AudioContext + WebGL (remplacé par des faux en test)
+│   │   │   │   │   ├── hooks/                # session, sauvegarde, masquage auto, wake lock, plein écran, raccourcis
+│   │   │   │   │   ├── components/           # PlayerView, ControlsOverlay, ProgressBar, HandControl, LoopPanel
 │   │   │   │   │   ├── pages/PlayerPage.tsx
+│   │   │   │   │   ├── input/                # V2 : InputSource, WebMidiInput, ScreenKeyboardInput
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── practice/
 │   │   │   │   │   ├── api/                  # practice.api.ts, practice.queries.ts
-│   │   │   │   │   ├── session-tracker.ts    # (phase 4) calcul du temps de lecture effective
 │   │   │   │   │   ├── components/           # PracticeSummary (statistiques, boucles)
 │   │   │   │   │   └── index.ts
 │   │   │   │   └── settings/

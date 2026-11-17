@@ -6,6 +6,14 @@ export function listLibrary(): Promise<LibraryEntry[]> {
   return apiRequest("GET", "/library", { schema: z.array(libraryEntrySchema) });
 }
 
-export function putLibraryEntry(songId: string, entry: PutLibraryEntryRequest): Promise<LibraryEntry> {
-  return apiRequest("PUT", `/library/${songId}`, { body: entry, schema: libraryEntrySchema });
+export function putLibraryEntry(
+  songId: string,
+  entry: PutLibraryEntryRequest,
+  options: { keepalive?: boolean } = {},
+): Promise<LibraryEntry> {
+  return apiRequest("PUT", `/library/${songId}`, {
+    body: entry,
+    schema: libraryEntrySchema,
+    ...(options.keepalive ? { keepalive: true } : {}),
+  });
 }
