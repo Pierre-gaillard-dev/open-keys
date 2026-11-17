@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Open Keys</title>
+  <rect width="512" height="512" fill="#0B0E13"/>
+  <g transform="translate(256 256) scale(0.72) translate(-256 -256)">
+    <rect x="120" y="231" width="72" height="150" rx="14" fill="#4DA3FF"/>
+    <rect x="220" y="131" width="72" height="250" rx="14" fill="#FFB23F"/>
+    <rect x="320" y="281" width="72" height="100" rx="14" fill="#4DA3FF"/>
+  </g>
+</svg>

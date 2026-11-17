@@ -1,5 +1,7 @@
 import { firstNoteIndexAtOrAfter, type Hand, type PlayableNote, type Timeline } from "@open-keys/core";
 import { Application, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
+// Shaders and uniforms without eval(): the CSP of the pages forbids 'unsafe-eval' (07-deploiement.md).
+import "pixi.js/unsafe-eval";
 import type { SongClock } from "../engine/song-clock";
 import {
   computeKeyboardLayout,

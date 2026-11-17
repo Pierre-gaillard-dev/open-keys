@@ -8,7 +8,7 @@ open-keys/
 │   ├── web/                                  # PWA React
 │   │   ├── public/
 │   │   │   ├── samples/salamander/           # 30 échantillons MP3 (≈ 2 Mo) + LICENSE.md (CC-BY 3.0)
-│   │   │   └── icons/
+│   │   │   └── icons/                        # icônes de la PWA (SVG source + PNG 192/512, maskable, Apple)
 │   │   ├── src/
 │   │   │   ├── main.tsx                      # point d'entrée : CSS global + createApp()
 │   │   │   ├── app/                          # assemblage de l'application
@@ -16,6 +16,7 @@ open-keys/
 │   │   │   │   ├── query-client.ts           # pas de nouvel essai sur 4xx, gestion du 401
 │   │   │   │   ├── router.tsx                # routes typées (TanStack Router), garde d'authentification
 │   │   │   │   ├── layout/AppShell.tsx       # barre du haut (pas de barre latérale) + page courante
+│   │   │   │   ├── pwa/                      # Service Worker : enregistrement, store, bannière de mise à jour
 │   │   │   │   ├── global.css                # Tailwind v4 : jetons de couleurs et polices
 │   │   │   │   └── app-flows.test.tsx        # parcours complets : app réelle + API simulée
 │   │   │   ├── features/
@@ -52,7 +53,7 @@ open-keys/
 │   │   │   │   │   ├── stores/player.store.ts         # état affiché (Zustand vanilla, ≤ 10 mises à jour/s)
 │   │   │   │   │   ├── practice/session-tracker.ts    # temps de lecture effective, plage de vitesses
 │   │   │   │   │   ├── runtime/browser-runtime.ts     # AudioContext + WebGL (remplacé par des faux en test)
-│   │   │   │   │   ├── hooks/                # session, sauvegarde, masquage auto, wake lock, plein écran, raccourcis
+│   │   │   │   │   ├── hooks/                # runtime, session, sauvegarde, masquage auto, wake lock, plein écran, raccourcis
 │   │   │   │   │   ├── components/           # PlayerView, ControlsOverlay, ProgressBar, HandControl, LoopPanel
 │   │   │   │   │   ├── pages/PlayerPage.tsx
 │   │   │   │   │   ├── input/                # V2 : InputSource, WebMidiInput, ScreenKeyboardInput
@@ -143,11 +144,13 @@ open-keys/
 │
 ├── docs/
 ├── docker/
-│   ├── web.Dockerfile                        # build Vite → nginx:alpine
+│   ├── web.Dockerfile                        # build Vite → nginx non root (port 8080)
 │   ├── api.Dockerfile                        # build tsdown → node:26-slim
-│   ├── nginx.conf                            # repli SPA, cache, compression
+│   ├── nginx/                                # repli SPA, cache, compression ; CSP et en-têtes de sécurité
+│   ├── compose.local.yml                     # production en local : + Caddy sur le port 8080
 │   └── Caddyfile                             # reverse proxy local (rôle de Traefik)
-├── docker-compose.yml                        # web + api (+ proxy en local)
+├── docker-compose.yml                        # production (Dokploy) : web + api + volume data
+├── .dockerignore
 ├── .github/workflows/ci.yml                  # lint, types, architecture, tests, build
 ├── .env.example
 ├── .nvmrc                                    # 26 (pour les outils qui le lisent : CI, éditeurs)

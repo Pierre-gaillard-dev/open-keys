@@ -35,7 +35,7 @@ flowchart LR
   - un `DynamicsCompressor` en sortie, contre la saturation dans les passages denses ;
   - un arrêt global en fondu rapide (30 ms) pour la pause et le seek.
 - **Pédale de sustain** : elle prolonge le **son** (`soundEnd`) mais **pas l'affichage**. La note qui tombe montre la durée d'appui sur la touche (`end`). Sinon, les arpèges sous pédale deviennent illisibles.
-- **Échantillons** : 30 fichiers MP3 Salamander (un toutes les tierces mineures, **une seule couche de vélocité**, environ 2 Mo) dans `apps/web/public/samples/salamander/`, servis par le conteneur `web`. La vélocité module le volume. Le cache hors-ligne viendra du Service Worker (phase 4).
+- **Échantillons** : 30 fichiers MP3 Salamander (un toutes les tierces mineures, **une seule couche de vélocité**, environ 2 Mo) dans `apps/web/public/samples/salamander/`, servis par le conteneur `web`. La vélocité module le volume. Ils sont précachés par le Service Worker.
 
 ## Scheduler (`engine/note-scheduler.ts`)
 
@@ -62,6 +62,7 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
 - **Le contrôleur est le seul point d'action** : les composants appellent `play`, `seekBy`, `setTempo`, `markLoopStart`/`markLoopEnd`, `toggleHand`, `toggleZoom`… et lisent le store. Le contrôleur garde moteur, rendu et store cohérents.
 - **Store Zustand vanilla** : position (rafraîchie toutes les 100 ms pendant la lecture), vitesse, boucle, mains, zoom. Le rendu PixiJS ne passe jamais par React.
 - **Runtime navigateur isolé** (`runtime/browser-runtime.ts`) : AudioContext, sampler, renderer WebGL. Dans les tests de composants, il est remplacé par des faux (`vi.mock`), et tout le reste du lecteur est réel.
+- **Le runtime appartient à la page** (`hooks/use-player-runtime.ts`) : il est créé dès l'ouverture du lecteur, et le décodage des échantillons (l'étape la plus longue, ≈ 1,2 s) se fait pendant le chargement du morceau. La session (`use-player-session.ts`) construit ensuite le moteur et le rendu sur ce runtime.
 - **Contrôles** : visibles à la pause. Pendant la lecture, ils se masquent après 3 s sans interaction et réapparaissent au toucher ou au mouvement de la souris. La partie basse se place juste au-dessus du clavier, selon la même règle de hauteur que le rendu (20 % de l'écran, entre 56 et 170 px).
 - **Zoom automatique** : activé par défaut quand le plus petit côté de l'écran fait moins de 600 px (téléphone, quelle que soit l'orientation). Le clavier cadre alors la plage du morceau, avec 2 touches de marge.
 - **Raccourcis (PC)** : `Espace` lecture/pause, `←`/`→` ±5 s, `↑`/`↓` vitesse ±5 %, `A`/`B` bornes de boucle, `L` boucle on/off, `1`/`2` son de la main gauche/droite, `Z` zoom, `F` plein écran, `Échap` quitter.
@@ -74,12 +75,16 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
 - Pratiquer un morceau « à apprendre » le passe automatiquement **« en cours »**.
 - À l'ouverture : reprise de la position (sauf dans la dernière seconde du morceau), de la vitesse, des mains et de la dernière boucle active.
 
-## Mesures (build de production, cache vide)
+## Mesures (build de production)
 
-| Navigateur | Prêt à jouer (depuis la navigation) | Lecture |
-|---|---|---|
-| Chrome headless | 2,6 – 3,2 s | ✅ position qui avance, aucune erreur |
-| Firefox headless | 3,6 – 4,3 s | ✅ position qui avance, aucune erreur |
+Temps jusqu'au bouton Lecture actif, depuis la navigation, sur le PC de développement :
 
-Avec un cache vide, ce temps comprend le téléchargement et le décodage des 30 échantillons. L'objectif « < 2 s échantillons en cache » est à mesurer sur le Pixel 10, et à atteindre avec le cache du Service Worker (phase 4).
+| Navigateur | Cache vide (phase 3) | Service Worker, échantillons en cache | Lecture |
+|---|---|---|---|
+| Chrome headless | 2,6 – 3,2 s | **1,6 – 2,0 s** (images Docker, CSP active) | ✅ position qui avance, aucune erreur |
+| Firefox headless | 3,6 – 4,3 s | 2,4 – 3,4 s | ✅ position qui avance |
+
+- **Les échantillons sont précachés, et le décodage est lancé en parallèle du chargement du morceau.** Le décodage des 30 MP3 (≈ 400 s d'audio stéréo) reste le poste principal : ≈ 1,2 à 1,4 s en headless, sans accélération matérielle.
+- L'objectif « < 2 s » reste à confirmer sur le Pixel 10.
+- S'il n'est pas tenu, deux leviers sans changer l'architecture : des échantillons **mono** (décodage et mémoire divisés par deux) ou **raccourcis** à une dizaine de secondes avec un fondu.
 

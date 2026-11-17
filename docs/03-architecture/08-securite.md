@@ -12,4 +12,5 @@
 - Appels à MusicBrainz : `User-Agent` identifiant l'app (`OpenKeys/<version> ( <MUSICBRAINZ_CONTACT> )`, contact fourni par variable d'environnement), 1 requête par seconde maximum, résultats mis en cache.
 - Fichiers stockés sous le nom de leur hash : aucun chemin fourni par l'utilisateur n'est utilisé.
 - En-têtes de sécurité : CSP stricte (nginx, pour les pages). `img-src` doit autoriser `coverartarchive.org`, `*.archive.org` et `upload.wikimedia.org` : les vignettes des suggestions de couverture sont chargées directement par le navigateur (`referrerpolicy=no-referrer`), et `secureHeaders()` de Hono sur l'API (`X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`, etc.).
+- La CSP n'autorise ni `unsafe-eval` ni script inline (voir [déploiement](./07-deploiement.md#web-nginx)). Les deux conteneurs tournent avec un utilisateur non root.
 - Les erreurs inattendues ne renvoient jamais leur message ni leur pile au client. Le détail ne figure que dans les logs, retrouvable grâce au `requestId`.

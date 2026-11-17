@@ -31,6 +31,14 @@ describe("loadEnv", () => {
     expect(env.COOKIE_SECURE).toBe(true);
   });
 
+  it("treats empty values as unset, as docker compose passes them", () => {
+    const env = loadEnv({ ADMIN_USERNAME: "", ADMIN_PASSWORD: "", LOG_LEVEL: "" });
+
+    expect(env.ADMIN_USERNAME).toBeUndefined();
+    expect(env.LOG_LEVEL).toBe("info");
+    expect(() => loadEnv({ NODE_ENV: "production", PUBLIC_URL: "" })).toThrow();
+  });
+
   it.each([
     [{ PORT: "not-a-port" }],
     [{ LOG_LEVEL: "verbose" }],

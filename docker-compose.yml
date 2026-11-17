@@ -1,0 +1,36 @@
+# Production (Dokploy compose application, see docs/03-architecture/07-deploiement.md).
+# Traefik routes the domain: /api → api:3000, everything else → web:8080 (domains configured in Dokploy).
+# Variables come from the Dokploy environment (written to .env next to this file). An unset variable is
+# passed as an empty string, which the API treats as unset (PUBLIC_URL is required: the API refuses to start).
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - data:/data
+    stop_grace_period: 15s
+
+volumes:
+  data:

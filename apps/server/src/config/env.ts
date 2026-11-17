@@ -52,6 +52,13 @@ const envSchema = z
 
 export type Env = z.infer<typeof envSchema>;
 
+/** Empty values count as unset: docker compose passes an unset `${VAR:-}` as an empty string. */
+function withoutEmptyValues(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    Object.entries(source).filter(([, value]) => value !== undefined && value !== ""),
+  );
+}
+
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  return envSchema.parse(source);
+  return envSchema.parse(withoutEmptyValues(source));
 }

@@ -6,7 +6,7 @@ Open Keys est une application *falling notes* personnelle. Elle lit des fichiers
 
 ![Lecteur sur PC](docs/maquettes/pc-05-lecteur.webp)
 
-> **Statut : utilisable pour apprendre.** Catalogue, import avec vérification et couvertures, et **lecteur falling notes** : vitesse, boucles A-B, une main à la fois, zoom, reprise et suivi de pratique. Prochaine étape : le mode hors-ligne ([roadmap](docs/05-roadmap.md)).
+> **Statut : utilisable pour apprendre.** Catalogue, import avec vérification et couvertures, et **lecteur falling notes** : vitesse, boucles A-B, une main à la fois, zoom, reprise et suivi de pratique. **Installable** (PWA) et déployable sur un VPS avec Dokploy. Prochaine étape : les données hors-ligne ([roadmap](docs/05-roadmap.md)).
 
 ## Fonctionnalités
 
@@ -93,6 +93,16 @@ pnpm install      # dépendances + hooks Git
 cp .env.example .env   # puis choisir ADMIN_USERNAME / ADMIN_PASSWORD (compte créé au premier démarrage)
 pnpm dev          # web (http://localhost:5173) + API (http://localhost:3000), /api proxifié
 pnpm verify       # lint, types, règles d'architecture, tests, build (comme la CI)
+```
+
+### Production
+
+Deux images Docker (`web` nginx, `api` Node) et un `docker-compose.yml`, déployés avec Dokploy. Build et déploiement sont gérés par Dokploy. Mise en place et variables : [déploiement](docs/03-architecture/07-deploiement.md).
+
+```bash
+# les images de production en local, sur http://localhost:8080
+ADMIN_USERNAME=pierre ADMIN_PASSWORD='mot-de-passe-local' \
+  docker compose -f docker-compose.yml -f docker/compose.local.yml up --build
 ```
 
 ## Crédits et licences

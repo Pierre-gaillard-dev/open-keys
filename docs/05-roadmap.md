@@ -47,12 +47,12 @@ flowchart LR
 - [x] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
 - [x] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
 - [x] **1.6** Web : Vite, Tailwind, TanStack Router et Query, client `fetch` typé par les contrats (D20), page de connexion, thème sombre.
-- [ ] **1.7** `web.Dockerfile` (nginx) + `api.Dockerfile` (Node) + `docker-compose.yml`. Application compose dans Dokploy : routage `/api` → api, `/` → web, HTTPS, volume `data`.
+- [x] **1.7** `web.Dockerfile` (nginx) + `api.Dockerfile` (Node) + `docker-compose.yml`. Application compose dans Dokploy : routage `/api` → api, `/` → web, HTTPS, volume `data`.
 - [x] **1.8** README initial (présentation, stack, lancement en local) + LICENSE MIT.
 
 **Critères de fin**
 - [ ] Connexion fonctionnelle sur l'URL de production, depuis le Pixel 10 et un PC.
-- [ ] Un push sur `main` → CI verte → redéploiement Dokploy.
+- [ ] Un push sur `main` → redéploiement par Dokploy.
 
 ---
 
@@ -60,7 +60,7 @@ flowchart LR
 
 - [x] **2.1** `core/midi` : `parseMidi`, `analyzeMidi`, avec un jeu de MIDI de test (une piste, deux pistes, multi-canal, changements de tempo, sustain). *Fait : `analyzeMidi` (serveur). Le parsing des notes pour le lecteur (`parseMidi`) arrive avec la phase 3.*
 - [x] **2.2** `core/hands` : `suggestHandMapping` et `applyHandMapping` (modes `tracks` et `split`), avec une couverture de tests élevée. *Fait : `suggestHandMapping` + `handForNote`.*
-- [ ] **2.3** `core/timeline` : index trié et recherche par fenêtre de temps (dichotomie).
+- [x] **2.3** `core/timeline` : index trié et recherche par fenêtre de temps (dichotomie).
 - [x] **2.4** Tables `songs`, `song_tracks`, `tags`, `song_tags` + stockage des fichiers par hash.
 - [x] **2.5** `POST /imports` : upload et URL (protection SSRF, limites), dédoublonnage, brouillon.
 - [x] **2.6** `POST /imports/:id/confirm`, `PATCH /songs/:id`, `DELETE /songs/:id`, purge des brouillons et des fichiers orphelins.
@@ -98,7 +98,7 @@ flowchart LR
 - [x] **4.2** Web : statut et favori (catalogue et fiche), reprise de la lecture (UC-12).
 - [x] **4.3** Boucles : sauvegarde, nommage, liste, rappel, suppression.
 - [x] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau. *Fait en ligne. La file d'attente hors-ligne arrive avec 4.7.*
-- [ ] **4.5** PWA : manifeste, icônes, Service Worker (shell + échantillons), installation sur Android.
+- [x] **4.5** PWA : manifeste, icônes, Service Worker (shell + échantillons), installation sur Android. *Mise à jour proposée par une bannière, jamais imposée pendant la pratique. Installation à valider sur le Pixel 10 une fois déployé.*
 - [ ] **4.6** Dexie : cache des MIDI (morceaux ouverts + favoris), catalogue hors-ligne avec badge.
 - [ ] **4.7** Outbox : file d'attente, rejeu (événement online, démarrage, toutes les 60 s), indicateur de synchronisation en attente.
 - [ ] **4.8** E2E : mode avion → lecture d'un favori → création d'une boucle → retour du réseau → boucle visible sur un autre appareil.
