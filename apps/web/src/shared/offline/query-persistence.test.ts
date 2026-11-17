@@ -14,6 +14,7 @@ describe("isPersistedQueryKey", () => {
     [["auth", "me"], true],
     [["library"], true],
     [["tags"], true],
+    [["practice", "history"], true],
     [["songs", "list", { view: "all" }], false],
     [["songs", "S1", "detail"], true],
     [["songs", "S1", "loops"], true],

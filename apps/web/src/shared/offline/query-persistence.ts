@@ -19,13 +19,13 @@ export const PERSISTED_QUERY_GC_TIME_MS = Number.POSITIVE_INFINITY;
 const SONG_PARTS: ReadonlySet<unknown> = new Set(["detail", "loops", "practice-stats"]);
 
 /**
- * What is kept for offline use: the user, the tags, the song details, the library, the loops and the
- * practice stats. Not the catalogue lists (one per search; offline, the catalogue lists the songs stored
+ * What is kept for offline use: the user, the tags, the song details, the library, the loops, the
+ * practice stats and history. Not the catalogue lists (one per search; offline, the catalogue lists the songs stored
  * on the device), the parsed timelines (large, rebuilt from the stored MIDI) nor the import screens.
  */
 export function isPersistedQueryKey(key: readonly unknown[]): boolean {
   const [root, second, third] = key;
-  if (root === "auth" || root === "library" || root === "tags") {
+  if (root === "auth" || root === "library" || root === "tags" || root === "practice") {
     return true;
   }
   return root === "songs" && second !== "list" && SONG_PARTS.has(third);

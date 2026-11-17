@@ -15,6 +15,8 @@
   --color-hand-left: #4da3ff;
   --color-hand-right: #ffb23f;
   --color-success: #5bd69a;
+  /* Data marks of charts (validated for the dark surfaces, see the progress page). */
+  --color-chart: #3987e5;
   --color-danger: #ff7a7a;
 
   --font-sans: "Inter Variable", system-ui, sans-serif;

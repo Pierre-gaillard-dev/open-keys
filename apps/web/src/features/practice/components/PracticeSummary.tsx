@@ -1,24 +1,6 @@
-import { cx } from "../../../shared/lib/cx";
 import { formatDuration, formatPracticeTime, formatRelativeDay } from "../../../shared/lib/format";
-import { SectionTitle } from "../../../shared/ui";
+import { SectionTitle, StatTile } from "../../../shared/ui";
 import { useLoops, usePracticeStats } from "../api/practice.queries";
-
-interface StatProps {
-  readonly value: string;
-  readonly label: string;
-  readonly className?: string;
-}
-
-function Stat({ value, label, className }: StatProps) {
-  return (
-    <div
-      className={cx("flex min-w-0 flex-col gap-1 rounded-2xl border border-line bg-surface p-4", className)}
-    >
-      <span className="font-display text-2xl font-semibold [overflow-wrap:anywhere]">{value}</span>
-      <span className="text-sm text-fg-muted">{label}</span>
-    </div>
-  );
-}
 
 /** Practice time, sessions and saved loops of the current user for a song (UC-16). */
 export function PracticeSummary({ songId }: { readonly songId: string }) {
@@ -31,9 +13,9 @@ export function PracticeSummary({ songId }: { readonly songId: string }) {
       {/* Three columns only when they are wide enough for "Aujourd'hui" (container width, not screen). */}
       <div className="@container">
         <div className="grid grid-cols-2 gap-2 @xl:grid-cols-3 md:gap-3">
-          <Stat value={data ? formatPracticeTime(data.totalActiveMs) : "—"} label="pratiqué" />
-          <Stat value={data ? String(data.sessionCount) : "—"} label="sessions" />
-          <Stat
+          <StatTile value={data ? formatPracticeTime(data.totalActiveMs) : "—"} label="pratiqué" />
+          <StatTile value={data ? String(data.sessionCount) : "—"} label="sessions" />
+          <StatTile
             value={data?.lastPracticedAt ? formatRelativeDay(data.lastPracticedAt) : "Jamais"}
             label="dernière fois"
             className="col-span-2 @xl:col-span-1"
