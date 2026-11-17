@@ -6,7 +6,7 @@ Open Keys est une application *falling notes* personnelle. Elle lit des fichiers
 
 ![Lecteur sur PC](docs/maquettes/pc-05-lecteur.webp)
 
-> **Statut : utilisable pour apprendre.** Catalogue, import avec vérification et couvertures, et **lecteur falling notes** : vitesse, boucles A-B, une main à la fois, zoom, reprise et suivi de pratique. **Installable** (PWA) et déployable sur un VPS avec Dokploy. Prochaine étape : les données hors-ligne ([roadmap](docs/05-roadmap.md)).
+> **Statut : utilisable pour apprendre.** Catalogue, import avec vérification et couvertures, et **lecteur falling notes** : vitesse, boucles A-B, une main à la fois, zoom, reprise et suivi de pratique. **Installable** (PWA), **utilisable hors-ligne** (favoris et morceaux ouverts, synchronisation au retour du réseau) et déployable sur un VPS avec Dokploy. MVP terminé, reste le README portfolio ([roadmap](docs/05-roadmap.md)).
 
 ## Fonctionnalités
 
@@ -93,6 +93,7 @@ pnpm install      # dépendances + hooks Git
 cp .env.example .env   # puis choisir ADMIN_USERNAME / ADMIN_PASSWORD (compte créé au premier démarrage)
 pnpm dev          # web (http://localhost:5173) + API (http://localhost:3000), /api proxifié
 pnpm verify       # lint, types, règles d'architecture, tests, build (comme la CI)
+pnpm e2e          # Playwright, Chromium et Firefox (navigateurs : voir docs/03-architecture/09-tests.md)
 ```
 
 ### Production

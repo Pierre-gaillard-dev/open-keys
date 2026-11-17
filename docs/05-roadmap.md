@@ -83,7 +83,7 @@ flowchart LR
 - [x] **3.3** `player/renderer` : notes qui tombent, clavier, couleurs des mains, touches allumées, repères sur les C (C4 mis en évidence), objets réutilisés.
 - [x] **3.4** `player.store` + `ControlsOverlay` : lecture/pause, barre de progression, vitesse 25–100 %, mains (son et affichage), boucle A-B. Contrôles masqués au bout de 3 s.
 - [x] **3.5** Plein écran, paysage, Wake Lock, raccourcis clavier.
-- [ ] **3.6** Tests : `clock`/`transport` (unitaires), e2e Playwright de lecture (Firefox et Chromium). *Fait : tests unitaires (horloge, scheduler, moteur, contrôleur, clavier) et tests de parcours sur l'app complète (runtime simulé). Reste : e2e Playwright en vrai navigateur (lecture vérifiée pour l'instant par scripts Chrome/Firefox headless).*
+- [x] **3.6** Tests : `clock`/`transport` (unitaires), e2e Playwright de lecture (Firefox et Chromium). *Unitaires (horloge, scheduler, moteur, contrôleur, clavier), parcours sur l'app complète (runtime simulé) et e2e Playwright sur le build de production : lecture depuis la fiche, vitesse et boucle.*
 
 **Critères de fin**
 - [ ] Critères de performance du spike tenus sur le Pixel 10 dans la vraie app.
@@ -97,11 +97,11 @@ flowchart LR
 - [x] **4.1** Tables `user_songs`, `loops`, `practice_sessions` + routes `PUT` idempotentes (la dernière écriture l'emporte).
 - [x] **4.2** Web : statut et favori (catalogue et fiche), reprise de la lecture (UC-12).
 - [x] **4.3** Boucles : sauvegarde, nommage, liste, rappel, suppression.
-- [x] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau. *Fait en ligne. La file d'attente hors-ligne arrive avec 4.7.*
+- [x] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau. *Les sessions passent par l'outbox (4.7).*
 - [x] **4.5** PWA : manifeste, icônes, Service Worker (shell + échantillons), installation sur Android. *Mise à jour proposée par une bannière, jamais imposée pendant la pratique. Installation à valider sur le Pixel 10 une fois déployé.*
-- [ ] **4.6** Dexie : cache des MIDI (morceaux ouverts + favoris), catalogue hors-ligne avec badge.
-- [ ] **4.7** Outbox : file d'attente, rejeu (événement online, démarrage, toutes les 60 s), indicateur de synchronisation en attente.
-- [ ] **4.8** E2E : mode avion → lecture d'un favori → création d'une boucle → retour du réseau → boucle visible sur un autre appareil.
+- [x] **4.6** Dexie : cache des MIDI (morceaux ouverts + favoris), catalogue hors-ligne avec badge. *Les autres données (utilisateur, fiches, bibliothèque, boucles) viennent du cache de TanStack Query, sauvegardé dans IndexedDB (D23).*
+- [x] **4.7** Outbox : file d'attente, rejeu (événement online, démarrage, toutes les 60 s), indicateur de synchronisation en attente. *Rejeu aussi dès que la sonde de `/api/health` retrouve l'API, et après chaque écriture.*
+- [x] **4.8** E2E : mode avion → lecture d'un favori → création d'une boucle → retour du réseau → boucle visible sur un autre appareil. *Dans Chromium et Firefox, en CI.*
 - [ ] **4.9** README portfolio : captures d'écran, GIF, schéma d'architecture, choix techniques.
 
 **Critères de fin du MVP**
@@ -127,6 +127,16 @@ flowchart LR
 
 - [ ] Vitesse cible et meilleure vitesse par boucle, montée en vitesse proposée (+5 %).
 - [ ] Tableau de bord : temps de pratique par jour et par semaine, morceaux en cours, historique.
+
+## V1.4 — Accompagnement (MIDI à plusieurs instruments)
+
+Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste ignorée n'est ni affichée ni entendue, et toutes les pistes jouées ont le son du piano.
+
+- [ ] **Rôle `accompaniment`** pour une piste, en plus de gauche / droite / ignorer : entendue, mais pas affichée en notes qui tombent. Contrat `trackHandSchema` et contrainte de `song_tracks.hand` (migration).
+- [ ] **Proposition revue à l'import** : les pistes de piano (programmes General MIDI 0 à 7) deviennent les mains, les autres instruments l'accompagnement, percussions comprises (aujourd'hui ignorées). Modifiable sur l'écran de vérification, comme les mains.
+- [ ] **Lecteur** : panneau « Instruments » pour activer ou couper chaque piste d'accompagnement (même principe que le son par main). Réglage mémorisé par morceau dans `user_songs`.
+- [ ] **Son des instruments** : échantillons General MIDI libres (FluidR3 GM, licence à confirmer au démarrage), chargés à la demande pour les seuls instruments du morceau et mis en cache par le Service Worker. Kit de batterie GM pour le canal 10. Un instrument sans échantillons est joué au piano.
+- [ ] Volume de l'accompagnement (avec le volume par main de la V1.2).
 
 ## V2 — Entrée MIDI
 

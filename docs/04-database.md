@@ -106,13 +106,17 @@ Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tablea
 
 ## 5. Stockage local (IndexedDB, Dexie)
 
+Base `open-keys` (`apps/web/src/shared/offline/offline-db.ts`) :
+
 | Store | Clé | Contenu |
 |---|---|---|
-| `songs` | `id` | Copie des métadonnées des morceaux (pour la liste hors-ligne) |
-| `midiFiles` | `sha256` | `ArrayBuffer` du MIDI |
-| `library` | `songId` | Copie de `user_songs` |
-| `loops` | `id` | Copie des boucles |
-| `outbox` | `id` (ULID) | `{ method, url, body, createdAt, attempts, lastError }` |
+| `midiFiles` | `songId` | Octets du MIDI + dernière version connue du morceau (`SongDetail`), pour le catalogue hors-ligne |
+| `outbox` | `id` (ULID), index `path`, `createdAt` | `{ path, body, createdAt, attempts, lastError }` : un `PUT` en attente, un seul par chemin |
+| `queryCache` | `"query-cache"` | Cache de TanStack Query sauvegardé : utilisateur, fiches, bibliothèque, boucles, statistiques, tags (D23) |
+
+- **Pas de copie des tables** `user_songs` ou `loops` : le cache des requêtes sauvegardé les contient déjà, et les écritures hors-ligne y sont appliquées immédiatement (D23).
+- Le cache sauvegardé est ignoré par un nouveau build (identifiant de build), puis rechargé depuis l'API.
+- **Déconnexion** : tout est effacé, y compris les écritures pas encore envoyées.
 
 Les échantillons de piano, le shell de l'app et les **couvertures** sont gérés par le cache du Service Worker, pas par IndexedDB. Les couvertures sont en cache-first, et leur URL contient le hash, donc elles ne changent jamais.
 
