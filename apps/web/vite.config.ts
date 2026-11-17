@@ -6,6 +6,10 @@ import { VitePWA } from "vite-plugin-pwa";
 const THEME_COLOR = "#0B0E13";
 
 export default defineConfig({
+  define: {
+    // Persisted query cache of an older build is discarded (shared/offline/query-persistence.ts).
+    "import.meta.env.VITE_BUILD_ID": JSON.stringify(Date.now().toString(36)),
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -44,10 +48,20 @@ export default defineConfig({
         ],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
-        // The API is never answered by the Service Worker (offline data: phase 4, Dexie and outbox).
+        // The API is not answered by the Service Worker (offline data: IndexedDB), except the covers.
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // Versioned URL (?v=<hash>): a cached cover never changes.
+            urlPattern: ({ url }) => /^\/api\/songs\/[^/]+\/cover$/.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "covers",
+              expiration: { maxEntries: 500 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
           {
             urlPattern: ({ url }) => url.pathname.startsWith("/assets/") && url.pathname.endsWith(".woff2"),
             handler: "CacheFirst",

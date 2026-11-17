@@ -9,8 +9,18 @@ export interface FakeRequest {
 
 export type FakeReply =
   | { readonly status?: number; readonly json?: unknown; readonly bytes?: Uint8Array }
+  /** The server cannot be reached (offline): fetch rejects. */
+  | { readonly networkError: true }
   | undefined;
 export type FakeHandler = (request: FakeRequest) => FakeReply;
+
+function toResponse(reply: Exclude<FakeReply, { networkError: true }>): Response {
+  const status = reply?.status ?? (reply?.json === undefined && reply?.bytes === undefined ? 204 : 200);
+  if (reply?.bytes) {
+    return new Response(reply.bytes.slice().buffer, { status });
+  }
+  return reply?.json === undefined ? new Response(null, { status }) : Response.json(reply.json, { status });
+}
 
 /**
  * Replaces fetch with an in-memory API: handlers are keyed by "METHOD /api/path" (path without query),
@@ -32,13 +42,10 @@ export function installFakeApi(handlers: Record<string, FakeHandler>) {
     const reply = handler
       ? handler(request)
       : { status: 404, json: { error: { code: "NOT_FOUND", message: "Not found", requestId: "test" } } };
-    const status = reply?.status ?? (reply?.json === undefined && reply?.bytes === undefined ? 204 : 200);
-    if (reply?.bytes) {
-      return Promise.resolve(new Response(reply.bytes.slice().buffer, { status }));
+    if (reply && "networkError" in reply) {
+      return Promise.reject(new TypeError("Failed to fetch"));
     }
-    return Promise.resolve(
-      reply?.json === undefined ? new Response(null, { status }) : Response.json(reply.json, { status }),
-    );
+    return Promise.resolve(toResponse(reply));
   });
   vi.stubGlobal("fetch", fetchMock);
   return {
@@ -47,6 +54,8 @@ export function installFakeApi(handlers: Record<string, FakeHandler>) {
     calls: (method: string, path: string) => requests.filter((r) => r.method === method && r.path === path),
   };
 }
+
+export const NETWORK_ERROR: FakeReply = { networkError: true };
 
 export function apiError(status: number, code: string, message: string, details?: unknown): FakeReply {
   return {

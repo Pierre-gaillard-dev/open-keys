@@ -2,6 +2,7 @@ export { Button, type ButtonProps, type ButtonSize, type ButtonVariant, buttonCl
 export { Chip } from "./Chip";
 export { ErrorBanner } from "./ErrorBanner";
 export { IconButton } from "./IconButton";
+export { OfflineUnavailable } from "./OfflineUnavailable";
 export { SectionTitle } from "./SectionTitle";
 export { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
 export { TextField } from "./TextField";
