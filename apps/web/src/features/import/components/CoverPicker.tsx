@@ -1,6 +1,6 @@
 import type { SongDetail } from "@open-keys/contracts";
 import { ImagePlus, Link2, Search, Trash2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import { cx } from "../../../shared/lib/cx";
 import { Button, ErrorBanner, TextField } from "../../../shared/ui";
 import { SongCover } from "../../catalog";
@@ -31,9 +31,10 @@ export function CoverPicker({
   const suggestions = useCoverSuggestions(song.id, title, composer, searching);
   const change = useChangeCover(song.id);
 
-  const submitUrl = (event: FormEvent) => {
-    event.preventDefault();
-    change.mutate({ kind: "set", request: { url } }, { onSuccess: () => setUrl("") });
+  const applyUrl = () => {
+    if (url && !change.isPending) {
+      change.mutate({ kind: "set", request: { url } }, { onSuccess: () => setUrl("") });
+    }
   };
 
   return (
@@ -120,19 +121,32 @@ export function CoverPicker({
           />
         </label>
       </div>
-      <form onSubmit={submitUrl} className="flex items-end gap-2">
+      {/* Not a <form>: the picker lives inside the song form (nested forms are invalid HTML, and Enter
+          here would submit the whole import). */}
+      <div className="flex items-end gap-2">
         <TextField
           label="Ou une URL d'image"
           type="url"
           value={url}
           onChange={(event) => setUrl(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              applyUrl();
+            }
+          }}
           placeholder="https://…"
           className="flex-1"
         />
-        <Button type="submit" disabled={!url || change.isPending} aria-label="Utiliser cette image">
+        <Button
+          type="button"
+          disabled={!url || change.isPending}
+          aria-label="Utiliser cette image"
+          onClick={applyUrl}
+        >
           <Link2 aria-hidden="true" className="size-4" />
         </Button>
-      </form>
+      </div>
       {(change.error ?? suggestions.error) && <ErrorBanner error={change.error ?? suggestions.error} />}
     </div>
   );
