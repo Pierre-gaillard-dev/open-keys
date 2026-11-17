@@ -72,7 +72,8 @@ export default defineConfig({
     }),
   ],
   server: {
-    // Same origin as production: /api is routed to the API container by Traefik.
-    proxy: { "/api": "http://localhost:3000" },
+    // Same origin as production: /api is routed to the API container by Traefik. Also used by
+    // `vite preview` (end-to-end tests run their own API, on another port).
+    proxy: { "/api": process.env["API_PROXY_TARGET"] ?? "http://localhost:3000" },
   },
 });

@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - e2e
 
 # Shared versions: packages reference them with "catalog:".
 catalog:

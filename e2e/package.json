@@ -1,0 +1,17 @@
+{
+  "name": "@open-keys/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@open-keys/config": "workspace:*",
+    "@open-keys/contracts": "workspace:*",
+    "@open-keys/core": "workspace:*",
+    "@playwright/test": "1.64.1",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
