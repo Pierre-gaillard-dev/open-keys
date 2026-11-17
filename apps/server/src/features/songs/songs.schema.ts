@@ -1,4 +1,4 @@
-import { COVER_SOURCES } from "@open-keys/contracts";
+import { COVER_SOURCES, LIBRARY_SOURCES } from "@open-keys/contracts";
 import { sql } from "drizzle-orm";
 import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { users } from "../auth/auth.schema";
@@ -18,7 +18,13 @@ export const songs = sqliteTable(
     difficulty: integer("difficulty"),
     sourceType: text("source_type", { enum: ["upload", "url", "mutopia"] }).notNull(),
     sourceUrl: text("source_url"),
+    /** Online library (UC-20): no CHECK constraint, adding one would mean rebuilding the table. */
+    sourceLibrary: text("source_library", { enum: LIBRARY_SOURCES }),
+    /** Id of the piece in the sources index (source_pieces.id), to show it as already imported. */
+    sourcePieceId: text("source_piece_id"),
     license: text("license"),
+    /** Who made the file (arranger, performer…), as the library credits it. */
+    credit: text("credit"),
     /** Deduplication key and file name: /data/midi/<sha256>.mid */
     midiSha256: text("midi_sha256").notNull().unique(),
     midiSize: integer("midi_size").notNull(),
@@ -42,6 +48,7 @@ export const songs = sqliteTable(
     index("songs_state_deleted_at_idx").on(table.state, table.deletedAt),
     index("songs_title_idx").on(table.title),
     index("songs_composer_idx").on(table.composer),
+    index("songs_source_piece_id_idx").on(table.sourcePieceId),
     check("songs_state_check", sql`${table.state} in ('draft', 'ready')`),
     check("songs_source_type_check", sql`${table.sourceType} in ('upload', 'url', 'mutopia')`),
     check("songs_hand_mode_check", sql`${table.handMode} in ('tracks', 'split')`),

@@ -3,6 +3,6 @@ export {
   createImportsService,
   type ImportResult,
   type ImportsService,
-  type KnownMetadata,
+  type LibraryPiece,
   titleFromName,
 } from "./imports.service";

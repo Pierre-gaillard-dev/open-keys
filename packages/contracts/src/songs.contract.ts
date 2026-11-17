@@ -9,6 +9,7 @@ import {
 } from "./common.contract";
 import { coverSchema } from "./covers.contract";
 import { songStatusSchema } from "./library.contract";
+import { librarySourceSchema } from "./sources.contract";
 
 export const trackHandSchema = z.enum(["left", "right", "ignore"]);
 export const handModeSchema = z.enum(["tracks", "split"]);
@@ -57,7 +58,11 @@ export const songDetailSchema = songSummarySchema.extend({
   state: songStateSchema,
   sourceType: songSourceTypeSchema,
   sourceUrl: z.string().nullable(),
+  /** Online library the song was imported from (UC-20), null for a file or a URL. */
+  sourceLibrary: librarySourceSchema.nullable(),
   license: z.string().nullable(),
+  /** Who made the file (arranger, performer…), as the library credits it. */
+  credit: z.string().nullable(),
   handMode: handModeSchema,
   splitPitch: pianoPitchSchema,
   tracks: z.array(songTrackSchema),

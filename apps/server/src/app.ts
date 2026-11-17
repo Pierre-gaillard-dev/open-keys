@@ -8,13 +8,13 @@ import { createCoversRoutes } from "./features/covers";
 import { createHealthRoutes } from "./features/health";
 import { createImportsRoutes } from "./features/imports";
 import { createLibraryRoutes } from "./features/library";
-import { createMutopiaRoutes } from "./features/mutopia";
 import {
   createLoopsRoutes,
   createPracticeSessionsRoutes,
   createSongPracticeRoutes,
 } from "./features/practice";
 import { createSongsRoutes } from "./features/songs";
+import { createSourcesRoutes } from "./features/sources";
 import { createTagsRoutes } from "./features/tags";
 import type { Services } from "./services";
 import { type AppEnv, createErrorHandler, notFoundHandler, requestLogger } from "./shared/http";
@@ -28,7 +28,7 @@ export const PROTECTED_PREFIXES = [
   "/library",
   "/loops",
   "/practice-sessions",
-  "/mutopia",
+  "/sources",
 ] as const;
 
 export interface AppDependencies {
@@ -68,7 +68,7 @@ export function createApp({ env, logger, services }: AppDependencies) {
     .route("/library", createLibraryRoutes(services.library))
     .route("/loops", createLoopsRoutes(services.practice))
     .route("/practice-sessions", createPracticeSessionsRoutes(services.practice))
-    .route("/mutopia", createMutopiaRoutes(services.mutopia));
+    .route("/sources", createSourcesRoutes(services.sources));
 }
 
 export type AppType = ReturnType<typeof createApp>;
