@@ -6,7 +6,7 @@ Open Keys est une application *falling notes* personnelle. Elle lit des fichiers
 
 ![Lecteur sur PC](docs/maquettes/pc-05-lecteur.webp)
 
-> **Statut : catalogue utilisable.** API complète, connexion, catalogue, import (fichier, URL) avec vérification et couvertures. Prochaine étape : le lecteur falling notes ([roadmap](docs/05-roadmap.md)).
+> **Statut : utilisable pour apprendre.** Catalogue, import avec vérification et couvertures, et **lecteur falling notes** : vitesse, boucles A-B, une main à la fois, zoom, reprise et suivi de pratique. Prochaine étape : le mode hors-ligne ([roadmap](docs/05-roadmap.md)).
 
 ## Fonctionnalités
 

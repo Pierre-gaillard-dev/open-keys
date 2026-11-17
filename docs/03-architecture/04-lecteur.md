@@ -17,7 +17,7 @@ flowchart LR
   UI[ControlsOverlay React] <--> ST
 ```
 
-## Horloge (`engine/clock.ts`)
+## Horloge (`engine/song-clock.ts`)
 
 - **Temps de partition** : référence unique, en secondes à 100 % de vitesse (stocké en ms en base). Positions, boucles et timeline l'utilisent.
 - **Ancre** : `(tempsAudio₀, tempsPartition₀, vitesse)`. Ainsi `partition(t) = tempsPartition₀ + (t − tempsAudio₀) × vitesse`. Lecture, pause, seek et changement de vitesse ne font que déplacer l'ancre.
@@ -35,9 +35,9 @@ flowchart LR
   - un `DynamicsCompressor` en sortie, contre la saturation dans les passages denses ;
   - un arrêt global en fondu rapide (30 ms) pour la pause et le seek.
 - **Pédale de sustain** : elle prolonge le **son** (`soundEnd`) mais **pas l'affichage**. La note qui tombe montre la durée d'appui sur la touche (`end`). Sinon, les arpèges sous pédale deviennent illisibles.
-- **Échantillons** : servis par le conteneur `web` et mis en cache par le Service Worker. Le spike utilisait le CDN de Tone.js.
+- **Échantillons** : 30 fichiers MP3 Salamander (un toutes les tierces mineures, **une seule couche de vélocité**, environ 2 Mo) dans `apps/web/public/samples/salamander/`, servis par le conteneur `web`. La vélocité module le volume. Le cache hors-ligne viendra du Service Worker (phase 4).
 
-## Scheduler (`engine/scheduler.ts`)
+## Scheduler (`engine/note-scheduler.ts`)
 
 - Il tourne toutes les **25 ms** (`setInterval`), plus un passage immédiat au démarrage.
 - Il programme les notes dont le début tombe dans les **150 ms** à venir (en temps réel), à leur instant audio exact.
@@ -56,3 +56,30 @@ flowchart LR
 ## Couche d'entrée (V2)
 
 L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaît pas l'origine des événements.
+
+## Interface (`controller/`, `stores/`, `components/`)
+
+- **Le contrôleur est le seul point d'action** : les composants appellent `play`, `seekBy`, `setTempo`, `markLoopStart`/`markLoopEnd`, `toggleHand`, `toggleZoom`… et lisent le store. Le contrôleur garde moteur, rendu et store cohérents.
+- **Store Zustand vanilla** : position (rafraîchie toutes les 100 ms pendant la lecture), vitesse, boucle, mains, zoom. Le rendu PixiJS ne passe jamais par React.
+- **Runtime navigateur isolé** (`runtime/browser-runtime.ts`) : AudioContext, sampler, renderer WebGL. Dans les tests de composants, il est remplacé par des faux (`vi.mock`), et tout le reste du lecteur est réel.
+- **Contrôles** : visibles à la pause. Pendant la lecture, ils se masquent après 3 s sans interaction et réapparaissent au toucher ou au mouvement de la souris. La partie basse se place juste au-dessus du clavier, selon la même règle de hauteur que le rendu (20 % de l'écran, entre 56 et 170 px).
+- **Zoom automatique** : activé par défaut quand le plus petit côté de l'écran fait moins de 600 px (téléphone, quelle que soit l'orientation). Le clavier cadre alors la plage du morceau, avec 2 touches de marge.
+- **Raccourcis (PC)** : `Espace` lecture/pause, `←`/`→` ±5 s, `↑`/`↓` vitesse ±5 %, `A`/`B` bornes de boucle, `L` boucle on/off, `1`/`2` son de la main gauche/droite, `Z` zoom, `F` plein écran, `Échap` quitter.
+- **Plein écran** avec verrouillage en paysage quand le navigateur le permet, et **Wake Lock** pendant la lecture.
+
+## Reprise et pratique (`hooks/use-practice-persistence.ts`)
+
+- À la pause, quand l'onglet est masqué et en quittant le lecteur, la bibliothèque est mise à jour : position, vitesse, mains, boucle active et date de pratique. Les requêtes partent avec `keepalive` pour survivre à la fermeture de la page.
+- **Une session par visite** : un ULID créé à l'ouverture et renvoyé à chaque sauvegarde. Le `PUT` est idempotent, et la session n'est enregistrée qu'au-delà de 10 s de lecture effective.
+- Pratiquer un morceau « à apprendre » le passe automatiquement **« en cours »**.
+- À l'ouverture : reprise de la position (sauf dans la dernière seconde du morceau), de la vitesse, des mains et de la dernière boucle active.
+
+## Mesures (build de production, cache vide)
+
+| Navigateur | Prêt à jouer (depuis la navigation) | Lecture |
+|---|---|---|
+| Chrome headless | 2,6 – 3,2 s | ✅ position qui avance, aucune erreur |
+| Firefox headless | 3,6 – 4,3 s | ✅ position qui avance, aucune erreur |
+
+Avec un cache vide, ce temps comprend le téléchargement et le décodage des 30 échantillons. L'objectif « < 2 s échantillons en cache » est à mesurer sur le Pixel 10, et à atteindre avec le cache du Service Worker (phase 4).
+
