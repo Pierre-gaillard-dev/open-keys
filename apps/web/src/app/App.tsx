@@ -1,12 +1,16 @@
-import { midiToNoteName } from "@open-keys/core";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider } from "@tanstack/react-router";
+import type { AppRouter } from "./router";
 
-const MIDDLE_C = 60;
+export interface AppProps {
+  readonly queryClient: QueryClient;
+  readonly router: AppRouter;
+}
 
-export function App() {
+export function App({ queryClient, router }: AppProps) {
   return (
-    <main>
-      <h1>Open Keys</h1>
-      <p>Do central : {midiToNoteName(MIDDLE_C)}</p>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   );
 }
