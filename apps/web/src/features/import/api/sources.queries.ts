@@ -1,25 +1,21 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { songKeys } from "../../catalog";
-import { importMutopiaPiece, searchMutopia } from "./mutopia.api";
+import { importSourcePiece, type SourcesSearch, searchSources } from "./sources.api";
 
-export const mutopiaKeys = {
-  search: (q: string, solo: boolean) => ["mutopia", "search", q, solo] as const,
-};
-
-export function useMutopiaSearch(q: string, solo: boolean) {
+export function useSourcesSearch(search: SourcesSearch) {
   return useQuery({
-    queryKey: mutopiaKeys.search(q, solo),
-    queryFn: ({ signal }) => searchMutopia(q, solo, signal),
+    queryKey: ["sources", "search", search] as const,
+    queryFn: ({ signal }) => searchSources(search, signal),
     // Keep the previous results while typing (no flash of empty list).
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
   });
 }
 
-export function useImportMutopiaPiece() {
+export function useImportSourcePiece() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: importMutopiaPiece,
+    mutationFn: importSourcePiece,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: songKeys.all }),
   });
 }

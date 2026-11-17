@@ -29,7 +29,7 @@ export function OnlineSearchEntry() {
       <Search aria-hidden="true" className="size-5 shrink-0 text-fg-soft" />
       <span className="flex flex-1 flex-col">
         <span className="font-semibold">Rechercher en ligne</span>
-        <span className="text-sm text-fg-muted">Bibliothèques libres (Mutopia)</span>
+        <span className="text-sm text-fg-muted">Mutopia, MAESTRO, xivmidi</span>
       </span>
       <ChevronRight aria-hidden="true" className="size-5 text-fg-muted" />
     </Link>

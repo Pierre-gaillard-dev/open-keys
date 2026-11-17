@@ -21,7 +21,9 @@ const song: SongDetail = {
   state: "draft",
   sourceType: "url",
   sourceUrl: "https://example.org/g.mid",
+  sourceLibrary: null,
   license: null,
+  credit: null,
   handMode: "tracks",
   splitPitch: 60,
   tracks: [

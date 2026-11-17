@@ -8,12 +8,29 @@ import { FavoriteToggle, StatusControl, useLibraryEntry } from "../../library";
 import { PracticeSummary } from "../../practice";
 import { useDeleteSong, useSong } from "../api/catalog.queries";
 import { SongCover } from "../components/SongCover";
+import { LIBRARY_SOURCE_LABELS } from "../library-source-labels";
 
 const SOURCE_LABELS: Readonly<Record<SongDetail["sourceType"], string>> = {
   upload: "Fichier importé",
   url: "Téléchargé depuis une URL",
   mutopia: "Mutopia Project",
 };
+
+/** Library name (UC-20) or host of the URL, linked to the page of the piece when there is one. */
+function SourceValue({ song }: { readonly song: SongDetail }) {
+  const label = song.sourceLibrary
+    ? LIBRARY_SOURCE_LABELS[song.sourceLibrary]
+    : song.sourceUrl
+      ? new URL(song.sourceUrl).hostname
+      : SOURCE_LABELS[song.sourceType];
+  return song.sourceUrl ? (
+    <a href={song.sourceUrl} className="text-hand-left hover:underline">
+      {label}
+    </a>
+  ) : (
+    label
+  );
+}
 
 function InfoRow({ label, children }: { readonly label: string; readonly children: ReactNode }) {
   return (
@@ -28,14 +45,9 @@ function SongInfo({ song }: { readonly song: SongDetail }) {
   return (
     <dl className="grid grid-cols-[7rem_1fr] gap-y-2 text-sm">
       <InfoRow label="Source">
-        {song.sourceUrl ? (
-          <a href={song.sourceUrl} className="text-hand-left hover:underline">
-            {new URL(song.sourceUrl).hostname}
-          </a>
-        ) : (
-          SOURCE_LABELS[song.sourceType]
-        )}
+        <SourceValue song={song} />
       </InfoRow>
+      {song.credit && <InfoRow label="Crédit">{song.credit}</InfoRow>}
       <InfoRow label="Licence">{song.license ?? "Non renseignée"}</InfoRow>
       <InfoRow label="Mains">
         {song.handMode === "tracks" ? `Par piste (${song.tracks.length})` : "Par hauteur"}
