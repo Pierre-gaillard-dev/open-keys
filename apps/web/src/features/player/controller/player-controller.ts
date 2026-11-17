@@ -2,7 +2,8 @@ import type { HandsSettings } from "@open-keys/contracts";
 import type { Hand } from "@open-keys/core";
 import type { PlayerEngine } from "../engine/player-engine";
 import type { RendererOptions } from "../renderer/falling-notes-renderer";
-import type { LoopSelection, PlayerStore } from "../stores/player.store";
+import type { LoopSelection, PlayerState, PlayerStore } from "../stores/player.store";
+import { NOTE_NAMES_MODES, type NoteNamesMode, type PlayerPreferences } from "../stores/player-preferences";
 
 export const MIN_TEMPO_PCT = 25;
 export const MAX_TEMPO_PCT = 100;
@@ -24,8 +25,13 @@ export interface PlaybackListener {
 const toSeconds = (ms: number) => ms / 1000;
 const toMs = (seconds: number) => Math.round(seconds * 1000);
 
-function rendererOptions(hands: HandsSettings, zoom: boolean): RendererOptions {
-  return { visibleHands: { left: hands.left.visible, right: hands.right.visible }, zoom };
+/** What the renderer shows, from the player state. */
+export function rendererOptions(state: Pick<PlayerState, "hands" | "zoom" | "preferences">): RendererOptions {
+  return {
+    visibleHands: { left: state.hands.left.visible, right: state.hands.right.visible },
+    zoom: state.zoom,
+    noteNames: state.preferences.noteNames,
+  };
 }
 
 /**
@@ -39,17 +45,60 @@ export function createPlayerController(
 ) {
   let renderer: RendererPort | undefined;
   let positionTimer: ReturnType<typeof setInterval> | undefined;
+  let countInTimers: ReturnType<typeof setTimeout>[] = [];
 
   const syncPosition = () => store.setState({ positionMs: toMs(engine.position) });
   const stopPositionTimer = () => {
     clearInterval(positionTimer);
     positionTimer = undefined;
   };
+  const updateRenderer = () => renderer?.setOptions(rendererOptions(store.getState()));
   const applyHands = (hands: HandsSettings) => {
-    engine.setHandAudible("left", hands.left.audible);
-    engine.setHandAudible("right", hands.right.audible);
-    renderer?.setOptions(rendererOptions(hands, store.getState().zoom));
+    for (const hand of ["left", "right"] as const) {
+      engine.setHandAudible(hand, hands[hand].audible);
+      engine.setHandVolume(hand, hands[hand].volume);
+    }
   };
+  const setHands = (hands: HandsSettings) => {
+    store.setState({ hands });
+    applyHands(hands);
+    updateRenderer();
+  };
+  const applyPreferences = (preferences: PlayerPreferences) => {
+    engine.setCountIn(preferences.countIn);
+    engine.setMetronome(preferences.metronome);
+  };
+  const setPreferences = (patch: Partial<PlayerPreferences>) => {
+    const preferences = { ...store.getState().preferences, ...patch };
+    store.setState({ preferences });
+    applyPreferences(preferences);
+    updateRenderer();
+  };
+
+  const clearCountIn = () => {
+    countInTimers.forEach(clearTimeout);
+    countInTimers = [];
+    store.setState({ countInBeatsLeft: null });
+  };
+  /** The big "4, 3, 2, 1" follows the clicks (scheduled on the audio clock): one store update per beat. */
+  const showCountIn = (clicks: readonly number[]) => {
+    clearCountIn();
+    const beat = clicks.length > 1 ? (clicks[1] ?? 0) - (clicks[0] ?? 0) : 0.5;
+    const steps = [
+      ...clicks.map((time, index) => ({ time, left: clicks.length - index })),
+      {
+        time: (clicks.at(-1) ?? engine.audioTime) + beat,
+        left: null,
+      },
+    ];
+    countInTimers = steps.map(({ time, left }) =>
+      setTimeout(
+        () => store.setState({ countInBeatsLeft: left }),
+        Math.max(0, (time - engine.audioTime) * 1000),
+      ),
+    );
+  };
+  engine.onCountIn = showCountIn;
   const enableLoop = (loop: LoopSelection) => {
     engine.setLoop({ start: toSeconds(loop.startMs), end: toSeconds(loop.endMs) });
     store.setState({ loop, loopEnabled: true, pendingLoopStartMs: null });
@@ -62,6 +111,7 @@ export function createPlayerController(
     }
     engine.pause();
     stopPositionTimer();
+    clearCountIn();
     syncPosition();
     store.setState({ status: "ready" });
     listener?.paused();
@@ -85,13 +135,13 @@ export function createPlayerController(
   engine.seek(toSeconds(initial.positionMs));
   engine.setRate(initial.tempoPct / 100);
   applyHands(initial.hands);
+  applyPreferences(initial.preferences);
 
   return {
     /** The renderer starts asynchronously (WebGL): attach it once ready. */
     attachRenderer(port: RendererPort) {
       renderer = port;
-      const { hands, zoom } = store.getState();
-      port.setOptions(rendererOptions(hands, zoom));
+      port.setOptions(rendererOptions(store.getState()));
     },
 
     async play() {
@@ -175,20 +225,43 @@ export function createPlayerController(
 
     toggleHand(hand: Hand, aspect: "audible" | "visible") {
       const hands = store.getState().hands;
-      const next: HandsSettings = { ...hands, [hand]: { ...hands[hand], [aspect]: !hands[hand][aspect] } };
-      store.setState({ hands: next });
-      applyHands(next);
+      setHands({ ...hands, [hand]: { ...hands[hand], [aspect]: !hands[hand][aspect] } });
+    },
+
+    /** 0–100 % (UC-25). */
+    setHandVolume(hand: Hand, volumePct: number) {
+      const hands = store.getState().hands;
+      const volume = Math.min(1, Math.max(0, Math.round(volumePct) / 100));
+      setHands({ ...hands, [hand]: { ...hands[hand], volume } });
     },
 
     toggleZoom() {
-      const zoom = !store.getState().zoom;
-      store.setState({ zoom });
-      renderer?.setOptions(rendererOptions(store.getState().hands, zoom));
+      store.setState({ zoom: !store.getState().zoom });
+      updateRenderer();
+    },
+
+    toggleCountIn() {
+      setPreferences({ countIn: !store.getState().preferences.countIn });
+    },
+
+    toggleMetronome() {
+      setPreferences({ metronome: !store.getState().preferences.metronome });
+    },
+
+    setNoteNames(noteNames: NoteNamesMode) {
+      setPreferences({ noteNames });
+    },
+
+    /** Keyboard shortcut: off → notes → keys → both → off. */
+    cycleNoteNames() {
+      const current = NOTE_NAMES_MODES.indexOf(store.getState().preferences.noteNames);
+      setPreferences({ noteNames: NOTE_NAMES_MODES[(current + 1) % NOTE_NAMES_MODES.length] ?? "off" });
     },
 
     dispose() {
       pause();
       stopPositionTimer();
+      clearCountIn();
       engine.dispose();
     },
   };

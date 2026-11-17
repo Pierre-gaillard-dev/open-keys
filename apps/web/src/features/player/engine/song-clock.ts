@@ -62,11 +62,17 @@ export class SongClock {
     return this.songTimeAtAudioTime(source.currentTime - latency) - (this.offsetMs / 1000) * this.#rate;
   }
 
-  play(): void {
+  /**
+   * Starts after `delayS` more real seconds (count-in: the clicks play first). Song time runs before
+   * the anchor too, so the notes are already falling during the count-in. Returns the audio time at
+   * which the music starts.
+   */
+  play(delayS = 0): number {
     if (!this.#playing) {
-      this.#anchorAudioTime = this.#source.currentTime + START_DELAY_S;
+      this.#anchorAudioTime = this.#source.currentTime + START_DELAY_S + delayS;
       this.#playing = true;
     }
+    return this.#anchorAudioTime;
   }
 
   pause(): void {
@@ -76,11 +82,13 @@ export class SongClock {
     }
   }
 
-  seek(songTime: number): void {
+  /** Moves to `songTime`; while playing, it is reached after `delayS` more real seconds (count-in). */
+  seek(songTime: number, delayS = 0): number {
     this.#anchorSongTime = Math.max(0, songTime);
     if (this.#playing) {
-      this.#anchorAudioTime = this.#source.currentTime + START_DELAY_S;
+      this.#anchorAudioTime = this.#source.currentTime + START_DELAY_S + delayS;
     }
+    return this.#anchorAudioTime;
   }
 
   setRate(rate: number): void {

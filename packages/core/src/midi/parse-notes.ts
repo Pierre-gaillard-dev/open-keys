@@ -1,4 +1,5 @@
 import { hasMidiHeader, InvalidMidiError } from "./analyze-midi";
+import { type Beat, beatGrid } from "./beat-grid";
 import type { Midi } from "./tonejs-midi";
 import { Midi as MidiParser } from "./tonejs-midi";
 
@@ -19,6 +20,8 @@ export interface ParsedNotes {
   readonly durationS: number;
   /** Sorted by start, then pitch. */
   readonly notes: readonly ParsedNote[];
+  /** Metronome grid (tempo map and time signatures of the file). */
+  readonly beats: readonly Beat[];
 }
 
 interface TimeRange {
@@ -83,5 +86,5 @@ export function parseMidiNotes(bytes: Uint8Array): ParsedNotes {
   );
   notes.sort((a, b) => a.start - b.start || a.pitch - b.pitch);
   const lastSound = notes.reduce((max, note) => Math.max(max, note.soundEnd), 0);
-  return { durationS: Math.max(midi.duration, lastSound), notes };
+  return { durationS: Math.max(midi.duration, lastSound), notes, beats: beatGrid(midi) };
 }

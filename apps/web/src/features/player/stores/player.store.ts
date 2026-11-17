@@ -1,5 +1,6 @@
 import { DEFAULT_HANDS_SETTINGS, type HandsSettings } from "@open-keys/contracts";
 import { createStore, type StoreApi } from "zustand/vanilla";
+import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "./player-preferences";
 
 export interface LoopSelection {
   readonly startMs: number;
@@ -25,6 +26,9 @@ export interface PlayerState {
   readonly pendingLoopStartMs: number | null;
   readonly hands: HandsSettings;
   readonly zoom: boolean;
+  readonly preferences: PlayerPreferences;
+  /** Clicks left before the music starts (count-in), null otherwise. Changes once per beat. */
+  readonly countInBeatsLeft: number | null;
 }
 
 export type PlayerStore = StoreApi<PlayerState>;
@@ -35,6 +39,7 @@ export interface InitialPlayerState {
   readonly tempoPct?: number;
   readonly hands?: HandsSettings;
   readonly zoom?: boolean;
+  readonly preferences?: PlayerPreferences;
 }
 
 export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
@@ -49,5 +54,7 @@ export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
     pendingLoopStartMs: null,
     hands: initial.hands ?? DEFAULT_HANDS_SETTINGS,
     zoom: initial.zoom ?? false,
+    preferences: initial.preferences ?? DEFAULT_PLAYER_PREFERENCES,
+    countInBeatsLeft: null,
   }));
 }

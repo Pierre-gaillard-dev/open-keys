@@ -10,10 +10,13 @@ import type { SamplesStatus } from "../hooks/use-player-runtime";
 import { usePlayerSession } from "../hooks/use-player-session";
 import { usePlayerShortcuts } from "../hooks/use-player-shortcuts";
 import { usePracticePersistence } from "../hooks/use-practice-persistence";
+import { useSavePreferences } from "../hooks/use-save-preferences";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import type { PlayerRuntime } from "../runtime/browser-runtime";
 import type { InitialPlayerState } from "../stores/player.store";
+import { loadPlayerPreferences } from "../stores/player-preferences";
 import { ControlsOverlay } from "./ControlsOverlay";
+import { CountInBadge } from "./CountInBadge";
 
 /** Resuming within the last second would immediately end: start over instead. */
 const RESUME_MARGIN_MS = 1000;
@@ -39,6 +42,7 @@ function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPl
     ...(entry ? { hands: entry.handsSettings } : {}),
     // On a phone, 88 keys are tiny: frame the piece's range (docs: zoom auto, priority 1).
     zoom: Math.min(window.innerWidth, window.innerHeight) < PHONE_SHORT_SIDE_PX,
+    preferences: loadPlayerPreferences(),
   };
 }
 
@@ -58,6 +62,7 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
   const initial = useMemo(() => initialState(timeline, libraryEntry), [timeline, libraryEntry]);
   const { store, tracker, controller } = usePlayerSession(timeline, initial, host, runtime, samples);
   usePracticePersistence(song.id, store, tracker, libraryEntry);
+  useSavePreferences(store);
   const status = useStore(store, (state) => state.status);
   const error = useStore(store, (state) => state.error);
   const playing = status === "playing";
@@ -112,6 +117,7 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
         isFullscreen={fullscreen.isFullscreen}
         onToggleFullscreen={() => void fullscreen.toggle()}
       />
+      <CountInBadge store={store} />
       {status === "loading" && (
         <p role="status" className="absolute inset-x-0 bottom-1/3 text-center text-sm text-fg-soft">
           Chargement du piano…

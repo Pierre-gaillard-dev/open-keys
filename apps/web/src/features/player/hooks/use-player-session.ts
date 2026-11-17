@@ -1,6 +1,10 @@
 import type { Timeline } from "@open-keys/core";
 import { type RefObject, useEffect, useState } from "react";
-import { createPlayerController, type PlayerController } from "../controller/player-controller";
+import {
+  createPlayerController,
+  type PlayerController,
+  rendererOptions,
+} from "../controller/player-controller";
 import { PlayerEngine } from "../engine/player-engine";
 import { SessionTracker } from "../practice/session-tracker";
 import type { PlayerRuntime } from "../runtime/browser-runtime";
@@ -30,13 +34,9 @@ export function usePlayerSession(
   const [controller, setController] = useState<PlayerController | null>(null);
 
   useEffect(() => {
-    const engine = new PlayerEngine(timeline, runtime.audio, runtime.output);
+    const engine = new PlayerEngine(timeline, runtime.audio, runtime.output, runtime.clicks);
     const instance = createPlayerController(engine, store, tracker);
-    const { hands, zoom } = store.getState();
-    const renderer = runtime.createRenderer(timeline, engine.clock, {
-      visibleHands: { left: hands.left.visible, right: hands.right.visible },
-      zoom,
-    });
+    const renderer = runtime.createRenderer(timeline, engine.clock, rendererOptions(store.getState()));
     let disposed = false;
 
     const element = host.current;

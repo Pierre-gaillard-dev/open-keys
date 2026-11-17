@@ -1,5 +1,5 @@
 import { buildTimeline } from "@open-keys/core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PlayerEngine } from "../engine/player-engine";
 import { START_DELAY_S } from "../engine/song-clock";
 import type { RendererOptions } from "../renderer/falling-notes-renderer";
@@ -26,10 +26,19 @@ function setup(initial: Parameters<typeof createPlayerStore>[0] = { durationMs: 
     velocity: 1,
   }));
   const timeline = buildTimeline(
-    { durationS: 10, notes },
+    {
+      durationS: 10,
+      notes,
+      beats: Array.from({ length: 22 }, (_, i) => ({ time: i * 0.5, downbeat: i % 4 === 0, beatsInBar: 4 })),
+    },
     { mode: "tracks", splitPitch: 60, tracks: [{ trackIndex: 0, hand: "right" }] },
   );
-  const engine = new PlayerEngine(timeline, audio, { play: () => undefined, stopAll: () => undefined });
+  const engine = new PlayerEngine(
+    timeline,
+    audio,
+    { play: () => undefined, stopAll: () => undefined },
+    { click: () => undefined, stopAll: () => undefined },
+  );
   const store = createPlayerStore(initial);
   const events: string[] = [];
   const listener: PlaybackListener = {
@@ -51,7 +60,10 @@ describe("player controller", () => {
       durationMs: 10_000,
       positionMs: 4000,
       tempoPct: 75,
-      hands: { left: { audible: false, visible: true }, right: { audible: true, visible: true } },
+      hands: {
+        left: { audible: false, visible: true, volume: 1 },
+        right: { audible: true, visible: true, volume: 1 },
+      },
     });
 
     expect(engine.position).toBe(4);
@@ -118,7 +130,56 @@ describe("player controller", () => {
     controller.toggleHand("left", "visible");
     controller.toggleHand("left", "audible");
 
-    expect(store.getState().hands.left).toEqual({ audible: false, visible: false });
+    expect(store.getState().hands.left).toEqual({ audible: false, visible: false, volume: 1 });
     expect(received.at(-1)?.visibleHands).toEqual({ left: false, right: true });
+  });
+
+  it("sets the volume of a hand, kept with the other hand settings (UC-25)", () => {
+    const { store, controller } = setup();
+
+    controller.setHandVolume("left", 37);
+    controller.setHandVolume("right", 150);
+
+    expect(store.getState().hands.left.volume).toBe(0.37);
+    expect(store.getState().hands.right.volume).toBe(1);
+  });
+
+  it("switches count-in, metronome and note names, and tells the renderer (UC-22 to UC-24)", () => {
+    const { store, controller } = setup();
+    const received: RendererOptions[] = [];
+    controller.attachRenderer({ setOptions: (options) => received.push(options) });
+
+    controller.toggleCountIn();
+    controller.toggleMetronome();
+    controller.cycleNoteNames();
+    controller.cycleNoteNames();
+
+    expect(store.getState().preferences).toEqual({ countIn: true, metronome: true, noteNames: "keys" });
+    expect(received.at(-1)?.noteNames).toBe("keys");
+  });
+
+  it("shows the count-in beat by beat, then hides it when the music starts", async () => {
+    vi.useFakeTimers();
+    try {
+      const { store, controller } = setup({
+        durationMs: 10_000,
+        preferences: { countIn: true, metronome: false, noteNames: "off" },
+      });
+
+      await controller.play();
+      expect(store.getState().countInBeatsLeft).toBeNull();
+      vi.advanceTimersByTime(START_DELAY_S * 1000 + 1);
+      expect(store.getState().countInBeatsLeft).toBe(4);
+      vi.advanceTimersByTime(1000);
+      expect(store.getState().countInBeatsLeft).toBe(2);
+      vi.advanceTimersByTime(1000);
+      expect(store.getState().countInBeatsLeft).toBeNull();
+
+      await controller.play();
+      controller.pause();
+      expect(store.getState().countInBeatsLeft).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -47,17 +47,18 @@ open-keys/
 │   │   │   │   │   │   ├── song-clock.ts     # horloge unique : ancre audio ↔ partition, compensation de latence
 │   │   │   │   │   │   ├── note-scheduler.ts # programmation anticipée (150 ms), boucle, mains muettes
 │   │   │   │   │   │   └── player-engine.ts  # façade : play / pause / seek / setRate / setLoop
-│   │   │   │   │   ├── audio/piano-sampler.ts # Web Audio natif, échantillons Salamander (D17)
+│   │   │   │   │   ├── audio/                # piano-sampler (Web Audio natif, Salamander, D17), metronome (clics)
 │   │   │   │   │   ├── renderer/
 │   │   │   │   │   │   ├── falling-notes-renderer.ts # PixiJS : notes, clavier, repères C, mains masquables, zoom
 │   │   │   │   │   │   └── keyboard-layout.ts        # géométrie des touches, plage visible (zoom)
 │   │   │   │   │   ├── controller/player-controller.ts # seul point d'action de l'UI : moteur + rendu + store
-│   │   │   │   │   ├── stores/player.store.ts         # état affiché (Zustand vanilla, ≤ 10 mises à jour/s)
+│   │   │   │   │   ├── stores/               # player.store (état affiché, ≤ 10 mises à jour/s), player-preferences (appareil)
 │   │   │   │   │   ├── practice/session-tracker.ts    # temps de lecture effective, plage de vitesses
 │   │   │   │   │   ├── runtime/                       # audio-runtime (AudioContext + piano), browser-runtime (+ WebGL)
 │   │   │   │   │   ├── preview/                       # écoute d'un MIDI avant import : moteur sans rendu, chargé au 1er clic
 │   │   │   │   │   ├── hooks/                # runtime, session, sauvegarde, masquage auto, wake lock, plein écran, raccourcis
-│   │   │   │   │   ├── components/           # PlayerView, ControlsOverlay, ProgressBar, HandControl, LoopPanel
+│   │   │   │   │   ├── components/           # PlayerView, ControlsOverlay, ProgressBar, HandControl, LoopPanel,
+│   │   │   │   │   │                         # PlayerOptionsPanel, CountInBadge
 │   │   │   │   │   ├── pages/PlayerPage.tsx
 │   │   │   │   │   ├── lazy-player-page.ts   # PlayerPage chargée à la demande (PixiJS hors du bundle de démarrage)
 │   │   │   │   │   ├── input/                # V2 : InputSource, WebMidiInput, ScreenKeyboardInput

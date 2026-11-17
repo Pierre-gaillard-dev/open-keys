@@ -1,4 +1,5 @@
 import { type Hand, type HandMapping, handForNote } from "../hands";
+import type { Beat } from "../midi/beat-grid";
 import type { ParsedNotes } from "../midi/parse-notes";
 
 export interface PlayableNote {
@@ -18,6 +19,8 @@ export interface Timeline {
   readonly maxNoteDuration: number;
   readonly minPitch: number;
   readonly maxPitch: number;
+  /** Metronome grid, sorted by time. */
+  readonly beats: readonly Beat[];
 }
 
 /** Applies the hand mapping (ignored tracks are dropped) and indexes the notes. */
@@ -43,7 +46,46 @@ export function buildTimeline(parsed: ParsedNotes, mapping: HandMapping): Timeli
     maxNoteDuration: notes.reduce((max, note) => Math.max(max, note.end - note.start), 0),
     minPitch: pitches.length > 0 ? Math.min(...pitches) : 60,
     maxPitch: pitches.length > 0 ? Math.max(...pitches) : 60,
+    beats: parsed.beats,
   };
+}
+
+/** Index of the first beat at or after `time` (binary search). */
+export function firstBeatIndexAtOrAfter(beats: readonly Beat[], time: number): number {
+  let low = 0;
+  let high = beats.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    const beat = beats[middle];
+    if (beat !== undefined && beat.time < time) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+  return low;
+}
+
+export interface CountIn {
+  /** Clicks before the music starts: one bar. */
+  readonly beats: number;
+  /** Length of one beat, in seconds at 100 % speed. */
+  readonly beatS: number;
+}
+
+const DEFAULT_COUNT_IN: CountIn = { beats: 4, beatS: 0.5 };
+/** Tolerance when the position is exactly on a beat (floating point). */
+const ON_BEAT_S = 0.001;
+
+/** The count-in before playing from `time`: one bar of the meter and tempo found there. */
+export function countInAt(beats: readonly Beat[], time: number): CountIn {
+  const index = Math.min(firstBeatIndexAtOrAfter(beats, time - ON_BEAT_S), beats.length - 2);
+  const beat = beats[index];
+  const next = beats[index + 1];
+  if (!(beat && next) || next.time <= beat.time) {
+    return DEFAULT_COUNT_IN;
+  }
+  return { beats: beat.beatsInBar, beatS: next.time - beat.time };
 }
 
 /** Index of the first note starting at or after `time` (binary search). */

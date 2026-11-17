@@ -7,15 +7,20 @@ export const songStatusSchema = z.enum(SONG_STATUSES);
 
 export type SongStatus = z.infer<typeof songStatusSchema>;
 
-const handSettingsSchema = z.object({ audible: z.boolean(), visible: z.boolean() });
+const handSettingsSchema = z.object({
+  audible: z.boolean(),
+  visible: z.boolean(),
+  /** 0–1 (UC-25). Absent from settings saved before V1.2: full volume. */
+  volume: z.number().min(0).max(1).default(1),
+});
 
 export const handsSettingsSchema = z.object({ left: handSettingsSchema, right: handSettingsSchema });
 
 export type HandsSettings = z.infer<typeof handsSettingsSchema>;
 
 export const DEFAULT_HANDS_SETTINGS: HandsSettings = {
-  left: { audible: true, visible: true },
-  right: { audible: true, visible: true },
+  left: { audible: true, visible: true, volume: 1 },
+  right: { audible: true, visible: true, volume: 1 },
 };
 
 /** Personal state of a song for the current user (UC-12, UC-13). Synced with last-write-wins. */

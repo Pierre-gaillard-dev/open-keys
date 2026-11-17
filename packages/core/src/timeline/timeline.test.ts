@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { HandMapping } from "../hands";
 import { buildMidi, scale } from "../midi/midi-fixtures";
 import { parseMidiNotes } from "../midi/parse-notes";
-import { buildTimeline, firstNoteIndexAtOrAfter, notesInWindow } from "./timeline";
+import { buildTimeline, countInAt, firstNoteIndexAtOrAfter, notesInWindow } from "./timeline";
 
 const byTracks: HandMapping = {
   mode: "tracks",
@@ -90,5 +90,24 @@ describe("notesInWindow", () => {
     });
 
     expect(notesInWindow(timeline, 2, 4).map((note) => note.pitch)).toEqual([60, 64]);
+  });
+});
+
+describe("countInAt", () => {
+  const beats = [0, 0.5, 1, 1.5, 2, 2.6, 3.2].map((time, index) => ({
+    time,
+    downbeat: index % 4 === 0,
+    beatsInBar: index < 4 ? 4 : 3,
+  }));
+
+  it("is one bar of the meter and tempo at the position", () => {
+    expect(countInAt(beats, 0)).toEqual({ beats: 4, beatS: 0.5 });
+    expect(countInAt(beats, 1.2)).toEqual({ beats: 4, beatS: 0.5 });
+    expect(countInAt(beats, 2)).toEqual({ beats: 3, beatS: expect.closeTo(0.6) });
+  });
+
+  it("uses the last known beat after the end, and 4 beats at 120 bpm without a grid", () => {
+    expect(countInAt(beats, 10)).toEqual({ beats: 3, beatS: expect.closeTo(0.6) });
+    expect(countInAt([], 0)).toEqual({ beats: 4, beatS: 0.5 });
   });
 });
