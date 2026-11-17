@@ -1,0 +1,9 @@
+# Local stand-in for Traefik: same routing as in production.
+:8080 {
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+	handle {
+		reverse_proxy web:8080
+	}
+}

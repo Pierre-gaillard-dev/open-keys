@@ -1,0 +1,20 @@
+# Production images run locally, with Caddy in place of Traefik:
+#   docker compose -f docker-compose.yml -f docker/compose.local.yml up --build
+# then http://localhost:8080 (see docs/03-architecture/07-deploiement.md).
+
+services:
+  proxy:
+    image: caddy:2.10-alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - web
+      - api
+
+  api:
+    environment:
+      PUBLIC_URL: http://localhost:8080
+      COOKIE_SECURE: "false"
+      TRUST_PROXY: "true"
