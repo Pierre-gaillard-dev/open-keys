@@ -92,6 +92,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D19 | Hachage des mots de passe | argon2id natif de `node:crypto` (Node 26) | Aucune dépendance native, paramètres conformes OWASP |
 | D20 | Client HTTP du web | `fetch` typé par les schémas de `packages/contracts` (validation des réponses à l'exécution), au lieu du client RPC `hc` de Hono | `hc` importe le type de l'app serveur dans le web : violation de l'isolation des apps, et TypeScript devrait typer le code serveur (Node, Drizzle) dans un projet DOM. Les contrats couvrent déjà toutes les réponses |
 | D21 | Lecteur | Contrôleur unique entre l'UI et le moteur, état affiché dans un store Zustand, runtime navigateur isolé (testable). Échantillons commités dans le dépôt (≈ 2 Mo, CC-BY). Zoom automatique par défaut sur téléphone (avancé de la V1.1). Un morceau pratiqué passe « en cours » | Testabilité sans Web Audio ni WebGL, aucune dépendance à un CDN, lisibilité sur un écran de 6 pouces |
+| D22 | Déploiement et PWA | Images non root (nginx sans privilèges, Node `node`), CSP sans `unsafe-eval` (PixiJS en mode sans eval, zod `jitless`). Déploiement déclenché par la CI via l'API Dokploy, après les vérifications et le build des images (auto-deploy de Dokploy désactivé). Service Worker en mise à jour à la demande (bannière hors du lecteur) | Ne jamais déployer un commit rouge. Ne jamais recharger la page pendant la pratique. Une faille XSS ne peut pas exécuter de code généré |
 
 ## 8. Risques
 
