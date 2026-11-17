@@ -28,8 +28,15 @@ export default defineConfig({
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
-        // Headless Firefox has no user gesture memory between steps: allow audio without one.
-        launchOptions: { firefoxUserPrefs: { "media.autoplay.default": 0 } },
+        launchOptions: {
+          firefoxUserPrefs: {
+            // Audio starts from Playwright's clicks, as from a user's.
+            "media.autoplay.default": 0,
+            // CI runners have no GPU: Firefox blocklists software GL unless forced (Mesa llvmpipe).
+            "webgl.force-enabled": true,
+          },
+          env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: "1" },
+        },
       },
     },
   ],
