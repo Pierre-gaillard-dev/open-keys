@@ -17,7 +17,7 @@ SQLite avec Drizzle ORM. Chaque table est définie dans le `*.schema.ts` de la f
 
 Le schéma de référence est **[`database.dbml`](./database.dbml)**. Pour le voir sous forme de diagramme, colle-le dans [dbdiagram.io](https://dbdiagram.io).
 
-> Dès que le code existera, le DBML sera **généré à partir du schéma Drizzle** (`drizzle-dbml-generator`) et vérifié en CI, pour que la doc ne diverge jamais du code. D'ici là, le fichier est maintenu à la main.
+> Le DBML est **généré à partir du schéma Drizzle** (`pnpm --filter @open-keys/server db:dbml`). La CI (`pnpm db:check`) échoue si le schéma a changé sans migration générée ou sans DBML régénéré. La doc ne peut donc pas diverger du code.
 
 Résumé des relations :
 
@@ -48,7 +48,7 @@ Catalogue **commun** (D3 : un `created_by` permet un futur catalogue par utilisa
 
 | Colonne | Note |
 |---|---|
-| `state` | `draft` à l'import, `ready` après validation. Les brouillons de plus de 24 h sont purgés |
+| `state` | `draft` à l'import, `ready` après validation. Les brouillons de plus de 24 h sont purgés. Réimporter un fichier d'un morceau supprimé le **restaure** en brouillon, avec son historique |
 | `midi_sha256` | Unique : sert à dédoublonner les imports et donne le nom du fichier `/data/midi/<sha256>.mid` |
 | `duration_ms`, `note_count`, `min_pitch`, `max_pitch` | Calculés à l'import (`analyzeMidi`) : affichage dans le catalogue, et zoom automatique en V1.1 |
 | `hand_mode` | `tracks` : assignation par piste (`song_tracks.hand`). `split` : découpage par hauteur, `split_pitch` |
@@ -62,8 +62,8 @@ Index : `(state, deleted_at)`, `(title)`, `(composer)`.
 Recherche texte : `LIKE` suffit dans le MVP. Table virtuelle FTS5 si le besoin apparaît.
 
 ### `song_tracks` — feature `songs`
-Une ligne par piste MIDI contenant des notes, avec son assignation à une main. Si une piste mélange plusieurs canaux, on crée une ligne par couple (piste, canal).
-Contrainte d'unicité : `(song_id, track_index, channel)`.
+Une ligne par piste MIDI contenant des notes, avec son assignation à une main (`channel` = canal principal de la piste).
+Contrainte d'unicité : `(song_id, track_index)`.
 
 ### `tags`, `song_tags` — feature `tags`
 Tags libres, en minuscules et nettoyés (`trim`). La table de liaison a une clé primaire composite et des suppressions en cascade.
@@ -100,7 +100,7 @@ Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tablea
 | Donnée | Écriture hors-ligne | Résolution des conflits |
 |---|---|---|
 | `songs`, `song_tracks`, `tags` | ❌ en ligne uniquement | — |
-| `user_songs` | ✅ | `updated_at` le plus récent l'emporte (le serveur ignore un `PUT` plus ancien) |
+| `user_songs` | ✅ | `updated_at` le plus récent l'emporte : `INSERT … ON CONFLICT DO UPDATE … WHERE updated_at <= excluded.updated_at`, et le serveur renvoie toujours l'état retenu |
 | `loops` | ✅ | idem, suppression logique propagée |
 | `practice_sessions` | ✅ | ajout seul. `PUT` idempotent sur l'identifiant ULID |
 

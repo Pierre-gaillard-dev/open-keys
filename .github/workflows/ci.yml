@@ -34,6 +34,9 @@ jobs:
       - name: Architecture rules (dependency-cruiser)
         run: pnpm deps:check
 
+      - name: Schema consistency (migrations and DBML up to date)
+        run: pnpm db:check
+
       - name: Tests
         run: pnpm test
 

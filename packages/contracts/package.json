@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@open-keys/core": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

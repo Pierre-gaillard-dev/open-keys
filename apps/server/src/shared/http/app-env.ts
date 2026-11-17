@@ -1,3 +1,4 @@
+import type { AuthUser } from "@open-keys/contracts";
 import type { RequestIdVariables } from "hono/request-id";
 import type { Logger } from "../logger";
 
@@ -5,5 +6,12 @@ import type { Logger } from "../logger";
 export interface AppEnv {
   Variables: RequestIdVariables & {
     logger: Logger;
+  };
+}
+
+/** Environment of routes behind requireAuth: the authenticated user is always set. */
+export interface AuthedEnv {
+  Variables: AppEnv["Variables"] & {
+    user: AuthUser;
   };
 }

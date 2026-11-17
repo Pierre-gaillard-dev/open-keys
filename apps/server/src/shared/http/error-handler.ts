@@ -29,6 +29,9 @@ export function createErrorHandler(fallbackLogger: Logger): ErrorHandler<AppEnv>
       if (error.status >= 500) {
         logger.error("Application error", { error, code: error.code });
       }
+      for (const [name, value] of Object.entries(error.headers)) {
+        c.header(name, value);
+      }
       return errorResponse(c, error.status, error.code, error.message, error.details);
     }
     if (error instanceof HTTPException) {

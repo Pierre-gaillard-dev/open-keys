@@ -2,7 +2,10 @@
 
 [← Sommaire](./README.md)
 
-Toutes les routes sont sous `/api` et exigent une session, sauf `POST /auth/login`. Entrées et sorties sont validées par les schémas de `packages/contracts`.
+Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les schémas de `packages/contracts`.
+
+- **Authentification** : la session est exigée pour tous les préfixes listés dans `PROTECTED_PREFIXES` (`app.ts`) : `/songs`, `/imports`, `/tags`, `/library`, `/loops`, `/practice-sessions`. Elle est appliquée par préfixe, donc aucune route ne peut être oubliée, et un test vérifie le 401 sur chacune. Seules `/health`, `/auth/login` et `/auth/logout` sont publiques.
+- **Origine** : les envois de formulaire (multipart) venant d'une autre origine que `PUBLIC_URL` sont refusés (403). Les requêtes JSON d'un autre site sont de toute façon bloquées par CORS, que l'API n'accorde jamais.
 
 | Méthode | Route | Rôle |
 |---|---|---|
@@ -14,13 +17,14 @@ Toutes les routes sont sous `/api` et exigent une session, sauf `POST /auth/logi
 | GET | `/songs/:id/midi` | Fichier MIDI (ETag = sha256, `Cache-Control: immutable`) |
 | PATCH | `/songs/:id` | Métadonnées et assignation des mains |
 | DELETE | `/songs/:id` | Suppression logique |
-| POST | `/imports` | Upload (multipart) ou `{ url }` → brouillon |
-| POST | `/imports/:id/confirm` | Validation du brouillon |
-| GET | `/songs/:id/cover` | Couverture WebP (URL avec `?v=<sha256>`, `Cache-Control: immutable`) |
+| POST | `/imports/file` | Upload multipart (champ `file`) → brouillon (201), ou brouillon existant (200), ou 409 si déjà au catalogue |
+| POST | `/imports/url` | `{ url }` → téléchargement via `safe-fetch` → brouillon (mêmes réponses) |
+| POST | `/imports/:id/confirm` | Validation du brouillon : métadonnées, tags, mains, `coverSuggestionId` facultatif |
+| GET | `/songs/:id/cover` | Couverture WebP (URL avec `?v=<16 premiers caractères du sha256>`, `Cache-Control: immutable`) |
 | GET | `/songs/:id/cover-suggestions` | Candidats automatiques (`title`, `composer` en paramètres, pour pouvoir les modifier avant validation) |
 | PUT | `/songs/:id/cover` | Remplacer : multipart (fichier), `{ url }` ou `{ suggestionId }` |
 | DELETE | `/songs/:id/cover` | Retirer → couverture générée |
-| GET | `/tags` | Tags existants |
+| GET | `/tags` | Tags utilisés par au moins un morceau, avec leur nombre |
 | GET | `/library` | Les entrées `user_songs` de l'utilisateur |
 | PUT | `/library/:songId` | Statut, favori, réglages (dernière écriture l'emporte) |
 | GET | `/songs/:id/loops` | Boucles de l'utilisateur pour ce morceau |

@@ -6,18 +6,29 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsdown",
     "start": "node dist/index.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:dbml": "tsx scripts/generate-dbml.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.8",
     "@hono/zod-validator": "0.9.1",
     "@open-keys/contracts": "workspace:*",
+    "@open-keys/core": "workspace:*",
+    "better-sqlite3": "13.2.0",
+    "drizzle-orm": "0.45.4",
     "hono": "4.13.18",
+    "ipaddr.js": "2.5.0",
+    "sharp": "0.35.5",
+    "undici": "8.12.4",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@open-keys/config": "workspace:*",
+    "@types/better-sqlite3": "9.6.0",
     "@types/node": "catalog:",
+    "drizzle-dbml-generator": "0.10.0",
+    "drizzle-kit": "0.31.11",
     "tsdown": "0.23.7",
     "tsx": "4.23.15",
     "typescript": "catalog:",

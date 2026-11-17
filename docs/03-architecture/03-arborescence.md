@@ -73,65 +73,69 @@ open-keys/
 │   │
 │   └── server/                               # API Hono
 │       ├── src/
-│       │   ├── index.ts                      # démarrage (serve)
-│       │   ├── app.ts                        # composition des routes, export AppType
+│       │   ├── index.ts                      # démarrage : env → stockage → base + migrations → compte initial → serveur → maintenance
+│       │   ├── services.ts                   # racine de composition : instancie tous les services (dépendances injectées)
+│       │   ├── app.ts                        # middlewares, préfixes protégés, montage des routes, export AppType
 │       │   ├── config/env.ts                 # variables d'environnement validées par zod
 │       │   ├── db/
-│       │   │   ├── client.ts                 # instance Drizzle + pragmas SQLite
-│       │   │   ├── schema.ts                 # ré-exporte les *.schema.ts des features
-│       │   │   ├── seed.ts                   # création de l'utilisateur initial
-│       │   │   └── migrations/               # générées par drizzle-kit
+│       │   │   ├── client.ts                 # better-sqlite3 + Drizzle, pragmas, migrations au démarrage, types Executor/Transaction
+│       │   │   ├── schema.ts                 # ré-exporte les *.schema.ts des features (drizzle-kit, client typé)
+│       │   │   └── migrations/               # générées par drizzle-kit, copiées dans dist/ au build
 │       │   ├── features/
+│       │   │   ├── health/                   # GET /api/health
 │       │   │   ├── auth/
 │       │   │   │   ├── auth.routes.ts        # handlers HTTP, aussi fins que possible
-│       │   │   │   ├── auth.service.ts       # logique métier
+│       │   │   │   ├── auth.service.ts       # connexion, sessions glissantes, compte initial
 │       │   │   │   ├── auth.queries.ts       # accès à la base uniquement
-│       │   │   │   ├── auth.schema.ts        # tables Drizzle (users, sessions)
-│       │   │   │   ├── auth.middleware.ts
-│       │   │   │   └── auth.service.test.ts
-│       │   │   ├── songs/                    # songs, song_tracks
-│       │   │   ├── tags/
-│       │   │   ├── imports/                  # upload, URL, protection SSRF, purge des brouillons
-│       │   │   │   ├── imports.routes.ts
-│       │   │   │   ├── imports.service.ts
-│       │   │   │   ├── url-fetcher.ts
-│       │   │   │   └── …
-│       │   │   ├── covers/                   # couvertures des morceaux
-│       │   │   │   ├── covers.routes.ts
-│       │   │   │   ├── covers.service.ts     # suggestions, choix, remplacement
+│       │   │   │   ├── auth.schema.ts        # tables Drizzle (users, auth_sessions)
+│       │   │   │   ├── auth.middleware.ts    # requireAuth → c.var.user
+│       │   │   │   ├── password-hasher.ts    # argon2id (node:crypto), format PHC
+│       │   │   │   ├── login-rate-limiter.ts # 5 échecs / 15 min par (client, identifiant)
+│       │   │   │   ├── session-cookie.ts
+│       │   │   │   └── *.test.ts
+│       │   │   ├── songs/                    # catalogue : songs, song_tracks ; songs.mapper.ts (lignes → contrats)
+│       │   │   ├── tags/                     # tags, song_tags
+│       │   │   ├── imports/                  # fichier, URL, déduplication, brouillon, validation
+│       │   │   ├── covers/
+│       │   │   │   ├── covers.routes.ts      # monté sous /songs : /songs/:id/cover…
+│       │   │   │   ├── covers.service.ts     # suggestions (cache 1 h), choix, upload, URL
 │       │   │   │   ├── image-processor.ts    # sharp : validation, recadrage, WebP 720×720
-│       │   │   │   └── providers/
-│       │   │   │       ├── cover-provider.types.ts       # interface CoverProvider
-│       │   │   │       ├── musicbrainz.provider.ts       # MusicBrainz + Cover Art Archive
-│       │   │   │       └── wikidata.provider.ts          # portrait du compositeur
-│       │   │   ├── library/                  # user_songs (statut, favori, réglages)
-│       │   │   ├── practice/                 # loops, practice_sessions
+│       │   │   │   └── providers/            # MusicBrainz + Cover Art Archive, Wikidata + Commons
+│       │   │   ├── library/                  # user_songs (statut, favori, réglages), dernière écriture l'emporte
+│       │   │   ├── practice/                 # loops, practice_sessions, statistiques
+│       │   │   ├── maintenance/              # purges : brouillons, morceaux supprimés, sessions, tags, fichiers orphelins
 │       │   │   └── mutopia/                  # V1.1 : index local + synchronisation
-│       │   └── shared/
-│       │       ├── http/safe-fetch.ts        # fetch sortant : SSRF, timeout, limite de taille (imports + couvertures)
-│       │       ├── storage/file-storage.ts   # /data/midi/<sha256>.mid, /data/covers/<sha256>.webp
-│       │       ├── http/errors.ts            # erreurs métier → codes HTTP
-│       │       ├── http/middlewares.ts       # logs, rate-limit, sécurité
-│       │       └── jobs/scheduler.ts         # tâches différées (purge)
+│       │   ├── shared/
+│       │   │   ├── http/                     # app-env, errors, error-handler, validation, request-logger,
+│       │   │   │                             # client-ip, safe-fetch (SSRF : IP vérifiée à la connexion)
+│       │   │   ├── logger/                   # logger JSON à niveaux
+│       │   │   ├── storage/file-storage.ts   # /data/midi/<sha256>.mid, /data/covers/<sha256>.webp (écriture atomique)
+│       │   │   ├── jobs/periodic-job.ts      # tâche périodique sans chevauchement
+│       │   │   └── runtime.ts                # Clock et générateur d'ULID injectables
+│       │   └── test/                         # banc de test : serveur complet en mémoire, fixtures, logger mémoire
+│       ├── scripts/generate-dbml.ts          # docs/database.dbml généré depuis le schéma Drizzle
 │       ├── drizzle.config.ts
+│       ├── tsdown.config.ts
 │       └── vitest.config.ts
 │
 ├── packages/
 │   ├── core/                                 # TypeScript pur, sans DOM ni Node : testable partout
 │   │   └── src/
 │   │       ├── midi/
-│   │       │   ├── parse-midi.ts             # octets → ParsedSong
-│   │       │   ├── analyze-midi.ts           # pistes, plages, durée, statistiques
+│   │       │   ├── analyze-midi.ts           # pistes, plages, durée, titre ; InvalidMidiError
+│   │       │   ├── tonejs-midi.ts            # interop UMD/ESM de @tonejs/midi (Node et bundlers)
+│   │       │   ├── midi-fixtures.ts          # MIDI de test construits en mémoire (export "@open-keys/core/testing")
 │   │       │   └── midi.types.ts
 │   │       ├── hands/
-│   │       │   ├── suggest-hand-mapping.ts   # heuristiques
-│   │       │   ├── apply-hand-mapping.ts     # ParsedSong + mapping → notes avec leur main
+│   │       │   ├── suggest-hand-mapping.ts   # proposition automatique + handForNote
 │   │       │   └── hands.types.ts
-│   │       ├── timeline/                     # index temporel, recherche des notes dans une fenêtre
-│   │       ├── music/                        # noms de notes, pitch ↔ touche, détection des touches noires
-│   │       └── index.ts
+│   │       ├── ids/ulid.ts                   # ULID (source aléatoire injectée)
+│   │       ├── timeline/                     # (phase 3) index temporel, recherche des notes dans une fenêtre
+│   │       ├── music/                        # noms de notes, touches noires
+│   │       ├── index.ts
+│   │       └── testing.ts                    # helpers de test, jamais importés par du code de production
 │   ├── contracts/                            # schémas zod des échanges avec l'API (entrées/sorties)
-│   │   └── src/{songs,imports,practice,library,auth}.contract.ts
+│   │   └── src/{auth,common,covers,error,health,imports,library,practice,songs,tags}.contract.ts
 │   └── config/                               # tsconfig partagés (base, react, node)
 │
 ├── docs/
@@ -166,14 +170,14 @@ flowchart LR
 ```
 
 - `packages/core` ne dépend de rien d'interne.
-- Une feature n'importe une autre feature **que via son `index.ts`**. On n'importe jamais directement un fichier interne d'une autre feature.
+- Une feature n'importe une autre feature **que via son `index.ts`**. On n'importe jamais directement un fichier interne d'une autre feature. **Seule exception : les tables (`*.schema.ts`)**, importables partout pour les clés étrangères et les jointures.
 - `shared/` n'importe jamais `features/`.
 
 Ces règles sont **vérifiées en CI** par dependency-cruiser (`pnpm deps:check`, config dans `.dependency-cruiser.cjs`) :
 
 | Règle | Interdit |
 |---|---|
-| `no-cross-feature-internals` | Importer un fichier interne d'une autre feature (seul `index.ts` est autorisé) |
+| `no-cross-feature-internals` | Importer un fichier interne d'une autre feature (seuls `index.ts` et les tables `*.schema.ts` sont autorisés) |
 | `shared-does-not-import-features` | `shared/` qui dépend de `features/` |
 | `core-is-pure` / `core-depends-on-nothing-internal` | Modules Node ou code interne dans `packages/core` (le DOM est exclu par son tsconfig) |
 | `packages-do-not-import-apps` / `apps-are-isolated` | Un package qui importe une app ; `web` et `server` qui s'importent entre eux |

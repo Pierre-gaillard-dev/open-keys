@@ -2,24 +2,43 @@ import { describe, expect, it } from "vitest";
 import { loadEnv } from "./env";
 
 describe("loadEnv", () => {
-  it("applies defaults", () => {
-    expect(loadEnv({})).toEqual({
+  it("applies development defaults", () => {
+    expect(loadEnv({})).toMatchObject({
       NODE_ENV: "development",
       PORT: 3000,
       APP_VERSION: "dev",
       LOG_LEVEL: "info",
+      DATA_DIR: "./data",
+      COOKIE_SECURE: false,
+      TRUST_PROXY: false,
+      MAX_MIDI_SIZE: 2 * 1024 * 1024,
+      allowedOrigins: ["http://localhost:5173"],
     });
   });
 
-  it("coerces the port", () => {
-    expect(loadEnv({ PORT: "8080" }).PORT).toBe(8080);
+  it("coerces numbers and booleans", () => {
+    const env = loadEnv({ PORT: "8080", TRUST_PROXY: "true", COOKIE_SECURE: "true" });
+
+    expect(env.PORT).toBe(8080);
+    expect(env.TRUST_PROXY).toBe(true);
+    expect(env.COOKIE_SECURE).toBe(true);
   });
 
-  it("rejects an invalid port", () => {
-    expect(() => loadEnv({ PORT: "not-a-port" })).toThrow();
+  it("derives the allowed origin and secure cookies from the public URL in production", () => {
+    const env = loadEnv({ NODE_ENV: "production", PUBLIC_URL: "https://keys.example.org/app" });
+
+    expect(env.allowedOrigins).toEqual(["https://keys.example.org"]);
+    expect(env.COOKIE_SECURE).toBe(true);
   });
 
-  it("rejects an unknown log level", () => {
-    expect(() => loadEnv({ LOG_LEVEL: "verbose" })).toThrow();
+  it.each([
+    [{ PORT: "not-a-port" }],
+    [{ LOG_LEVEL: "verbose" }],
+    [{ ADMIN_USERNAME: "pierre" }],
+    [{ ADMIN_USERNAME: "pierre", ADMIN_PASSWORD: "short" }],
+    [{ NODE_ENV: "production" }],
+    [{ PUBLIC_URL: "ftp://example.org" }],
+  ])("rejects %j", (source) => {
+    expect(() => loadEnv(source)).toThrow();
   });
 });

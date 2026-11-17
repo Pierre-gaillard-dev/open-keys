@@ -7,6 +7,11 @@ export default defineConfig({
   target: "node26",
   outDir: "dist",
   clean: true,
-  // Workspace packages are consumed as TypeScript sources: bundle them.
-  noExternal: [/^@open-keys\//],
+  deps: {
+    // Workspace packages are consumed as TypeScript sources: bundle them, with their own dependencies.
+    alwaysBundle: [/^@open-keys\//, "@tonejs/midi"],
+    onlyBundle: [/^@open-keys\//, "@tonejs/midi"],
+  },
+  // SQL migrations are applied at startup, from dist/migrations.
+  copy: [{ from: "src/db/migrations", to: "dist" }],
 });

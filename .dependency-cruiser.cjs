@@ -7,12 +7,16 @@ module.exports = {
     {
       name: "no-cross-feature-internals",
       comment:
-        "A feature may only import another feature through its public index.ts (docs/06-conventions.md §1).",
+        "A feature may only import another feature through its public index.ts, except its tables (*.schema.ts, for joins and foreign keys).",
       severity: "error",
       from: { path: "^apps/([^/]+)/src/features/([^/]+)/" },
       to: {
         path: "^apps/$1/src/features/[^/]+/",
-        pathNot: ["^apps/$1/src/features/$2/", "^apps/$1/src/features/[^/]+/index\\.ts$"],
+        pathNot: [
+          "^apps/$1/src/features/$2/",
+          "^apps/$1/src/features/[^/]+/index\\.ts$",
+          "^apps/$1/src/features/[^/]+/[^/]+\\.schema\\.ts$",
+        ],
       },
     },
     {

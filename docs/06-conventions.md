@@ -11,7 +11,8 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 |---|---|---|
 | `*.routes.ts` | Handlers HTTP Hono : validation, appel du service, réponse. Aucune logique métier | server |
 | `*.service.ts` | Logique métier, orchestration | server |
-| `*.queries.ts` | Accès à la base (Drizzle) **uniquement** : pas de règles métier | server |
+| `*.queries.ts` | Accès à la base (Drizzle) **uniquement** : pas de règles métier. Les fonctions appelables dans une transaction prennent un `Executor` | server |
+| `*.mapper.ts` | Conversion des lignes de la base vers les contrats de l'API | server |
 | `*.schema.ts` | Tables Drizzle | server |
 | `*.contract.ts` | Schémas zod des entrées/sorties de l'API | packages/contracts |
 | `*.api.ts` | Appels du client RPC | web |
@@ -22,7 +23,7 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 | `*.test.ts` | Tests, à côté du fichier testé | partout |
 
 - **`index.ts` = API publique** d'une feature ou d'un package. Ce qu'il n'exporte pas est privé.
-- Règles d'import : voir `03-architecture/03-arborescence.md`. `core` est pur (pas de DOM, pas de Node, pas d'I/O).
+- Règles d'import : voir `03-architecture/03-arborescence.md`. Les tables (`*.schema.ts`) sont la seule partie d'une feature importable directement par une autre. `core` est pur (pas de DOM, pas de Node, pas d'I/O).
 
 ## 1 bis. Outils qui font respecter ces règles
 
@@ -69,14 +70,14 @@ Une rigueur proche du Clean Code, sans dogmatisme. Ce document est la référenc
 ## 6. Tests
 
 - `packages/core` : tests unitaires obligatoires sur toute fonction publique.
-- Serveur : un test d'intégration par route (succès + erreur principale).
+- Serveur : un test d'intégration par route (succès + erreur principale), via le banc `src/test/test-server.ts` : un serveur complet avec SQLite en mémoire, horloge contrôlable et réseau simulé.
 - Correction d'un bug = un test qui le reproduit.
 - Les MIDI de test sont exclusivement du domaine public (dossier `fixtures/`).
 
 ## 7. Git et PR
 
 - Commits conventionnels (`feat(player): …`, `fix(import): …`).
-- Une PR = une tâche de la roadmap, référencée dans sa description.
+- Une PR = **une fonctionnalité utilisable** (plusieurs tâches de la roadmap, citées dans la description), découpée en commits propres.
 - CI verte obligatoire : lint, vérification des types, tests, build.
 - Tout choix d'architecture non trivial est documenté (mise à jour de `docs/`, ou une ligne dans le tableau des décisions de `01-cadrage.md`).
 

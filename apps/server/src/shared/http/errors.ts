@@ -30,18 +30,22 @@ export function errorCodeOfStatus(status: number): ErrorCode {
 export interface AppErrorOptions {
   readonly details?: unknown;
   readonly cause?: unknown;
+  /** Extra response headers (e.g. Retry-After). */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 /** Expected business error: its message is safe to show to the client. */
 export class AppError extends Error {
   readonly code: ErrorCode;
   readonly details: unknown;
+  readonly headers: Readonly<Record<string, string>>;
 
   constructor(code: ErrorCode, message: string, options: AppErrorOptions = {}) {
     super(message, { cause: options.cause });
     this.name = "AppError";
     this.code = code;
     this.details = options.details;
+    this.headers = options.headers ?? {};
   }
 
   get status(): ContentfulStatusCode {

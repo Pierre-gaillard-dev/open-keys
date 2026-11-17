@@ -18,10 +18,11 @@
 | Style | **Tailwind CSS** + composants maison | Thème sombre, cibles tactiles larges |
 | API | **Hono** + `@hono/zod-validator` + client RPC `hc` | API typée, sans génération de code |
 | Validation | **Zod** (schémas dans `packages/contracts`) | Schémas partagés entre le front et le back |
-| Base de données | **SQLite** (`better-sqlite3`) + **Drizzle ORM / drizzle-kit** | Schéma, migrations, requêtes typées |
+| Base de données | **SQLite** (`better-sqlite3`, binaires précompilés) + **Drizzle ORM 0.45 / drizzle-kit** | Schéma, migrations, requêtes typées. `node:sqlite` n'est supporté que par Drizzle 1.0 (RC) : à reconsidérer à sa sortie (D18) |
 | Images | **sharp** | Conversion des couvertures en WebP 720×720 |
-| Authentification | Sessions en base, cookie `httpOnly`, hash **argon2id** | Un seul utilisateur, prêt pour plusieurs |
-| Build API | **tsdown** | Bundle de `apps/server`, avec les packages internes inclus |
+| Authentification | Sessions en base (jeton haché en SHA-256), cookie `httpOnly`, **argon2id natif** (`node:crypto`, Node 26) | Aucune dépendance native pour le hachage (D19) |
+| Fetch sortant | **undici** (`Agent` avec résolution DNS contrôlée) + **ipaddr.js** | Imports par URL et couvertures sans SSRF |
+| Build API | **tsdown** | Bundle de `apps/server`, avec les packages internes inclus (`deps.alwaysBundle`) et les migrations copiées dans `dist/` |
 | Qualité | **Biome 2** (lint et formatage), `tsc --noEmit`, **dependency-cruiser** (règles d'architecture), **Vitest 5** (un projet par package), **Playwright** (e2e) | CI stricte |
 | Hooks Git | **lefthook** (Biome au pre-commit) + **commitlint** (commits conventionnels) | Rien de non formaté ni de mal nommé n'arrive dans l'historique |
 | Déploiement | docker-compose (`web` nginx + `api` Node), Dokploy (Traefik, HTTPS) | Deux conteneurs, un seul domaine, volume `/data` |
