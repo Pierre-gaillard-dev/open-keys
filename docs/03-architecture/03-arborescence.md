@@ -17,6 +17,7 @@ open-keys/
 │   │   │   │   ├── router.tsx                # routes typées (TanStack Router), garde d'authentification
 │   │   │   │   ├── layout/AppShell.tsx       # barre du haut (pas de barre latérale) + page courante
 │   │   │   │   ├── pwa/                      # Service Worker : enregistrement, store, bannière de mise à jour
+│   │   │   │   ├── offline/                  # indicateur de synchro, favoris gardés sur l'appareil
 │   │   │   │   ├── global.css                # Tailwind v4 : jetons de couleurs et polices
 │   │   │   │   └── app-flows.test.tsx        # parcours complets : app réelle + API simulée
 │   │   │   ├── features/
@@ -66,9 +67,12 @@ open-keys/
 │   │   │   └── shared/
 │   │   │       ├── api/http-client.ts        # apiRequest() : /api, réponses validées par zod, ApiError
 │   │   │       ├── offline/
-│   │   │       │   ├── db.ts                 # schéma Dexie
-│   │   │       │   ├── midi-cache.ts
-│   │   │       │   └── outbox.ts             # file d'attente + rejeu idempotent
+│   │   │       │   ├── offline-db.ts         # schéma Dexie : midiFiles, outbox, queryCache
+│   │   │       │   ├── midi-cache.ts         # MIDI sur l'appareil + version du morceau
+│   │   │       │   ├── outbox.ts             # file de PUT idempotents, rejeu, nombre en attente
+│   │   │       │   ├── query-persistence.ts  # cache TanStack Query sauvegardé (requêtes gardées)
+│   │   │       │   ├── connectivity.ts       # en ligne / hors-ligne partagé, sonde de /api/health
+│   │   │       │   └── index.ts              # instances partagées (outbox, midiCache), clearOfflineData
 │   │   │       ├── ui/                       # Button, Chip, SegmentedControl, TextField… (sans logique métier)
 │   │   │       ├── lib/                      # cx (tailwind-merge), format, use-debounced-value
 │   │   │       └── test/                     # (dans src/test) fake-api, fixtures, render-app
@@ -142,6 +146,10 @@ open-keys/
 │   │   └── src/{auth,common,covers,error,health,imports,library,practice,songs,tags}.contract.ts
 │   └── config/                               # tsconfig partagés (base, react, node)
 │
+├── e2e/                                      # Playwright (Chromium, Firefox) : build de production + vraie API
+│   ├── playwright.config.ts
+│   ├── tests/                                # playback.spec.ts, offline.spec.ts
+│   └── support/                              # connexion et import par l'API
 ├── docs/
 ├── docker/
 │   ├── web.Dockerfile                        # build Vite → nginx non root (port 8080)

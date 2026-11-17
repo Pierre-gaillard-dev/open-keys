@@ -116,10 +116,11 @@ describe("player", () => {
     expect(within(panel).getByRole("button", { name: "Enregistrer la boucle" })).toBeDefined();
   });
 
-  it("saves the loop with a name, then deletes it", async () => {
+  it("saves the loop with a name, then deletes it (soft delete, synchronised in the background)", async () => {
     const song = songDetail();
     const midi = buildMidi([{ notes: scale(64, 40) }]);
-    let loops: object[] = [];
+    // Server side: soft-deleted loops are not listed.
+    const loops = new Map<string, { deletedAt: number | null }>();
     const api = installFakeApi({
       "GET /api/auth/me": () => ({ json: USER }),
       [`GET /api/songs/${song.id}`]: () => ({
@@ -130,16 +131,20 @@ describe("player", () => {
       [`PUT /api/library/${song.id}`]: (request) => ({
         json: { songId: song.id, ...(request.body as object) },
       }),
-      [`GET /api/songs/${song.id}/loops`]: () => ({ json: loops }),
+      [`GET /api/songs/${song.id}/loops`]: () => ({
+        json: [...loops.values()].filter((loop) => loop.deletedAt === null),
+      }),
       "PUT /api/loops/*": (request) => {
-        loops = [{ id: request.path.split("/").at(-1), ...(request.body as object) }];
-        return { json: loops[0] };
-      },
-      "DELETE /api/loops/*": () => {
-        loops = [];
-        return undefined;
+        const loop = {
+          id: request.path.split("/").at(-1),
+          ...(request.body as { deletedAt: number | null }),
+        };
+        loops.set(request.path, loop);
+        return { json: loop };
       },
     });
+    const loopWrites = () =>
+      api.requests.filter((r) => r.method === "PUT" && r.path.startsWith("/api/loops/"));
     renderApp(`/songs/${song.id}/play`);
     const play = await screen.findByRole("button", { name: "Lecture" });
     await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
@@ -151,18 +156,22 @@ describe("player", () => {
     await userEvent.type(screen.getByLabelText("Boucle 0:00 – 0:05"), "Intro");
     await userEvent.click(screen.getByRole("button", { name: "Enregistrer la boucle" }));
 
-    const saved = await screen.findByRole("button", { name: /^Intro/ });
-    expect(api.calls("PUT", `/api/loops/${(loops[0] as { id: string }).id}`)[0]?.body).toMatchObject({
+    expect(await screen.findByRole("button", { name: /^Intro/ })).toBeDefined();
+    await waitFor(() => expect(loopWrites()).toHaveLength(1));
+    expect(loopWrites()[0]?.body).toMatchObject({
       songId: song.id,
       name: "Intro",
       startMs: 0,
       endMs: 5000,
+      deletedAt: null,
     });
-    expect(saved).toBeDefined();
 
     await userEvent.click(screen.getByRole("button", { name: "Supprimer la boucle Intro" }));
 
     await waitFor(() => expect(screen.queryByRole("button", { name: /^Intro/ })).toBeNull());
     expect(screen.getByRole("button", { name: "Boucle" }).hasAttribute("disabled")).toBe(true);
+    await waitFor(() => expect(loopWrites()).toHaveLength(2));
+    expect(loopWrites()[1]?.path).toBe(loopWrites()[0]?.path);
+    expect(loopWrites()[1]?.body).toMatchObject({ name: "Intro", deletedAt: expect.any(Number) });
   });
 });

@@ -1,11 +1,18 @@
+import type { UseQueryResult } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { buttonClasses, ErrorBanner } from "../../../shared/ui";
+import { isNetworkError } from "../../../shared/api";
+import { buttonClasses, ErrorBanner, OfflineUnavailable } from "../../../shared/ui";
 import { useSong } from "../../catalog";
 import { useLibraryEntry } from "../../library";
 import { useLoops } from "../../practice";
 import { useTimeline } from "../api/player.queries";
 import { PlayerView } from "../components/PlayerView";
 import { usePlayerRuntime } from "../hooks/use-player-runtime";
+
+/** Data available, or given up on: failed, or waiting for a network that is not there (offline). */
+function isSettled(query: UseQueryResult): boolean {
+  return query.data !== undefined || query.isFetched || query.fetchStatus === "paused";
+}
 
 /**
  * UC-08: watch and listen. Loads the song and decodes the piano samples in parallel, then hands over to
@@ -17,8 +24,22 @@ export function PlayerPage({ songId }: { readonly songId: string }) {
   const library = useLibraryEntry(songId);
   const loops = useLoops(songId);
   const { runtime, samples } = usePlayerRuntime();
-  const error = song.error ?? timeline.error;
+  const error = (song.data ? null : song.error) ?? timeline.error;
+  // Offline: the song was never opened on this device, or its MIDI was never downloaded.
+  const offlineUnavailable =
+    (!song.data && song.fetchStatus === "paused") ||
+    (timeline.error !== null && isNetworkError(timeline.error));
 
+  if (offlineUnavailable) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col gap-4 p-6">
+        <OfflineUnavailable what="Ce morceau" />
+        <Link to="/" className={buttonClasses("secondary")}>
+          Retour au catalogue
+        </Link>
+      </div>
+    );
+  }
   if (error) {
     return (
       <div className="mx-auto flex max-w-md flex-col gap-4 p-6">
@@ -29,7 +50,7 @@ export function PlayerPage({ songId }: { readonly songId: string }) {
       </div>
     );
   }
-  if (!(song.data && timeline.data && library.isFetched && loops.isFetched && runtime)) {
+  if (!(song.data && timeline.data && isSettled(library) && isSettled(loops) && runtime)) {
     return (
       <p role="status" className="p-10 text-center text-fg-soft">
         Préparation du morceau…

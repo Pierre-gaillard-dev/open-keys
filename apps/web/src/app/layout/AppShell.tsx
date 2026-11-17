@@ -2,6 +2,8 @@ import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useCurrentUser, useLogout } from "../../features/auth";
 import { IconButton } from "../../shared/ui";
+import { SyncStatus } from "../offline/SyncStatus";
+import { useKeepFavoritesOffline } from "../offline/use-keep-favorites-offline";
 import { UpdateBanner } from "../pwa/UpdateBanner";
 
 /** TanStack Router marks the active link with data-status="active" (and aria-current). */
@@ -26,6 +28,7 @@ export function AppShell() {
   const user = useCurrentUser();
   const logout = useLogout();
   const navigate = useNavigate();
+  useKeepFavoritesOffline();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -41,6 +44,7 @@ export function AppShell() {
           </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end gap-3">
+          <SyncStatus />
           {user.data && <span className="hidden text-sm text-fg-muted sm:inline">{user.data.username}</span>}
           <IconButton
             label="Se déconnecter"

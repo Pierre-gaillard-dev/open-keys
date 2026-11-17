@@ -35,8 +35,8 @@ function nextEntry(current: LibraryEntry | undefined, patch: LibraryPatch, songI
 }
 
 /**
- * Saves a patch outside of React (player exit): merged with the cached entry, cached immediately,
- * sent with keepalive so it survives the page being closed.
+ * Applies a patch locally (cache, kept for offline use) and queues it for the server: works the same
+ * online and offline (UC-12, UC-15). The server keeps the latest write (updatedAt).
  */
 export async function saveLibraryPatch(
   queryClient: QueryClient,
@@ -54,37 +54,14 @@ export async function saveLibraryPatch(
     next,
   ]);
   const { songId: _songId, ...body } = next;
-  await putLibraryEntry(songId, body, { keepalive: true });
-  void queryClient.invalidateQueries({ queryKey: ["songs"] });
+  await putLibraryEntry(songId, body);
 }
 
-/** Status and favorite changes, applied optimistically then confirmed by the server. */
+/** Status and favorite changes: applied at once, synchronised in the background. */
 export function useUpdateLibraryEntry(songId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (patch: LibraryPatch) => {
-      const current = queryClient
-        .getQueryData(libraryQuery.queryKey)
-        ?.find((entry) => entry.songId === songId);
-      const { songId: _songId, ...body } = nextEntry(current, patch, songId);
-      return putLibraryEntry(songId, body);
-    },
-    onMutate: async (patch) => {
-      await queryClient.cancelQueries({ queryKey: libraryQuery.queryKey });
-      const previous = queryClient.getQueryData(libraryQuery.queryKey);
-      queryClient.setQueryData(libraryQuery.queryKey, (entries = []) => {
-        const current = entries.find((entry) => entry.songId === songId);
-        return [...entries.filter((entry) => entry.songId !== songId), nextEntry(current, patch, songId)];
-      });
-      return { previous };
-    },
-    onError: (_error, _patch, context) => {
-      queryClient.setQueryData(libraryQuery.queryKey, context?.previous);
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: libraryQuery.queryKey });
-      // Lists filter and sort on this state.
-      void queryClient.invalidateQueries({ queryKey: ["songs"] });
-    },
+    mutationFn: (patch: LibraryPatch) => saveLibraryPatch(queryClient, songId, patch),
+    networkMode: "always",
   });
 }

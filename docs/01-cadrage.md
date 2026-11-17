@@ -56,8 +56,9 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 5. Métronome
 6. Volume par main
 7. Vitesse cible par boucle et tableau de bord de pratique
-8. **V2 — entrée MIDI** : vérification des notes, mode attente, score, pause avec une touche du piano
-9. Gamification (séries de jours, objectifs)
+8. **Accompagnement** : garder les autres instruments d'un MIDI, avec leur son, et les activer ou les couper dans le lecteur (V1.4)
+9. **V2 — entrée MIDI** : vérification des notes, mode attente, score, pause avec une touche du piano
+10. Gamification (séries de jours, objectifs)
 
 ## 6. Contraintes
 
@@ -93,6 +94,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D20 | Client HTTP du web | `fetch` typé par les schémas de `packages/contracts` (validation des réponses à l'exécution), au lieu du client RPC `hc` de Hono | `hc` importe le type de l'app serveur dans le web : violation de l'isolation des apps, et TypeScript devrait typer le code serveur (Node, Drizzle) dans un projet DOM. Les contrats couvrent déjà toutes les réponses |
 | D21 | Lecteur | Contrôleur unique entre l'UI et le moteur, état affiché dans un store Zustand, runtime navigateur isolé (testable). Échantillons commités dans le dépôt (≈ 2 Mo, CC-BY). Zoom automatique par défaut sur téléphone (avancé de la V1.1). Un morceau pratiqué passe « en cours » | Testabilité sans Web Audio ni WebGL, aucune dépendance à un CDN, lisibilité sur un écran de 6 pouces |
 | D22 | Déploiement et PWA | Images non root (nginx sans privilèges, Node `node`), CSP sans `unsafe-eval` (PixiJS en mode sans eval, zod `jitless`). Build des images et déploiement gérés dans l'interface de Dokploy, la CI ne fait que vérifier le code. Service Worker en mise à jour à la demande (bannière hors du lecteur) | Un seul endroit pour le déploiement (Dokploy). Ne jamais recharger la page pendant la pratique. Une faille XSS ne peut pas exécuter de code généré |
+| D23 | Données hors-ligne | Le cache de TanStack Query est sauvegardé dans IndexedDB et restauré au démarrage, au lieu de copies par table (`songs`, `library`, `loops`). Dexie ne garde que les MIDI (avec la fiche du morceau) et l'outbox. Les écritures sont appliquées au cache puis envoyées par l'outbox (`PUT` seulement, un par chemin). Connectivité détectée par les échecs réseau et une sonde de l'API | Une seule source de vérité côté client, en ligne comme hors-ligne : les pages n'ont pas deux chemins de lecture. Moins de code de synchronisation, testable sans navigateur (`fake-indexeddb`) |
 
 ## 8. Risques
 

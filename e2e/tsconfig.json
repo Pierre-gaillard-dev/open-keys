@@ -1,0 +1,7 @@
+{
+  "extends": "@open-keys/config/tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"]
+  },
+  "include": ["playwright.config.ts", "tests", "support"]
+}

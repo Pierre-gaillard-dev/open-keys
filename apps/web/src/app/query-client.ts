@@ -1,5 +1,6 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { ApiError } from "../shared/api";
+import { PERSISTED_QUERY_GC_TIME_MS } from "../shared/offline";
 
 const MAX_RETRIES = 2;
 
@@ -23,6 +24,8 @@ export function createQueryClient(onUnauthorized: () => void = () => undefined):
     defaultOptions: {
       queries: {
         staleTime: 30_000,
+        // Kept in memory as long as they are persisted for offline use.
+        gcTime: PERSISTED_QUERY_GC_TIME_MS,
         // Client errors (4xx) will not fix themselves: only retry network and server failures.
         retry: (failureCount, error) =>
           failureCount < MAX_RETRIES &&

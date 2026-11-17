@@ -64,7 +64,7 @@ flowchart LR
 
 - `vite-plugin-pwa` (Workbox, `generateSW`) génère `sw.js` et `manifest.webmanifest`.
 - **Précache** (≈ 3,3 Mo) : shell de l'app (JS, CSS, HTML), polices latines et les 30 échantillons du piano. Les autres sous-ensembles de polices sont mis en cache à la première utilisation.
-- **L'API n'est jamais servie par le Service Worker.** Les données hors ligne arrivent en phase 4, avec Dexie et l'outbox.
+- **L'API n'est pas servie par le Service Worker**, sauf les couvertures (cache-first, URL versionnée par le hash). Les données hors-ligne sont dans IndexedDB (voir [flux](./05-flux.md#synchronisation-hors-ligne)).
 - **Mise à jour à la demande** (`registerType: "prompt"`) :
   - une nouvelle version attend que l'utilisateur clique sur « Mettre à jour », dans la bannière en haut des pages (jamais dans le lecteur, pour ne pas interrompre la pratique) ;
   - l'app vérifie la présence d'une nouvelle version toutes les heures.

@@ -24,7 +24,8 @@
     "deps:check": "depcruise apps packages",
     "verify": "pnpm lint && pnpm typecheck && pnpm deps:check && pnpm test && pnpm build",
     "prepare": "lefthook install",
-    "db:check": "pnpm --filter @open-keys/server db:generate && pnpm --filter @open-keys/server db:dbml && git diff --exit-code -- docs/database.dbml && test -z \"$(git status --porcelain -- apps/server/src/db/migrations)\""
+    "db:check": "pnpm --filter @open-keys/server db:generate && pnpm --filter @open-keys/server db:dbml && git diff --exit-code -- docs/database.dbml && test -z \"$(git status --porcelain -- apps/server/src/db/migrations)\"",
+    "e2e": "pnpm --filter @open-keys/e2e test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",

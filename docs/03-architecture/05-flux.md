@@ -34,15 +34,25 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant UI
-  participant IDB as IndexedDB
-  participant OB as Outbox
+  participant QC as Cache des requêtes<br/>(sauvegardé dans IndexedDB)
+  participant OB as Outbox (IndexedDB)
   participant A as API
-  UI->>IDB: écriture locale (réglages, boucle, session)
-  UI->>OB: ajout { méthode PUT, url, corps, id ULID }
-  OB->>A: PUT idempotent
-  alt en ligne
-    A-->>OB: 200 → retiré de la file
-  else hors-ligne / erreur réseau
-    OB->>OB: nouvel essai (online, démarrage, toutes les 60 s)
+  UI->>QC: écriture appliquée tout de suite (réglages, boucle, session)
+  UI->>OB: PUT { chemin, corps } (remplace un PUT en attente sur le même chemin)
+  OB->>A: PUT idempotent, dans l'ordre
+  alt accepté
+    A-->>OB: 2xx → retiré de la file, données rafraîchies
+  else réseau injoignable
+    OB->>OB: hors-ligne, nouvel essai (retour en ligne, démarrage, toutes les 60 s)
+  else 5xx, 408, 429
+    OB->>OB: gardé, nouvel essai plus tard
+  else 401
+    OB->>UI: retour à la connexion, écritures gardées
+  else autre 4xx (rejeté)
+    OB->>OB: abandonné (ne bloque pas la file)
   end
 ```
+
+- **Écriture** : toujours locale d'abord, en ligne comme hors-ligne. Une boucle est supprimée par un `PUT` avec `deletedAt` (suppression logique) : l'outbox ne contient que des `PUT`.
+- **Connectivité** : partagée avec TanStack Query (`onlineManager`). Une requête qui n'atteint pas l'API passe l'app hors-ligne : les requêtes se mettent en pause et gardent leurs données. Une sonde de `/api/health` toutes les 15 s, ou l'événement `online` du navigateur, la repasse en ligne.
+- **Lecture hors-ligne** : le cache des requêtes est restauré avant le premier rendu (la garde d'authentification voit l'utilisateur). Les MIDI viennent de `midiFiles`. Les favoris y sont téléchargés en arrière-plan quand on est en ligne.
