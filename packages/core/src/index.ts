@@ -14,5 +14,15 @@ export {
   InvalidMidiError,
   type MidiAnalysis,
   type MidiTrackSummary,
+  type ParsedNote,
+  type ParsedNotes,
+  parseMidiNotes,
 } from "./midi";
 export { isBlackKey, MAX_MIDI_PITCH, MIN_MIDI_PITCH, midiToNoteName } from "./music";
+export {
+  buildTimeline,
+  firstNoteIndexAtOrAfter,
+  notesInWindow,
+  type PlayableNote,
+  type Timeline,
+} from "./timeline";
