@@ -102,7 +102,7 @@ flowchart LR
 - [x] **4.6** Dexie : cache des MIDI (morceaux ouverts + favoris), catalogue hors-ligne avec badge. *Les autres données (utilisateur, fiches, bibliothèque, boucles) viennent du cache de TanStack Query, sauvegardé dans IndexedDB (D23).*
 - [x] **4.7** Outbox : file d'attente, rejeu (événement online, démarrage, toutes les 60 s), indicateur de synchronisation en attente. *Rejeu aussi dès que la sonde de `/api/health` retrouve l'API, et après chaque écriture.*
 - [x] **4.8** E2E : mode avion → lecture d'un favori → création d'une boucle → retour du réseau → boucle visible sur un autre appareil. *Dans Chromium et Firefox, en CI.*
-- [ ] **4.9** README portfolio : captures d'écran, GIF, schéma d'architecture, choix techniques.
+- [x] **4.9** README portfolio : captures d'écran, GIF, schéma d'architecture, choix techniques.
 
 **Critères de fin du MVP**
 - [x] Apprendre un morceau de bout en bout uniquement avec l'app, sur le téléphone.
