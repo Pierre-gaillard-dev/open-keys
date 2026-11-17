@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
+import { Suspense } from "react";
 import { useCurrentUser, useLogout } from "../../features/auth";
 import { IconButton } from "../../shared/ui";
 import { SyncStatus } from "../offline/SyncStatus";
@@ -55,7 +56,10 @@ export function AppShell() {
         </div>
       </header>
       <main className="flex flex-1 flex-col">
-        <Outlet />
+        {/* Some pages are loaded on demand (import screens). */}
+        <Suspense fallback={<p className="p-10 text-center text-fg-soft">Chargement…</p>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
