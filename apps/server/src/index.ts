@@ -53,12 +53,9 @@ const maintenance = startPeriodicJob(
   logger,
 );
 
-const mutopiaSync = startPeriodicJob(
-  "mutopia-sync",
-  MUTOPIA_CHECK_INTERVAL_MS,
-  () => services.mutopia.syncIfStale(),
-  logger,
-);
+const mutopiaSync = env.MUTOPIA_SYNC
+  ? startPeriodicJob("mutopia-sync", MUTOPIA_CHECK_INTERVAL_MS, () => services.mutopia.syncIfStale(), logger)
+  : null;
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info("API listening", { port: info.port, env: env.NODE_ENV, version: env.APP_VERSION });
@@ -67,7 +64,7 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
 function shutdown(signal: string): void {
   logger.info("Shutting down", { signal });
   maintenance.stop();
-  mutopiaSync.stop();
+  mutopiaSync?.stop();
   setTimeout(() => {
     logger.error("Forced shutdown after timeout");
     process.exit(1);
