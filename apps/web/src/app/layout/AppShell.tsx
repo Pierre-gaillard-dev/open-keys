@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useCurrentUser, useLogout } from "../../features/auth";
 import { IconButton } from "../../shared/ui";
+import { UpdateBanner } from "../pwa/UpdateBanner";
 
 /** TanStack Router marks the active link with data-status="active" (and aria-current). */
 const NAV_LINK =
@@ -28,6 +29,7 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <UpdateBanner />
       <header className="flex h-16 shrink-0 items-stretch gap-8 border-b border-surface-2 px-4 md:px-10">
         <Logo />
         <nav aria-label="Navigation principale" className="hidden items-stretch gap-7 md:flex">
