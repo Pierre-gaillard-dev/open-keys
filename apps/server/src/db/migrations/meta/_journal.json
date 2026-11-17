@@ -8,6 +8,13 @@
       "when": 1794901805566,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794917277077,
+      "tag": "0001_mutopia_index",
+      "breakpoints": true
     }
   ]
 }

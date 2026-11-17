@@ -165,6 +165,28 @@ describe("import", () => {
     });
   });
 
+  it("sets a cover from a URL with Enter, without submitting the import", async () => {
+    const draft = songDetail({ state: "draft" });
+    const api = installFakeApi({
+      "GET /api/auth/me": () => ({ json: USER }),
+      [`GET /api/songs/${draft.id}`]: () => ({ json: draft }),
+      [`PUT /api/songs/${draft.id}/cover`]: () => undefined,
+      "GET /api/tags": () => ({ json: [] }),
+    });
+    renderApp(`/import/${draft.id}`);
+
+    await userEvent.type(
+      await screen.findByLabelText("Ou une URL d'image"),
+      "https://example.org/cover.jpg{Enter}",
+    );
+
+    await waitFor(() => expect(api.calls("PUT", `/api/songs/${draft.id}/cover`)).toHaveLength(1));
+    expect(api.calls("PUT", `/api/songs/${draft.id}/cover`)[0]?.body).toEqual({
+      url: "https://example.org/cover.jpg",
+    });
+    expect(api.calls("POST", `/api/imports/${draft.id}/confirm`)).toHaveLength(0);
+  });
+
   it("validates the title before sending anything", async () => {
     const draft = songDetail({ state: "draft" });
     const api = installFakeApi({

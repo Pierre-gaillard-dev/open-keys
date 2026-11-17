@@ -95,6 +95,21 @@ Une ligne par session de lecture d'au moins 10 s effectives.
 
 Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tableau de bord.
 
+### `mutopia_pieces` — feature `mutopia` (V1.1)
+Copie locale de l'index du Mutopia Project : les morceaux avec une partie de piano et **un seul fichier MIDI** (D24). Reconstruite chaque semaine, jamais modifiée par l'utilisateur.
+
+| Colonne | Note |
+|---|---|
+| `mutopia_id` | PK : l'identifiant de Mutopia (`piece-info.cgi?id=…`) |
+| `composer` | Tel que Mutopia l'écrit (« E. Satie ») |
+| `instrument` | Instrumentation de Mutopia (« Piano », « Voice and Piano »…) |
+| `keyboard_solo` | Uniquement des claviers (piano, clavecin, clavicorde) : jouable tel quel. Filtre « Piano seul » par défaut |
+| `license` | Forme courte (« Public Domain », « CC BY-SA 4.0 »), reprise dans `songs.license` à l'import |
+| `search_text` | Titre, compositeur et opus en minuscules sans accents : « gymnopedie » trouve « Gymnopédie » |
+| `synced_at` | Synchronisation qui a vu la ligne. Les lignes plus anciennes que la dernière synchronisation complète sont supprimées |
+
+Index : `midi_url` (jointure avec `songs.source_url` pour afficher « Dans le catalogue »).
+
 ## 4. Règles de synchronisation
 
 | Donnée | Écriture hors-ligne | Résolution des conflits |
@@ -135,7 +150,6 @@ Un fichier qu'aucune ligne de `songs` ne référence plus est purgé par une tâ
 
 | Version | Changement |
 |---|---|
-| V1.1 | Table `mutopia_pieces` (`mutopia_id` UK, `title`, `composer`, `opus`, `instrument`, `license`, `midi_url`, `synced_at`) + FTS5 |
 | V1.3 | Utilisation de `loops.target_tempo_pct` / `best_tempo_pct` (colonnes déjà présentes) |
 | V2 | Remplissage de `practice_sessions.accuracy` / `score`. Éventuellement une table `session_events` pour l'analyse détaillée des erreurs |
 | Multi-utilisateur | Rien à migrer pour les données personnelles. Seule décision à prendre : catalogue commun ou `songs.owner_id` |

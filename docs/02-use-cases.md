@@ -212,6 +212,13 @@ flowchart LR
   - en cas de conflit, la dernière écriture l'emporte, sur la base de `updated_at`.
 - Le catalogue (morceaux, tags) n'est modifiable qu'en ligne.
 
+### UC-20 — Rechercher et importer depuis Mutopia (V1.1)
+- Depuis l'import, onglet (PC) ou entrée (téléphone) « Rechercher en ligne ».
+- Recherche par titre, compositeur ou opus, sans tenir compte des accents ni de la casse. Par défaut, les pièces pour clavier seul ; « Avec piano » ajoute le chant, les duos…
+- **Écouter** un morceau avant de l'importer (piano de l'app, mains proposées par l'import).
+- **Importer** passe par l'écran de vérification, avec titre, compositeur et licence pré-remplis. Un morceau déjà importé affiche « Dans le catalogue ».
+- L'index est copié sur le serveur et mis à jour chaque semaine : la recherche ne dépend pas de la disponibilité de Mutopia.
+
 ### UC-16 — Temps de pratique
 - Sur la fiche d'un morceau : temps total, nombre de sessions, date de la dernière pratique.
 

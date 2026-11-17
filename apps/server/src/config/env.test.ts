@@ -12,6 +12,7 @@ describe("loadEnv", () => {
       COOKIE_SECURE: false,
       TRUST_PROXY: false,
       MAX_MIDI_SIZE: 2 * 1024 * 1024,
+      MUTOPIA_SYNC: true,
       allowedOrigins: ["http://localhost:5173"],
     });
   });

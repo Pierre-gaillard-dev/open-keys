@@ -1,6 +1,6 @@
 import type { ListSongsQuery } from "@open-keys/contracts";
-import { and, asc, desc, eq, inArray, isNull, like, or, type SQL, sql } from "drizzle-orm";
-import type { Database, Executor } from "../../db";
+import { and, asc, desc, eq, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
+import { containsText, type Database, type Executor } from "../../db";
 import { userSongs } from "../library/library.schema";
 import { songTags, tags } from "../tags/tags.schema";
 import { songs, songTracks } from "./songs.schema";
@@ -90,17 +90,13 @@ export function findLibrarySummary(db: Executor, userId: string, songId: string)
   );
 }
 
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
-}
-
 function listFilters(query: ListSongsQuery): SQL[] {
   const filters: SQL[] = [eq(songs.state, "ready"), notDeleted];
   if (query.q) {
-    const pattern = `%${escapeLike(query.q.toLowerCase())}%`;
+    const term = query.q.toLowerCase();
     const search = or(
-      like(sql`lower(${songs.title})`, sql`${pattern} escape '\\'`),
-      like(sql`lower(coalesce(${songs.composer}, ''))`, sql`${pattern} escape '\\'`),
+      containsText(sql`lower(${songs.title})`, term),
+      containsText(sql`lower(coalesce(${songs.composer}, ''))`, term),
     );
     if (search) {
       filters.push(search);

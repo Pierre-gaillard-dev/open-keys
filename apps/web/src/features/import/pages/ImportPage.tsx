@@ -1,42 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Upload } from "lucide-react";
 import { type DragEvent, type FormEvent, useState } from "react";
-import { z } from "zod";
-import { ApiError } from "../../../shared/api";
 import { cx } from "../../../shared/lib/cx";
-import { Button, ErrorBanner, TextField } from "../../../shared/ui";
+import { Button, TextField } from "../../../shared/ui";
 import { useImportFile, useImportUrl } from "../api/import.queries";
-
-const conflictDetailsSchema = z.object({ songId: z.string(), title: z.string().optional() });
-
-/** 409: the file is already in the catalogue — offer to open it instead of an error. */
-function ImportError({ error }: { readonly error: unknown }) {
-  const duplicate =
-    error instanceof ApiError && error.code === "CONFLICT"
-      ? conflictDetailsSchema.safeParse(error.details)
-      : undefined;
-  if (duplicate?.success) {
-    return (
-      <div
-        role="status"
-        className="flex flex-col gap-1 rounded-2xl border border-line bg-surface-2 p-4 text-sm"
-      >
-        <p className="font-semibold">Ce fichier est déjà dans ton catalogue</p>
-        {duplicate.data.title && (
-          <p className="text-fg-muted">« {duplicate.data.title} » a la même empreinte.</p>
-        )}
-        <Link
-          to="/songs/$songId"
-          params={{ songId: duplicate.data.songId }}
-          className="py-1 font-semibold text-hand-left"
-        >
-          Ouvrir le morceau existant
-        </Link>
-      </div>
-    );
-  }
-  return <ErrorBanner error={error} title="Import impossible" />;
-}
+import { ImportError } from "../components/ImportError";
+import { ImportTabs, OnlineSearchEntry } from "../components/ImportTabs";
 
 export function ImportPage() {
   const navigate = useNavigate();
@@ -75,6 +44,8 @@ export function ImportPage() {
         <ChevronLeft aria-hidden="true" className="size-4" /> Catalogue
       </Link>
       <h1 className="font-display text-3xl font-bold tracking-tight">Importer un morceau</h1>
+      <ImportTabs />
+      <OnlineSearchEntry />
 
       <label
         onDragOver={(event) => {

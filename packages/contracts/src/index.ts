@@ -5,6 +5,7 @@ export * from "./error.contract";
 export * from "./health.contract";
 export * from "./imports.contract";
 export * from "./library.contract";
+export * from "./mutopia.contract";
 export * from "./practice.contract";
 export * from "./songs.contract";
 export * from "./tags.contract";

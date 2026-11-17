@@ -1,3 +1,1 @@
-export { ImportPage } from "./pages/ImportPage";
-export { ImportReviewPage } from "./pages/ImportReviewPage";
-export { SongEditPage } from "./pages/SongEditPage";
+export { ImportPage, ImportReviewPage, MutopiaSearchPage, SongEditPage } from "./lazy-pages";
