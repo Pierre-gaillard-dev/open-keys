@@ -1,5 +1,6 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { fetchPracticeStats, listLoops } from "./practice.api";
+import type { PutLoopRequest } from "@open-keys/contracts";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteLoop, fetchPracticeStats, listLoops, putLoop } from "./practice.api";
 
 export const practiceStatsQuery = (songId: string) =>
   queryOptions({
@@ -16,4 +17,20 @@ export function usePracticeStats(songId: string) {
 
 export function useLoops(songId: string) {
   return useQuery(loopsQuery(songId));
+}
+
+export function useSaveLoop(songId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, loop }: { id: string; loop: PutLoopRequest }) => putLoop(id, loop),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: loopsQuery(songId).queryKey }),
+  });
+}
+
+export function useDeleteLoop(songId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteLoop,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: loopsQuery(songId).queryKey }),
+  });
 }

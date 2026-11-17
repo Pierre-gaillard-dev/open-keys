@@ -1,5 +1,5 @@
 import { DEFAULT_HANDS_SETTINGS, type LibraryEntry, type PutLibraryEntryRequest } from "@open-keys/contracts";
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listLibrary, putLibraryEntry } from "./library.api";
 
 export const libraryQuery = queryOptions({
@@ -32,6 +32,30 @@ function nextEntry(current: LibraryEntry | undefined, patch: LibraryPatch, songI
     // Last-write-wins on the server: the client clock dates the change.
     updatedAt: Date.now(),
   };
+}
+
+/**
+ * Saves a patch outside of React (player exit): merged with the cached entry, cached immediately,
+ * sent with keepalive so it survives the page being closed.
+ */
+export async function saveLibraryPatch(
+  queryClient: QueryClient,
+  songId: string,
+  patch: LibraryPatch,
+): Promise<void> {
+  const entries = queryClient.getQueryData(libraryQuery.queryKey) ?? [];
+  const next = nextEntry(
+    entries.find((entry) => entry.songId === songId),
+    patch,
+    songId,
+  );
+  queryClient.setQueryData(libraryQuery.queryKey, [
+    ...entries.filter((entry) => entry.songId !== songId),
+    next,
+  ]);
+  const { songId: _songId, ...body } = next;
+  await putLibraryEntry(songId, body, { keepalive: true });
+  void queryClient.invalidateQueries({ queryKey: ["songs"] });
 }
 
 /** Status and favorite changes, applied optimistically then confirmed by the server. */
