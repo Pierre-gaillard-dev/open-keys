@@ -1,7 +1,9 @@
-import { Midi, type Track } from "@tonejs/midi";
 import type { MidiAnalysis, MidiTrackSummary } from "./midi.types";
+import { Midi, type Track } from "./tonejs-midi";
 
 const PERCUSSION_CHANNEL = 9;
+/** Placeholder names written by notation software (LilyPond writes "control track" in every Mutopia file). */
+const GENERIC_TITLE = /^(control track|untitled( score)?|track \d*|sequence \d*|tempo track)$/i;
 const HEADER = [0x4d, 0x54, 0x68, 0x64]; // "MThd"
 
 export class InvalidMidiError extends Error {
@@ -24,6 +26,12 @@ function parse(bytes: Uint8Array): Midi {
   } catch (cause) {
     throw new InvalidMidiError("Unreadable MIDI file", { cause });
   }
+}
+
+/** The header name, unless it is a placeholder that says nothing about the piece. */
+function meaningfulTitle(name: string): string | null {
+  const title = name.trim();
+  return title && !GENERIC_TITLE.test(title) ? title : null;
 }
 
 function summarizeTrack(track: Track, index: number): MidiTrackSummary {
@@ -56,7 +64,7 @@ export function analyzeMidi(bytes: Uint8Array): MidiAnalysis {
     ...midi.tracks.flatMap((t) => t.notes.map((note) => note.time + note.duration)),
   );
   return {
-    title: midi.header.name.trim() || null,
+    title: meaningfulTitle(midi.header.name),
     durationMs: Math.round(Math.max(midi.duration, lastNoteEnd) * 1000),
     noteCount: tracks.reduce((sum, track) => sum + track.noteCount, 0),
     minPitch: Math.min(...tracks.map((track) => track.minPitch)),

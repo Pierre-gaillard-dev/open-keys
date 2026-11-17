@@ -29,6 +29,13 @@ describe("analyzeMidi", () => {
     expect(analysis.tracks[1]).toMatchObject({ name: "Left hand", channel: 1, averagePitch: 37.5 });
   });
 
+  it.each(["control track", "Untitled score", "Track 1", "  "])(
+    "ignores the placeholder title %j",
+    (title) => {
+      expect(analyzeMidi(buildMidi([{ notes: scale(60, 2) }], title)).title).toBeNull();
+    },
+  );
+
   it("skips tracks without notes and keeps original indexes", () => {
     const bytes = buildMidi([{ name: "Tempo map", notes: [] }, { notes: scale(60, 2) }]);
 
