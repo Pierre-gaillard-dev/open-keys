@@ -61,6 +61,14 @@ jobs:
       - name: Install the browsers
         run: pnpm --filter @open-keys/e2e exec playwright install --with-deps chromium firefox
 
+      # No sound card on the runner: Firefox's AudioContext never starts without an audio server.
+      - name: Virtual sound card
+        run: |
+          sudo apt-get install --yes --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=e2e
+          pactl set-default-sink e2e
+
       - name: Playwright
         run: pnpm e2e
 

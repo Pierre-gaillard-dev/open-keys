@@ -28,15 +28,9 @@ export default defineConfig({
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
-        launchOptions: {
-          firefoxUserPrefs: {
-            // Audio starts from Playwright's clicks, as from a user's.
-            "media.autoplay.default": 0,
-            // CI runners have no GPU: Firefox blocklists software GL unless forced (Mesa llvmpipe).
-            "webgl.force-enabled": true,
-          },
-          env: { ...process.env, LIBGL_ALWAYS_SOFTWARE: "1" },
-        },
+        // Audio starts from Playwright's clicks, as from a user's. Without a GPU (CI), PixiJS falls back
+        // to its Canvas 2D renderer; without a sound card, see the PulseAudio step of the CI job.
+        launchOptions: { firefoxUserPrefs: { "media.autoplay.default": 0 } },
       },
     },
   ],
