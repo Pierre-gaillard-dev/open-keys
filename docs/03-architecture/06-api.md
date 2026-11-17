@@ -31,6 +31,7 @@ Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les s
 | PUT | `/loops/:id` | Créer ou modifier une boucle (identifiant ULID fourni par le client) |
 | DELETE | `/loops/:id` | Suppression logique |
 | PUT | `/practice-sessions/:id` | Enregistrer une session (idempotent) |
+| GET | `/practice-sessions` | Historique (`from`, `to` facultatif, 400 jours au plus) : sessions les plus récentes d'abord, avec le titre du morceau. Regroupées par jour côté client, dans son fuseau horaire |
 | GET | `/songs/:id/practice-stats` | Temps total, nombre de sessions, dernière pratique |
 | GET | `/health` | Sonde Dokploy |
 | GET | `/sources/pieces` | Recherche dans les bibliothèques en ligne (`q`, `source` facultatif, `solo` = `true` par défaut) : 100 résultats au plus, `total`, état de chaque index, morceau déjà importé |

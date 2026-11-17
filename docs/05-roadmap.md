@@ -126,8 +126,8 @@ flowchart LR
 
 ## V1.3 — Progression
 
-- [ ] Vitesse cible et meilleure vitesse par boucle, montée en vitesse proposée (+5 %).
-- [ ] Tableau de bord : temps de pratique par jour et par semaine, morceaux en cours, historique.
+- [x] Vitesse cible et meilleure vitesse par boucle, montée en vitesse proposée (+5 %).
+- [x] Tableau de bord : temps de pratique par jour et par semaine, morceaux en cours, historique.
 
 ## V1.4 — Accompagnement (MIDI à plusieurs instruments)
 
