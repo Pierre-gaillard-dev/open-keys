@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
+
+/* Design tokens from docs/maquettes: dark UI in greys, colour reserved for the hands. */
+@theme {
+  --color-bg: #0b0e13;
+  --color-surface: #141922;
+  --color-surface-2: #1c2330;
+  --color-line: #2a3342;
+  --color-line-strong: #3a4556;
+  --color-fg: #e8ecf2;
+  --color-fg-soft: #c5cdd8;
+  --color-fg-muted: #9aa4b2;
+  --color-hand-left: #4da3ff;
+  --color-hand-right: #ffb23f;
+  --color-success: #5bd69a;
+  --color-danger: #ff7a7a;
+
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", "Inter Variable", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-hand-left;
+  }
+}
