@@ -6,10 +6,12 @@ import { useStore } from "zustand";
 import { ErrorBanner } from "../../../shared/ui";
 import { useAutoHide } from "../hooks/use-auto-hide";
 import { useFullscreen } from "../hooks/use-fullscreen";
+import type { SamplesStatus } from "../hooks/use-player-runtime";
 import { usePlayerSession } from "../hooks/use-player-session";
 import { usePlayerShortcuts } from "../hooks/use-player-shortcuts";
 import { usePracticePersistence } from "../hooks/use-practice-persistence";
 import { useWakeLock } from "../hooks/use-wake-lock";
+import type { PlayerRuntime } from "../runtime/browser-runtime";
 import type { InitialPlayerState } from "../stores/player.store";
 import { ControlsOverlay } from "./ControlsOverlay";
 
@@ -23,6 +25,8 @@ export interface PlayerViewProps {
   readonly timeline: Timeline;
   readonly libraryEntry: LibraryEntry | null;
   readonly savedLoops: readonly Loop[];
+  readonly runtime: PlayerRuntime;
+  readonly samples: SamplesStatus;
 }
 
 function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPlayerState {
@@ -38,11 +42,11 @@ function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPl
   };
 }
 
-export function PlayerView({ song, timeline, libraryEntry, savedLoops }: PlayerViewProps) {
+export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, samples }: PlayerViewProps) {
   const host = useRef<HTMLDivElement>(null);
   // Read once: the store is created from it on mount (later library updates come from this player).
   const initial = useMemo(() => initialState(timeline, libraryEntry), [timeline, libraryEntry]);
-  const { store, tracker, controller } = usePlayerSession(timeline, initial, host);
+  const { store, tracker, controller } = usePlayerSession(timeline, initial, host, runtime, samples);
   usePracticePersistence(song.id, store, tracker, libraryEntry);
   const status = useStore(store, (state) => state.status);
   const error = useStore(store, (state) => state.error);
