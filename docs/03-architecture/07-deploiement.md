@@ -43,7 +43,19 @@ flowchart LR
 
 ## Variables d'environnement (`api`)
 
-`NODE_ENV`, `PORT`, `APP_VERSION`, `LOG_LEVEL` (en place), puis `DATA_DIR`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `PUBLIC_URL`, `MAX_MIDI_SIZE`, `MUSICBRAINZ_CONTACT` (au fil des tâches).
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `NODE_ENV` | `development` | `production` exige `PUBLIC_URL` et active les cookies `Secure` |
+| `PORT` | `3000` | |
+| `APP_VERSION` | `dev` | Exposée par `/api/health` et dans le `User-Agent` sortant |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `DATA_DIR` | `./data` | `open-keys.db`, `midi/`, `covers/` |
+| `PUBLIC_URL` | — | Origine publique (`https://…`) : seule origine acceptée pour les envois de formulaire |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | — | Compte initial, créé au démarrage s'il n'existe aucun utilisateur (12 caractères minimum) |
+| `COOKIE_SECURE` | `true` en production | Cookie de session HTTPS uniquement |
+| `TRUST_PROXY` | `false` | `true` derrière Traefik : l'IP cliente vient de `X-Forwarded-For` |
+| `MAX_MIDI_SIZE` / `MAX_COVER_SIZE` | 2 Mo / 10 Mo | Limites d'upload et de téléchargement |
+| `MUSICBRAINZ_CONTACT` | URL du dépôt | Contact dans le `User-Agent` envoyé à MusicBrainz et Wikimedia (exigé par leurs règles) |
 Elles sont toutes validées par zod au démarrage (`config/env.ts`) : une valeur invalide empêche l'API de démarrer.
 Elles sont gérées dans Dokploy et jamais commitées. Le dépôt fournit un `.env.example`.
 

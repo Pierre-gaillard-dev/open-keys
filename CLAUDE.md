@@ -8,7 +8,7 @@ Application d'apprentissage du piano en mode *falling notes* (PWA React + API Ho
 - `docs/02-use-cases.md` — cas d'utilisation (UC-xx)
 - `docs/03-architecture/` — contexte, stack, **arborescence** et règles d'import, moteur du lecteur, flux, API, déploiement, sécurité, tests (sommaire dans `README.md`)
 - `docs/04-database.md` + `docs/database.dbml` — schéma de base de données et règles de synchronisation
-- `docs/05-roadmap.md` — phases et tâches (une tâche = une PR)
+- `docs/05-roadmap.md` — phases et tâches (une PR = une fonctionnalité complète, pas une tâche isolée)
 - `docs/06-conventions.md` — **conventions de code, à respecter strictement**
 
 ## Commandes
@@ -16,6 +16,7 @@ Application d'apprentissage du piano en mode *falling notes* (PWA React + API Ho
 - `pnpm dev` : web (5173) + API (3000), avec `/api` proxifié.
 - `pnpm verify` : lint, types, règles d'architecture, tests, build. **Doit passer avant toute PR.**
 - `pnpm check` : corrige le formatage et les imports (Biome).
+- Schéma de base modifié → `pnpm --filter @open-keys/server db:generate` (migration) puis `db:dbml` (doc). `pnpm db:check` (CI) vérifie que les deux sont à jour.
 
 ## Règles clés
 

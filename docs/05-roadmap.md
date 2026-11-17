@@ -1,6 +1,6 @@
 # Open Keys — Roadmap
 
-Le développement est fait par IA, avec des revues attentives. Chaque tâche ci-dessous est pensée pour tenir dans **une PR relisable** : un seul objectif, des tests inclus, une CI verte. Une étape n'est terminée que si **tous** ses critères de fin sont remplis.
+Le développement est fait par IA, avec des revues attentives. **Une PR livre une fonctionnalité utilisable**, en regroupant plusieurs tâches et en les découpant en commits propres. Les tâches ci-dessous servent de liste de contrôle. Une étape n'est terminée que si **tous** ses critères de fin sont remplis.
 
 ```mermaid
 flowchart LR
@@ -44,8 +44,8 @@ flowchart LR
 - [x] **1.1** Monorepo pnpm : `apps/web`, `apps/server`, `packages/{core,contracts,config}`, TypeScript strict, Biome, dependency-cruiser, lefthook, commitlint, Vitest.
 - [x] **1.2** CI GitHub Actions : lint, vérification des types, règles d'architecture, tests, build.
 - [x] **1.3** Serveur Hono : configuration validée par zod, `/api/health`, erreurs typées, logs.
-- [ ] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
-- [ ] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
+- [x] **1.4** Drizzle + SQLite : client, pragmas, migrations au démarrage, tables `users` et `auth_sessions`, seed de l'utilisateur. Génération de `docs/database.dbml` à partir de Drizzle (script + vérification en CI).
+- [x] **1.5** Authentification : login, logout, me, middleware, rate-limit, tests.
 - [ ] **1.6** Web : Vite, Tailwind, TanStack Router et Query, client `hc` typé, page de connexion, thème sombre.
 - [ ] **1.7** `web.Dockerfile` (nginx) + `api.Dockerfile` (Node) + `docker-compose.yml`. Application compose dans Dokploy : routage `/api` → api, `/` → web, HTTPS, volume `data`.
 - [x] **1.8** README initial (présentation, stack, lancement en local) + LICENSE MIT.
@@ -58,14 +58,14 @@ flowchart LR
 
 ## Phase 2 — Core MIDI et catalogue
 
-- [ ] **2.1** `core/midi` : `parseMidi`, `analyzeMidi`, avec un jeu de MIDI de test (une piste, deux pistes, multi-canal, changements de tempo, sustain).
-- [ ] **2.2** `core/hands` : `suggestHandMapping` et `applyHandMapping` (modes `tracks` et `split`), avec une couverture de tests élevée.
+- [x] **2.1** `core/midi` : `parseMidi`, `analyzeMidi`, avec un jeu de MIDI de test (une piste, deux pistes, multi-canal, changements de tempo, sustain). *Fait : `analyzeMidi` (serveur). Le parsing des notes pour le lecteur (`parseMidi`) arrive avec la phase 3.*
+- [x] **2.2** `core/hands` : `suggestHandMapping` et `applyHandMapping` (modes `tracks` et `split`), avec une couverture de tests élevée. *Fait : `suggestHandMapping` + `handForNote`.*
 - [ ] **2.3** `core/timeline` : index trié et recherche par fenêtre de temps (dichotomie).
-- [ ] **2.4** Tables `songs`, `song_tracks`, `tags`, `song_tags` + stockage des fichiers par hash.
-- [ ] **2.5** `POST /imports` : upload et URL (protection SSRF, limites), dédoublonnage, brouillon.
-- [ ] **2.6** `POST /imports/:id/confirm`, `PATCH /songs/:id`, `DELETE /songs/:id`, purge des brouillons et des fichiers orphelins.
-- [ ] **2.7** `GET /songs` (filtres, tri), `GET /songs/:id`, `GET /songs/:id/midi` (ETag), `GET /tags`.
-- [ ] **2.7b** Couvertures : `safe-fetch` mutualisé, `image-processor` (sharp → WebP 720×720), fournisseurs MusicBrainz/CAA et Wikidata, routes `cover` / `cover-suggestions`, purge des images orphelines.
+- [x] **2.4** Tables `songs`, `song_tracks`, `tags`, `song_tags` + stockage des fichiers par hash.
+- [x] **2.5** `POST /imports` : upload et URL (protection SSRF, limites), dédoublonnage, brouillon.
+- [x] **2.6** `POST /imports/:id/confirm`, `PATCH /songs/:id`, `DELETE /songs/:id`, purge des brouillons et des fichiers orphelins.
+- [x] **2.7** `GET /songs` (filtres, tri), `GET /songs/:id`, `GET /songs/:id/midi` (ETag), `GET /tags`.
+- [x] **2.7b** Couvertures : `safe-fetch` mutualisé, `image-processor` (sharp → WebP 720×720), fournisseurs MusicBrainz/CAA et Wikidata, routes `cover` / `cover-suggestions`, purge des images orphelines.
 - [ ] **2.8** Web : page d'import (fichier/URL) et écran de vérification (tableau des pistes, découpage par hauteur, formulaire de métadonnées). Aperçu audio simple, sans le lecteur complet.
 - [ ] **2.9** Web : catalogue (grille de couvertures, recherche, filtres) et fiche d'un morceau. Choix de la couverture dans l'écran de vérification et sur la fiche. Couverture générée en repli.
 
@@ -94,7 +94,7 @@ flowchart LR
 
 ## Phase 4 — Pratique et hors-ligne → **MVP**
 
-- [ ] **4.1** Tables `user_songs`, `loops`, `practice_sessions` + routes `PUT` idempotentes (la dernière écriture l'emporte).
+- [x] **4.1** Tables `user_songs`, `loops`, `practice_sessions` + routes `PUT` idempotentes (la dernière écriture l'emporte).
 - [ ] **4.2** Web : statut et favori (catalogue et fiche), reprise de la lecture (UC-12).
 - [ ] **4.3** Boucles : sauvegarde, nommage, liste, rappel, suppression.
 - [ ] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau.
