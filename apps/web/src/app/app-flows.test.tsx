@@ -116,6 +116,29 @@ describe("catalogue", () => {
   });
 });
 
+describe("song page", () => {
+  it("credits the library a song was imported from", async () => {
+    const song = songDetail({
+      sourceType: "url",
+      sourceLibrary: "xivmidi",
+      sourceUrl: "https://xivmidi.com/files/abc",
+      credit: "Bard Arranger",
+    });
+    installFakeApi({
+      "GET /api/auth/me": () => ({ json: USER }),
+      [`GET /api/songs/${song.id}`]: () => ({ json: song }),
+      "GET /api/library": () => ({ json: [] }),
+      [`GET /api/songs/${song.id}/loops`]: () => ({ json: [] }),
+    });
+    renderApp(`/songs/${song.id}`);
+
+    expect((await screen.findByRole("link", { name: "xivmidi" })).getAttribute("href")).toBe(
+      "https://xivmidi.com/files/abc",
+    );
+    expect(screen.getByText("Bard Arranger")).toBeDefined();
+  });
+});
+
 describe("import", () => {
   it("imports a file, reviews it and adds it to the catalogue", async () => {
     const draft = songDetail({ state: "draft", title: "gymnopedie 1", composer: null, tags: [] });

@@ -35,8 +35,8 @@ const envSchema = z
       .default(10 * 1024 * 1024),
     /** Contact advertised in the User-Agent sent to MusicBrainz and Wikimedia (their API policies require one). */
     MUSICBRAINZ_CONTACT: z.string().min(1).default(PROJECT_URL),
-    /** Weekly synchronisation of the Mutopia index (disabled by the end-to-end tests: no crawling in CI). */
-    MUTOPIA_SYNC: booleanString.default(true),
+    /** Synchronisation of the online libraries (disabled by the end-to-end tests: no crawling in CI). */
+    SOURCES_SYNC: booleanString.default(true),
   })
   .refine((env) => (env.ADMIN_USERNAME === undefined) === (env.ADMIN_PASSWORD === undefined), {
     message: "ADMIN_USERNAME and ADMIN_PASSWORD must be set together",

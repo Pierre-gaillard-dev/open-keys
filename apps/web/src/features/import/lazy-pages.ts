@@ -18,6 +18,6 @@ export const SongEditPage = lazy(() =>
   import("./pages/SongEditPage").then((module) => ({ default: module.SongEditPage })),
 );
 
-export const MutopiaSearchPage = lazy(() =>
-  import("./pages/MutopiaSearchPage").then((module) => ({ default: module.MutopiaSearchPage })),
+export const OnlineSearchPage = lazy(() =>
+  import("./pages/OnlineSearchPage").then((module) => ({ default: module.OnlineSearchPage })),
 );

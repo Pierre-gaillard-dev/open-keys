@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { decodeEntities, isKeyboardSolo, parseListingPage, shortLicense } from "./mutopia.listing";
 
-const LISTING = readFileSync(new URL("../../test/mutopia-listing.fixture.html", import.meta.url), "utf8");
+const LISTING = readFileSync(
+  new URL("../../../../test/mutopia-listing.fixture.html", import.meta.url),
+  "utf8",
+);
 
 describe("parseListingPage", () => {
   it("reads every piece of a real listing page", () => {

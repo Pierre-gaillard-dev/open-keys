@@ -13,7 +13,7 @@ import { Suspense, useCallback } from "react";
 import { z } from "zod";
 import { currentUserQuery, LoginPage } from "../features/auth";
 import { CatalogPage, type CatalogSearch, catalogSearchSchema, SongDetailPage } from "../features/catalog";
-import { ImportPage, ImportReviewPage, MutopiaSearchPage, SongEditPage } from "../features/import";
+import { ImportPage, ImportReviewPage, OnlineSearchPage, SongEditPage } from "../features/import";
 import { PlayerPage } from "../features/player";
 import { buttonClasses, ErrorBanner } from "../shared/ui";
 import { AppShell } from "./layout/AppShell";
@@ -119,18 +119,18 @@ const songEditRoute = createRoute({
 
 const importRoute = createRoute({ getParentRoute: () => shellRoute, path: "/import", component: ImportPage });
 
-const mutopiaSearchRoute = createRoute({
+const onlineSearchRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/import/search",
   validateSearch: z.object({ q: z.string().optional().catch(undefined) }),
-  component: function MutopiaSearchRoute() {
-    const { q } = mutopiaSearchRoute.useSearch();
+  component: function OnlineSearchRoute() {
+    const { q } = onlineSearchRoute.useSearch();
     const navigate = useNavigate({ from: "/import/search" });
     const onQueryChange = useCallback(
       (next: string) => void navigate({ search: { q: next || undefined }, replace: true }),
       [navigate],
     );
-    return <MutopiaSearchPage query={q ?? ""} onQueryChange={onQueryChange} />;
+    return <OnlineSearchPage query={q ?? ""} onQueryChange={onQueryChange} />;
   },
 });
 
@@ -150,7 +150,7 @@ const routeTree = rootRoute.addChildren([
       songRoute,
       songEditRoute,
       importRoute,
-      mutopiaSearchRoute,
+      onlineSearchRoute,
       importReviewRoute,
     ]),
     playerRoute,

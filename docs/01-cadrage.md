@@ -50,7 +50,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 
 ### Plus tard, par ordre de priorité
 1. Zoom automatique du clavier sur la plage de notes utilisée (**V1.1**)
-2. Recherche et import depuis **Mutopia** (V1.1)
+2. Recherche et import depuis des **bibliothèques en ligne** : Mutopia, MAESTRO, xivmidi (V1.1)
 3. Décompte avant le départ
 4. Nom des notes, en notation anglaise (C, D, E…)
 5. Métronome
@@ -67,6 +67,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 - HTTPS obligatoire (PWA, Service Worker, Wake Lock).
 - Déploiement via Dokploy : **deux conteneurs** (`web` nginx + `api` Hono) orchestrés par un `docker-compose`, sur un seul domaine. Un volume persistant pour SQLite et les fichiers ; pas de conteneur de base de données.
 - Pas de secrets ni de contenu protégé dans le dépôt. Les attributions de licence sont respectées (échantillons Salamander en CC-BY).
+- L'instance reste privée (cercle restreint) : l'app peut importer des arrangements sous droits (xivmidi), **toujours crédités** (bibliothèque, lien, arrangeur ou interprète, licence quand elle est connue). Les fichiers vivent sur le serveur, jamais dans le dépôt. Aucune protection d'un site n'est contournée (`robots.txt`, blocage des robots, connexion, conditions d'utilisation).
 
 ## 7. Décisions
 
@@ -95,7 +96,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D21 | Lecteur | Contrôleur unique entre l'UI et le moteur, état affiché dans un store Zustand, runtime navigateur isolé (testable). Échantillons commités dans le dépôt (≈ 2 Mo, CC-BY). Zoom automatique par défaut sur téléphone (avancé de la V1.1). Un morceau pratiqué passe « en cours » | Testabilité sans Web Audio ni WebGL, aucune dépendance à un CDN, lisibilité sur un écran de 6 pouces |
 | D22 | Déploiement et PWA | Images non root (nginx sans privilèges, Node `node`), CSP sans `unsafe-eval` (PixiJS en mode sans eval, zod `jitless`). Build des images et déploiement gérés dans l'interface de Dokploy, la CI ne fait que vérifier le code. Service Worker en mise à jour à la demande (bannière hors du lecteur) | Un seul endroit pour le déploiement (Dokploy). Ne jamais recharger la page pendant la pratique. Une faille XSS ne peut pas exécuter de code généré |
 | D23 | Données hors-ligne | Le cache de TanStack Query est sauvegardé dans IndexedDB et restauré au démarrage, au lieu de copies par table (`songs`, `library`, `loops`). Dexie ne garde que les MIDI (avec la fiche du morceau) et l'outbox. Les écritures sont appliquées au cache puis envoyées par l'outbox (`PUT` seulement, un par chemin). Connectivité détectée par les échecs réseau et une sonde de l'API | Une seule source de vérité côté client, en ligne comme hors-ligne : les pages n'ont pas deux chemins de lecture. Moins de code de synchronisation, testable sans navigateur (`fake-indexeddb`) |
-| D24 | Mutopia | L'index est lu sur les pages de liste du site (`make-table.cgi?Instrument=Piano`, 10 morceaux par page, une page par seconde, environ 80 pages), chaque semaine, et écrit seulement si toute la liste a été lue. Morceaux à un seul MIDI uniquement (44 sur 788 n'ont qu'un zip). Recherche sur une colonne normalisée (sans accents), pas FTS5. Écoute avant import par le moteur du lecteur sans rendu, chargé au premier clic ; MIDI servi par l'API. Pages d'import chargées à la demande | Le site n'a ni API ni fichier d'index, et son RSS s'arrête en 2019 ; le `robots.txt` autorise tout. Moins de 1 000 lignes : un `LIKE` suffit, et la normalisation gère les accents. La CSP interdit à la page de joindre Mutopia |
+| D24 | Bibliothèques en ligne | Un **fournisseur par bibliothèque** (liste complète + MIDI), un index commun `source_pieces` recherché localement, une synchronisation par bibliothèque (Mutopia et xivmidi chaque semaine, MAESTRO chaque mois), écrite seulement si toute la liste a été lue. **Mutopia** : pages de liste du site (une par seconde). **MAESTRO** : CSV + archive de 58 Mo extraite une fois sur le serveur. **xivmidi** : données JSON intégrées aux pages de la bibliothèque (une par seconde). Morceaux à un seul MIDI. Recherche sur une colonne normalisée (accents, casse, ponctuation), pas FTS5. Écoute par le moteur du lecteur sans rendu, chargé au premier clic ; MIDI servi par l'API. Origine et crédit gardés sur le morceau (`source_library`, `source_piece_id`, `credit`), sans contrainte CHECK | Mutopia n'a ni API ni index, son RSS s'arrête en 2019. MuseScore exige une clé d'API et un compte Pro (prévu plus tard). Moins de 10 000 lignes : un `LIKE` suffit. Une contrainte CHECK nouvelle sur `songs` demanderait de reconstruire la table, ce qui, dans la transaction de migration, supprimerait en cascade pistes, boucles et sessions. La CSP interdit à la page de joindre les bibliothèques |
 
 ## 8. Risques
 

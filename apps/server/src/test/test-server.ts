@@ -7,7 +7,8 @@ import { openDatabase } from "../db";
 import { createPasswordHasher, type RateLimitPolicy } from "../features/auth";
 import { insertUser } from "../features/auth/auth.queries";
 import type { CoverProvider } from "../features/covers";
-import { createServices } from "../services";
+import { createMutopiaProvider, type PageGet } from "../features/sources";
+import { createServices, type Infrastructure } from "../services";
 import { AppError, type SafeFetch } from "../shared/http";
 import { createIdGenerator } from "../shared/runtime";
 import { createFileStorage } from "../shared/storage";
@@ -22,8 +23,20 @@ export interface TestServerOptions {
   readonly remoteFiles?: Readonly<Record<string, Uint8Array>>;
   readonly coverProviders?: readonly CoverProvider[];
   readonly loginPolicy?: RateLimitPolicy;
-  /** Fake Mutopia listing, page by page (startat 0, 10, 20…). */
+  /** Fake Mutopia listing, page by page (startat 0, 10, 20…). Read at each request: tests may change it. */
   readonly mutopiaPages?: readonly string[];
+  /** Other online libraries (replaces the fake Mutopia). */
+  readonly sourceProviders?: Infrastructure["sourceProviders"];
+}
+
+/** Mutopia listing pages served from memory, by their `startat` parameter. */
+function fakeMutopia(pages: readonly string[]): PageGet {
+  return (url) => {
+    const page = pages[Number(new URL(url).searchParams.get("startat") ?? 0) / 10];
+    return Promise.resolve(
+      page === undefined ? new Response("Not found", { status: 404 }) : new Response(page),
+    );
+  };
 }
 
 /** A complete API wired like production, with in-memory SQLite, a temp data dir and a controllable clock. */
@@ -61,13 +74,11 @@ export async function createTestServer(options: TestServerOptions = {}) {
     safeFetch,
     hasher,
     coverProviders: options.coverProviders ?? [],
-    mutopiaSource: {
-      listingPage: (startAt) => {
-        const page = options.mutopiaPages?.[startAt / 10];
-        return page === undefined ? Promise.reject(new Error("No such page")) : Promise.resolve(page);
-      },
-    },
-    mutopiaPageDelayMs: 0,
+    sourceProviders:
+      options.sourceProviders ??
+      (({ download }) => [
+        createMutopiaProvider({ get: fakeMutopia(options.mutopiaPages ?? []), download, pageDelayMs: 0 }),
+      ]),
     ...(options.loginPolicy ? { loginPolicy: options.loginPolicy } : {}),
   });
   const app = createApp({ env, logger, services });

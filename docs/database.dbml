@@ -34,25 +34,6 @@ table loops {
   }
 }
 
-table mutopia_pieces {
-  mutopia_id integer [pk, not null]
-  title text [not null]
-  composer text [not null]
-  opus text
-  instrument text [not null]
-  keyboard_solo integer [not null]
-  style text
-  license text [not null]
-  midi_url text [not null]
-  published_at integer
-  search_text text [not null]
-  synced_at integer [not null]
-
-  indexes {
-    midi_url [name: 'mutopia_pieces_midi_url_idx']
-  }
-}
-
 table practice_sessions {
   id text [pk, not null]
   user_id text [not null]
@@ -112,7 +93,10 @@ table songs {
   difficulty integer
   source_type text [not null]
   source_url text
+  source_library text
+  source_piece_id text
   license text
+  credit text
   midi_sha256 text [not null, unique]
   midi_size integer [not null]
   duration_ms integer [not null]
@@ -132,11 +116,36 @@ table songs {
     (state, deleted_at) [name: 'songs_state_deleted_at_idx']
     title [name: 'songs_title_idx']
     composer [name: 'songs_composer_idx']
+    source_piece_id [name: 'songs_source_piece_id_idx']
     
     
     
     
     
+  }
+}
+
+table source_pieces {
+  id text [pk, not null]
+  source text [not null]
+  external_id text [not null]
+  title text [not null]
+  composer text
+  opus text
+  instrument text [not null]
+  solo integer [not null]
+  style text
+  license text
+  credit text
+  duration_ms integer
+  midi_ref text [not null]
+  page_url text
+  published_at integer
+  search_text text [not null]
+  synced_at integer [not null]
+
+  indexes {
+    (source, synced_at) [name: 'source_pieces_source_idx']
   }
 }
 

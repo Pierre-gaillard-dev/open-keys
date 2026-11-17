@@ -33,7 +33,9 @@ export function songDetail(overrides: Partial<SongDetail> = {}): SongDetail {
     state: "ready",
     sourceType: "upload",
     sourceUrl: null,
+    sourceLibrary: null,
     license: null,
+    credit: null,
     handMode: "tracks",
     splitPitch: 60,
     tracks: [

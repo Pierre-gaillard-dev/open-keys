@@ -10,9 +10,9 @@ import { type CoverProvider, createCoversService } from "./features/covers";
 import { createImportsService } from "./features/imports";
 import { createLibraryService } from "./features/library";
 import { createMaintenanceService } from "./features/maintenance";
-import { createMutopiaService, type MutopiaSource } from "./features/mutopia";
 import { createPracticeService } from "./features/practice";
 import { createSongsService } from "./features/songs";
+import { createSourcesService, type SourceProvider } from "./features/sources";
 import { createTagsService } from "./features/tags";
 import type { SafeFetch } from "./shared/http";
 import type { Logger } from "./shared/logger";
@@ -30,9 +30,10 @@ export interface Infrastructure {
   readonly safeFetch: SafeFetch;
   readonly hasher: PasswordHasher;
   readonly coverProviders: readonly CoverProvider[];
-  readonly mutopiaSource: MutopiaSource;
-  /** Pause between two pages of the Mutopia listing (0 in tests). */
-  readonly mutopiaPageDelayMs?: number;
+  /** Online libraries (UC-20); they download MIDI files through the imports service. */
+  readonly sourceProviders: (deps: {
+    readonly download: (url: string) => Promise<Uint8Array>;
+  }) => readonly SourceProvider[];
   readonly loginPolicy?: RateLimitPolicy;
 }
 
@@ -75,14 +76,13 @@ export function createServices(infra: Infrastructure) {
   const practice = createPracticeService({ db, clock, songs });
   const library = createLibraryService({ db, songs, practice });
   const maintenance = createMaintenanceService({ db, storage, clock, logger, auth, tags });
-  const mutopia = createMutopiaService({
+  const sources = createSourcesService({
     db,
-    source: infra.mutopiaSource,
+    providers: infra.sourceProviders({ download: imports.downloadMidi }),
     imports,
     clock,
     logger,
-    ...(infra.mutopiaPageDelayMs === undefined ? {} : { pageDelayMs: infra.mutopiaPageDelayMs }),
   });
 
-  return { auth, tags, songs, covers, imports, practice, library, maintenance, mutopia };
+  return { auth, tags, songs, covers, imports, practice, library, maintenance, sources };
 }

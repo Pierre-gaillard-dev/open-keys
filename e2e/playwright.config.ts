@@ -45,8 +45,8 @@ export default defineConfig({
         ADMIN_USERNAME: ADMIN.username,
         ADMIN_PASSWORD: ADMIN.password,
         LOG_LEVEL: "warn",
-        // Never crawl the real Mutopia site from the tests.
-        MUTOPIA_SYNC: "false",
+        // Never crawl the real online libraries from the tests.
+        SOURCES_SYNC: "false",
       },
       reuseExistingServer: false,
     },

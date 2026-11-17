@@ -1,4 +1,4 @@
-import type { ConfirmImportRequest, SongDetail } from "@open-keys/contracts";
+import type { ConfirmImportRequest, LibrarySource, SongDetail } from "@open-keys/contracts";
 import { analyzeMidi, InvalidMidiError, type MidiAnalysis, suggestHandMapping } from "@open-keys/core";
 import { AppError, type SafeFetch } from "../../shared/http";
 import type { Logger } from "../../shared/logger";
@@ -10,13 +10,19 @@ import type { SongsService } from "../songs";
 export type ImportSource =
   | { readonly type: "upload"; readonly filename: string }
   | { readonly type: "url"; readonly url: string }
-  | { readonly type: "mutopia"; readonly url: string; readonly metadata: KnownMetadata };
+  | { readonly type: "library"; readonly piece: LibraryPiece };
 
-/** What the source already knows (Mutopia index): pre-filled on the review screen. */
-export interface KnownMetadata {
+/** A piece of an online library (UC-20): what it knows is pre-filled on the review screen. */
+export interface LibraryPiece {
+  readonly library: LibrarySource;
+  /** Id in the sources index (source_pieces.id). */
+  readonly pieceId: string;
+  /** Public page of the piece, kept as the song's source URL. */
+  readonly pageUrl: string | null;
   readonly title: string;
-  readonly composer: string;
-  readonly license: string;
+  readonly composer: string | null;
+  readonly license: string | null;
+  readonly credit: string | null;
 }
 
 export interface ImportsServiceDeps {
@@ -51,8 +57,8 @@ export function titleFromName(name: string): string {
 }
 
 function suggestedTitle(analysis: MidiAnalysis, source: ImportSource): string {
-  if (source.type === "mutopia") {
-    return source.metadata.title.slice(0, MAX_TITLE_LENGTH);
+  if (source.type === "library") {
+    return source.piece.title.slice(0, MAX_TITLE_LENGTH);
   }
   if (analysis.title) {
     return analysis.title.slice(0, MAX_TITLE_LENGTH);
@@ -66,13 +72,17 @@ function suggestedTitle(analysis: MidiAnalysis, source: ImportSource): string {
 
 /** Fields of the draft that depend on where the file comes from. */
 function draftOrigin(analysis: MidiAnalysis, source: ImportSource) {
-  const known = source.type === "mutopia" ? source.metadata : null;
+  const piece = source.type === "library" ? source.piece : null;
   return {
     title: suggestedTitle(analysis, source),
-    composer: known?.composer ?? null,
-    license: known?.license ?? null,
-    sourceType: source.type,
-    sourceUrl: source.type === "upload" ? null : source.url,
+    composer: piece?.composer ?? null,
+    license: piece?.license ?? null,
+    credit: piece?.credit ?? null,
+    // A library file is downloaded too: "url", the library itself is in sourceLibrary.
+    sourceType: source.type === "upload" ? ("upload" as const) : ("url" as const),
+    sourceUrl: piece ? piece.pageUrl : source.type === "url" ? source.url : null,
+    sourceLibrary: piece?.library ?? null,
+    sourcePieceId: piece?.pieceId ?? null,
   };
 }
 
@@ -170,9 +180,9 @@ export function createImportsService(deps: ImportsServiceDeps) {
       return importBytes(userId, await downloadMidi(url), { type: "url", url });
     },
 
-    /** A piece of a known library (Mutopia): its metadata is pre-filled for the review (UC-20). */
-    async importFromLibrary(userId: string, url: string, metadata: KnownMetadata): Promise<ImportResult> {
-      return importBytes(userId, await downloadMidi(url), { type: "mutopia", url, metadata });
+    /** A piece of an online library, already downloaded by its provider (UC-20). */
+    importFromLibrary(userId: string, bytes: Uint8Array, piece: LibraryPiece): Promise<ImportResult> {
+      return importBytes(userId, bytes, { type: "library", piece });
     },
 
     downloadMidi,

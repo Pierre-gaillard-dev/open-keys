@@ -6,7 +6,7 @@
 |---|---|
 | **Pianiste** | Seul utilisateur, sur mobile ou sur PC |
 
-Le backend, les sources externes (URL, Mutopia, MusicBrainz, Wikidata) et le clavier MIDI (V2) font partie du système ou de son environnement technique, pas des acteurs. Ils apparaissent dans le **diagramme de contexte** de [`03-architecture/01-contexte.md`](./03-architecture/01-contexte.md).
+Le backend, les sources externes (URL, bibliothèques MIDI en ligne, MusicBrainz, Wikidata) et le clavier MIDI (V2) font partie du système ou de son environnement technique, pas des acteurs. Ils apparaissent dans le **diagramme de contexte** de [`03-architecture/01-contexte.md`](./03-architecture/01-contexte.md).
 
 ## 2. Diagramme des cas d'utilisation
 
@@ -28,7 +28,7 @@ flowchart LR
     subgraph CAT["Catalogue"]
       UC02(["UC-02 Importer un fichier MIDI"])
       UC03(["UC-03 Importer par URL"])
-      UC20(["UC-20 Importer depuis Mutopia (V1.1)"])
+      UC20(["UC-20 Importer depuis une bibliothèque en ligne (V1.1)"])
       UC04(["UC-04 Vérifier l'import"])
       UC17(["UC-17 Gérer la couverture"])
       UC05(["UC-05 Parcourir et filtrer"])
@@ -97,7 +97,7 @@ flowchart LR
 | UC-15 | Synchroniser les données de pratique | MVP |
 | UC-16 | Consulter le temps de pratique d'un morceau | MVP |
 | UC-17 | Gérer la couverture d'un morceau (suggestion automatique, fichier, URL) | MVP |
-| UC-20 | Rechercher et importer depuis Mutopia | V1.1 |
+| UC-20 | Rechercher et importer depuis une bibliothèque en ligne (Mutopia, MAESTRO, xivmidi) | V1.1 |
 | UC-21 | Zoom automatique du clavier | V1.1 |
 | UC-22 | Décompte avant le départ | V1.2 |
 | UC-23 | Afficher le nom des notes (C, D, E…) | V1.2 |
@@ -212,12 +212,13 @@ flowchart LR
   - en cas de conflit, la dernière écriture l'emporte, sur la base de `updated_at`.
 - Le catalogue (morceaux, tags) n'est modifiable qu'en ligne.
 
-### UC-20 — Rechercher et importer depuis Mutopia (V1.1)
+### UC-20 — Rechercher et importer depuis une bibliothèque en ligne (V1.1)
 - Depuis l'import, onglet (PC) ou entrée (téléphone) « Rechercher en ligne ».
-- Recherche par titre, compositeur ou opus, sans tenir compte des accents ni de la casse. Par défaut, les pièces pour clavier seul ; « Avec piano » ajoute le chant, les duos…
+- **Une seule recherche** sur toutes les bibliothèques, ou sur une seule : Mutopia Project (classique, domaine public et Creative Commons), MAESTRO (interprétations de concours, CC BY-NC-SA) et xivmidi (arrangements communautaires : pop, jeux vidéo, anime…).
+- Par titre, compositeur ou artiste, opus, arrangeur, sans tenir compte des accents, de la casse ni de la ponctuation. Par défaut, les morceaux **solo** ; « Tout » ajoute les ensembles, le chant…
 - **Écouter** un morceau avant de l'importer (piano de l'app, mains proposées par l'import).
-- **Importer** passe par l'écran de vérification, avec titre, compositeur et licence pré-remplis. Un morceau déjà importé affiche « Dans le catalogue ».
-- L'index est copié sur le serveur et mis à jour chaque semaine : la recherche ne dépend pas de la disponibilité de Mutopia.
+- **Importer** passe par l'écran de vérification, avec titre, compositeur, licence et **crédit** pré-remplis. La fiche du morceau affiche ensuite la bibliothèque (lien vers la page d'origine) et le crédit. Un morceau déjà importé affiche « Dans le catalogue ».
+- Les index sont copiés sur le serveur et mis à jour régulièrement : la recherche ne dépend pas de la disponibilité des sites.
 
 ### UC-16 — Temps de pratique
 - Sur la fiche d'un morceau : temps total, nombre de sessions, date de la dernière pratique.

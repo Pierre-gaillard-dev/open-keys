@@ -44,7 +44,9 @@ export function toSongDetail(
     state: song.state,
     sourceType: song.sourceType,
     sourceUrl: song.sourceUrl,
+    sourceLibrary: song.sourceLibrary,
     license: song.license,
+    credit: song.credit,
     handMode: song.handMode,
     splitPitch: song.splitPitch,
     tracks: tracks.map((track) => ({

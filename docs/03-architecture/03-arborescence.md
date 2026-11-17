@@ -34,10 +34,10 @@ open-keys/
 │   │   │   │   │   ├── pages/                # CatalogPage, SongDetailPage
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── import/
-│   │   │   │   │   ├── api/                  # import.*.ts (import, validation, couvertures), mutopia.*.ts (recherche, import)
+│   │   │   │   │   ├── api/                  # import.*.ts (import, validation, couvertures), sources.*.ts (recherche, import)
 │   │   │   │   │   ├── song-form.ts          # modèle du formulaire, validé par les contrats
 │   │   │   │   │   ├── components/           # SongEditor, TrackHandsEditor, CoverPicker, TagsInput
-│   │   │   │   │   ├── pages/                # ImportPage, ImportReviewPage, SongEditPage (même éditeur), MutopiaSearchPage
+│   │   │   │   │   ├── pages/                # ImportPage, ImportReviewPage, SongEditPage (même éditeur), OnlineSearchPage
 │   │   │   │   │   ├── lazy-pages.ts         # pages chargées à la demande (hors du bundle de démarrage)
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── library/                  # statut et favori (mise à jour optimiste)
@@ -115,11 +115,13 @@ open-keys/
 │       │   │   ├── library/                  # user_songs (statut, favori, réglages), dernière écriture l'emporte
 │       │   │   ├── practice/                 # loops, practice_sessions, statistiques
 │       │   │   ├── maintenance/              # purges : brouillons, morceaux supprimés, sessions, tags, fichiers orphelins
-│       │   │   └── mutopia/                  # V1.1 : index local du Mutopia Project
-│       │   │       ├── mutopia.listing.ts    # lecture des pages de liste du site (HTML)
-│       │   │       ├── mutopia.source.ts     # téléchargement des pages (injecté : faux en test)
-│       │   │       ├── mutopia.service.ts    # synchronisation hebdomadaire, recherche, écoute, import
-│       │   │       └── mutopia.queries.ts, .schema.ts, .routes.ts
+│       │   │   └── sources/                  # V1.1 : bibliothèques en ligne (D24)
+│       │   │       ├── providers/            # un fournisseur par bibliothèque : liste complète + MIDI
+│       │   │       │   ├── mutopia/          # pages de liste du site (HTML)
+│       │   │       │   ├── maestro/          # CSV + archive extraite une fois dans /data/sources
+│       │   │       │   └── xivmidi/          # données JSON intégrées aux pages de la bibliothèque
+│       │   │       ├── sources.service.ts    # synchronisation par bibliothèque, recherche, écoute, import
+│       │   │       └── sources.queries.ts, .schema.ts, .routes.ts
 │       │   ├── shared/
 │       │   │   ├── http/                     # app-env, errors, error-handler, validation, request-logger,
 │       │   │   │                             # client-ip, safe-fetch (SSRF : IP vérifiée à la connexion)
