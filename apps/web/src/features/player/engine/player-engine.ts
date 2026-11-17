@@ -24,6 +24,8 @@ export class PlayerEngine {
   onEnd: () => void = () => undefined;
   /** A count-in started (play or back to the start of the loop): audio times of its clicks. */
   onCountIn: (clicks: readonly number[]) => void = () => undefined;
+  /** The loop was played to its end and starts again (UC-26). */
+  onLoopRestart: () => void = () => undefined;
 
   constructor(timeline: Timeline, audio: PlayerAudio, output: NoteOutput, clicks: ClickOutput) {
     this.timeline = timeline;
@@ -36,6 +38,7 @@ export class PlayerEngine {
       this.onEnd();
     };
     this.#scheduler.onLoop = (_start, countInClicks) => {
+      this.onLoopRestart();
       if (countInClicks.length > 0) {
         this.onCountIn(countInClicks);
       }

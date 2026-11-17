@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
+import { BarChart3, LogOut } from "lucide-react";
 import { Suspense } from "react";
 import { useCurrentUser, useLogout } from "../../features/auth";
 import { IconButton } from "../../shared/ui";
@@ -43,9 +43,19 @@ export function AppShell() {
           <Link to="/import" className={NAV_LINK}>
             Importer
           </Link>
+          <Link to="/progress" className={NAV_LINK}>
+            Progression
+          </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end gap-3">
           <SyncStatus />
+          <Link
+            to="/progress"
+            aria-label="Progression"
+            className="flex size-11 items-center justify-center rounded-xl border border-line text-fg-soft md:hidden"
+          >
+            <BarChart3 aria-hidden="true" className="size-4" />
+          </Link>
           {user.data && <span className="hidden text-sm text-fg-muted sm:inline">{user.data.username}</span>}
           <IconButton
             label="Se déconnecter"

@@ -7,7 +7,14 @@ const session = { startedAt: 1000, endedAt: 61_000, activeMs: 45_000, minTempoPc
 function playerState() {
   const store = createPlayerStore({ durationMs: 180_000, positionMs: 42_000, tempoPct: 75 });
   store.setState({
-    loop: { startMs: 1000, endMs: 5000, id: "01JD0000000000000000000L01", name: null },
+    loop: {
+      startMs: 1000,
+      endMs: 5000,
+      id: "01JD0000000000000000000L01",
+      name: null,
+      targetTempoPct: null,
+      bestTempoPct: null,
+    },
     loopEnabled: true,
   });
   return store.getState();

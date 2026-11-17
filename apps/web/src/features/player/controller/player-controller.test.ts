@@ -182,4 +182,67 @@ describe("player controller", () => {
       vi.useRealTimers();
     }
   });
+
+  describe("loop progression (UC-26)", () => {
+    function looping(loop: { targetTempoPct?: number | null; bestTempoPct?: number | null } = {}) {
+      const context = setup({ durationMs: 10_000, tempoPct: 70 });
+      context.controller.selectLoop({
+        startMs: 1000,
+        endMs: 3000,
+        id: "01JD0000000000000000000L01",
+        name: "Pont",
+        targetTempoPct: loop.targetTempoPct ?? null,
+        bestTempoPct: loop.bestTempoPct ?? null,
+      });
+      const turns = (count: number) => {
+        for (let turn = 0; turn < count; turn++) {
+          context.engine.onLoopRestart();
+        }
+      };
+      return { ...context, turns };
+    }
+
+    it("keeps the speed as the best one after 3 turns in a row", () => {
+      const { store, turns } = looping({ bestTempoPct: 60 });
+
+      turns(2);
+      expect(store.getState().loop?.bestTempoPct).toBe(60);
+      turns(1);
+      expect(store.getState().loop?.bestTempoPct).toBe(70);
+    });
+
+    it("proposes +5 % after 5 turns, up to the target, then starts counting again at the new speed", () => {
+      const { store, controller, turns } = looping({ targetTempoPct: 72 });
+
+      turns(4);
+      expect(store.getState().speedUpOffer).toBeNull();
+      turns(1);
+      expect(store.getState().speedUpOffer).toBe(72);
+
+      controller.acceptSpeedUp();
+      expect(store.getState()).toMatchObject({ tempoPct: 72, loopRuns: 0, speedUpOffer: null });
+      turns(5);
+      // Target reached: nothing more to propose.
+      expect(store.getState().speedUpOffer).toBeNull();
+    });
+
+    it("waits as many turns again after 'later', and restarts the count when the speed changes", () => {
+      const { store, controller, turns } = looping();
+
+      turns(5);
+      controller.dismissSpeedUp();
+      expect(store.getState()).toMatchObject({ loopRuns: 0, speedUpOffer: null });
+      turns(3);
+      controller.changeTempo(-5);
+      expect(store.getState().loopRuns).toBe(0);
+    });
+
+    it("sets the target speed of the current loop", () => {
+      const { store, controller } = looping();
+
+      controller.setLoopTarget(85);
+
+      expect(store.getState().loop?.targetTempoPct).toBe(85);
+    });
+  });
 });

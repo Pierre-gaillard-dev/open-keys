@@ -15,6 +15,7 @@ import { currentUserQuery, LoginPage } from "../features/auth";
 import { CatalogPage, type CatalogSearch, catalogSearchSchema, SongDetailPage } from "../features/catalog";
 import { ImportPage, ImportReviewPage, OnlineSearchPage, SongEditPage } from "../features/import";
 import { PlayerPage } from "../features/player";
+import { ProgressPage } from "../features/progress";
 import { buttonClasses, ErrorBanner } from "../shared/ui";
 import { AppShell } from "./layout/AppShell";
 
@@ -134,6 +135,12 @@ const onlineSearchRoute = createRoute({
   },
 });
 
+const progressRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/progress",
+  component: ProgressPage,
+});
+
 const importReviewRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/import/$songId",
@@ -152,6 +159,7 @@ const routeTree = rootRoute.addChildren([
       importRoute,
       onlineSearchRoute,
       importReviewRoute,
+      progressRoute,
     ]),
     playerRoute,
   ]),

@@ -85,6 +85,7 @@ La ligne est créée à la première interaction (upsert).
 
 ### `loops` — feature `practice`
 Boucles A-B nommées. Contrainte `CHECK (end_ms > start_ms)`.
+`target_tempo_pct` : vitesse visée (null = 100 %). `best_tempo_pct` : plus haute vitesse jouée 3 tours de suite (V1.3, UC-26).
 Index : `(user_id, song_id, deleted_at)`.
 
 ### `practice_sessions` — feature `practice`
@@ -158,6 +159,5 @@ Un fichier qu'aucune ligne de `songs` ne référence plus est purgé par une tâ
 
 | Version | Changement |
 |---|---|
-| V1.3 | Utilisation de `loops.target_tempo_pct` / `best_tempo_pct` (colonnes déjà présentes) |
 | V2 | Remplissage de `practice_sessions.accuracy` / `score`. Éventuellement une table `session_events` pour l'analyse détaillée des erreurs |
 | Multi-utilisateur | Rien à migrer pour les données personnelles. Seule décision à prendre : catalogue commun ou `songs.owner_id` |

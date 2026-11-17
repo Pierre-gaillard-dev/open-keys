@@ -227,6 +227,15 @@ flowchart LR
 - **Volume par main** (UC-25) : de 0 à 100 %, mémorisé avec les autres réglages des mains du morceau.
 - Décompte, métronome et nom des notes sont des réglages de l'appareil, valables pour tous les morceaux. Ils s'activent depuis le bouton « Réglages » du lecteur, ou au clavier (`C`, `M`, `N`).
 
+### UC-26 / UC-27 — Progression (V1.3)
+- **Vitesse cible par boucle** (UC-26) : réglée dans le panneau des boucles. La boucle garde sa meilleure vitesse (jouée 3 tours de suite), et après 5 tours l'app propose « Passer à +5 % ? » jusqu'à la cible.
+- **Tableau de bord** (UC-27), page « Progression » :
+  - temps de pratique des 7 et 30 derniers jours, jours pratiqués, série de jours d'affilée ;
+  - histogramme par jour (30 jours) ou par semaine (12 semaines), avec une infobulle au survol et un tableau des données ;
+  - morceaux en cours avec leur temps de pratique ;
+  - dernières sessions (morceau, date, vitesses, durée).
+- Disponible hors-ligne avec les dernières données chargées.
+
 ### UC-16 — Temps de pratique
 - Sur la fiche d'un morceau : temps total, nombre de sessions, date de la dernière pratique.
 

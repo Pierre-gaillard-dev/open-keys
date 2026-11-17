@@ -58,11 +58,13 @@ open-keys/
 │   │   │   │   │   ├── preview/                       # écoute d'un MIDI avant import : moteur sans rendu, chargé au 1er clic
 │   │   │   │   │   ├── hooks/                # runtime, session, sauvegarde, masquage auto, wake lock, plein écran, raccourcis
 │   │   │   │   │   ├── components/           # PlayerView, ControlsOverlay, ProgressBar, HandControl, LoopPanel,
-│   │   │   │   │   │                         # PlayerOptionsPanel, CountInBadge
+│   │   │   │   │   │                         # PlayerOptionsPanel, CountInBadge, SpeedUpOffer
 │   │   │   │   │   ├── pages/PlayerPage.tsx
 │   │   │   │   │   ├── lazy-player-page.ts   # PlayerPage chargée à la demande (PixiJS hors du bundle de démarrage)
 │   │   │   │   │   ├── input/                # V2 : InputSource, WebMidiInput, ScreenKeyboardInput
 │   │   │   │   │   └── index.ts
+│   │   │   │   ├── progress/                 # tableau de bord (UC-27) : progress-stats (jours, semaines, série),
+│   │   │   │   │                             # PracticeChart (histogramme accessible), ProgressPage (chargée à la demande)
 │   │   │   │   ├── practice/
 │   │   │   │   │   ├── api/                  # practice.api.ts, practice.queries.ts
 │   │   │   │   │   ├── components/           # PracticeSummary (statistiques, boucles)
@@ -77,7 +79,7 @@ open-keys/
 │   │   │       │   ├── query-persistence.ts  # cache TanStack Query sauvegardé (requêtes gardées)
 │   │   │       │   ├── connectivity.ts       # en ligne / hors-ligne partagé, sonde de /api/health
 │   │   │       │   └── index.ts              # instances partagées (outbox, midiCache), clearOfflineData
-│   │   │       ├── ui/                       # Button, Chip, SegmentedControl, TextField… (sans logique métier)
+│   │   │       ├── ui/                       # Button, Chip, SegmentedControl, StatTile, TextField… (sans logique métier)
 │   │   │       ├── lib/                      # cx (tailwind-merge), format, use-debounced-value
 │   │   │       └── test/                     # (dans src/test) fake-api, fixtures, render-app
 │   │   ├── index.html

@@ -82,6 +82,13 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
 - **Volume par main** : appliqué à la vélocité des notes de la main. Enregistré avec les réglages des mains du morceau (`hands_settings.volume`).
 - **Préférences de l'appareil** : décompte, métronome et nom des notes, gardés dans le `localStorage` (illisibles ou absents : valeurs par défaut). Pas synchronisés : un téléphone sur trépied et un PC ne s'utilisent pas de la même façon.
 
+## Progression par boucle (V1.3, UC-26)
+
+- Chaque tour complet de la boucle est compté à la vitesse courante (`engine.onLoopRestart`). Changer de vitesse ou de boucle remet le compte à zéro.
+- **Meilleure vitesse** : la vitesse courante, dès **3 tours de suite**, si elle dépasse la meilleure connue. Sans entrée MIDI (V2), l'app ne sait pas si les notes étaient justes : « réussi » veut dire « joué en entier plusieurs fois de suite ».
+- **Proposition d'accélérer** après **5 tours de suite**, de 5 % et jusqu'à la vitesse cible de la boucle (100 % par défaut). Visible même quand les contrôles sont masqués. « Plus tard » attend 5 nouveaux tours.
+- Vitesse cible réglable dans le panneau des boucles. Les deux vitesses d'une boucle enregistrée sont sauvegardées comme toute modification de boucle (outbox, hors-ligne compris).
+
 ## Reprise et pratique (`hooks/use-practice-persistence.ts`)
 
 - À la pause, quand l'onglet est masqué et en quittant le lecteur, la bibliothèque est mise à jour : position, vitesse, mains, boucle active et date de pratique. Les requêtes partent avec `keepalive` pour survivre à la fermeture de la page.

@@ -2,6 +2,7 @@ import {
   DEFAULT_HANDS_SETTINGS,
   libraryEntrySchema,
   loopSchema,
+  practiceHistorySchema,
   practiceSessionSchema,
   practiceStatsSchema,
   songDetailSchema,
@@ -169,6 +170,45 @@ describe("practice sessions", () => {
     );
 
     expect(practiceSessionSchema.parse(await response.json()).loopId).toBeNull();
+  });
+});
+
+describe("practice history (UC-27)", () => {
+  it("lists the sessions of a period, most recent first, with their song", async () => {
+    await setup();
+    await server.json("PUT", `/api/practice-sessions/${SESSION_ID}`, sessionBody());
+    await server.json(
+      "PUT",
+      "/api/practice-sessions/01JD0000000000000000000003",
+      sessionBody({ startedAt: 90_000, endedAt: 150_000 }),
+    );
+    await server.json(
+      "PUT",
+      "/api/practice-sessions/01JD0000000000000000000004",
+      sessionBody({ startedAt: 500_000, endedAt: 560_000 }),
+    );
+
+    const response = await server.request("/api/practice-sessions?from=5000&to=100000");
+    expect(response.status).toBe(200);
+    const history = practiceHistorySchema.parse(await response.json());
+
+    expect(history.sessions.map((session) => session.startedAt)).toEqual([90_000, 10_000]);
+    expect(history.sessions[0]).toMatchObject({ songId, songTitle: expect.any(String), activeMs: 50_000 });
+  });
+
+  it("is personal and limited in length", async () => {
+    await setup();
+    await server.json("PUT", `/api/practice-sessions/${SESSION_ID}`, sessionBody());
+    await server.addUser("other");
+    await server.login("other", TEST_PASSWORD);
+
+    const mine = practiceHistorySchema.parse(
+      await (await server.request("/api/practice-sessions?from=0&to=100000")).json(),
+    );
+    expect(mine.sessions).toEqual([]);
+    // More than 400 days (from 0 up to now): refused.
+    expect((await server.request("/api/practice-sessions?from=0")).status).toBe(400);
+    expect((await server.request("/api/practice-sessions")).status).toBe(400);
   });
 });
 

@@ -5,4 +5,5 @@ export { IconButton } from "./IconButton";
 export { OfflineUnavailable } from "./OfflineUnavailable";
 export { SectionTitle } from "./SectionTitle";
 export { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
+export { StatTile, type StatTileProps } from "./StatTile";
 export { TextField } from "./TextField";
