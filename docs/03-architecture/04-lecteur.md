@@ -63,7 +63,11 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
 - **Store Zustand vanilla** : position (rafraîchie toutes les 100 ms pendant la lecture), vitesse, boucle, mains, zoom. Le rendu PixiJS ne passe jamais par React.
 - **Runtime navigateur isolé** (`runtime/browser-runtime.ts`) : AudioContext, sampler, renderer WebGL. Dans les tests de composants, il est remplacé par des faux (`vi.mock`), et tout le reste du lecteur est réel.
 - **Le runtime appartient à la page** (`hooks/use-player-runtime.ts`) : il est créé dès l'ouverture du lecteur, et le décodage des échantillons (l'étape la plus longue, ≈ 1,2 s) se fait pendant le chargement du morceau. La session (`use-player-session.ts`) construit ensuite le moteur et le rendu sur ce runtime.
-- **Contrôles** : visibles à la pause. Pendant la lecture, ils se masquent après 3 s sans interaction et réapparaissent au toucher ou au mouvement de la souris. La partie basse se place juste au-dessus du clavier, selon la même règle de hauteur que le rendu (20 % de l'écran, entre 56 et 170 px).
+- **Contrôles** :
+  - visibles à la pause, **masqués dès le lancement de la lecture** (fondu de 200 ms) ;
+  - un tap sur une zone vide (notes, clavier, espaces entre les boutons) les masque, y compris à la pause, pour regarder les notes ;
+  - un tap, un mouvement de souris ou une touche les réaffiche. Pendant la lecture, ils se masquent à nouveau après 3 s sans interaction ;
+  - la partie basse se place juste au-dessus du clavier, selon la même règle de hauteur que le rendu (20 % de l'écran, entre 56 et 170 px).
 - **Zoom automatique** : activé par défaut quand le plus petit côté de l'écran fait moins de 600 px (téléphone, quelle que soit l'orientation). Le clavier cadre alors la plage du morceau, avec 2 touches de marge.
 - **Raccourcis (PC)** : `Espace` lecture/pause, `←`/`→` ±5 s, `↑`/`↓` vitesse ±5 %, `A`/`B` bornes de boucle, `L` boucle on/off, `1`/`2` son de la main gauche/droite, `Z` zoom, `F` plein écran, `Échap` quitter.
 - **Plein écran** avec verrouillage en paysage quand le navigateur le permet, et **Wake Lock** pendant la lecture.

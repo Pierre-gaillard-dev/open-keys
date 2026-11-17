@@ -28,6 +28,9 @@ const PILL = "m-0 flex h-12 items-center rounded-xl border-0 bg-surface-2 px-1";
 const PILL_BUTTON =
   "flex h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold disabled:opacity-40";
 
+/** Rows spanning the screen: only their children catch taps, the gaps let them through to the background. */
+const ROW = "pointer-events-none *:pointer-events-auto";
+
 /**
  * Controls drawn over the falling notes (mockups: mobile landscape and PC). The bottom part sits just
  * above the keyboard, whose height follows the renderer's rule (20 % of the screen, 56–170 px).
@@ -56,14 +59,21 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
 
   return (
     <div
+      data-player-background
+      data-testid="player-controls"
+      data-visible={visible}
       className={cx(
-        "absolute inset-0 transition-opacity duration-300",
+        "absolute inset-0 transition-opacity duration-200",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
       )}
     >
-      <div className="absolute inset-x-0 top-0 bg-bg/80" style={{ bottom: "clamp(56px, 20%, 170px)" }} />
+      <div
+        data-player-background
+        className="absolute inset-x-0 top-0 bg-bg/80"
+        style={{ bottom: "clamp(56px, 20%, 170px)" }}
+      />
 
-      <header className="absolute inset-x-3 top-3 flex items-center gap-3">
+      <header className={cx("absolute inset-x-3 top-3 flex items-center gap-3", ROW)}>
         <Link
           to="/songs/$songId"
           params={{ songId }}
@@ -119,7 +129,12 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
         </div>
       </header>
 
-      <div className="absolute inset-x-0 top-1/2 flex -translate-y-[60%] items-center justify-center gap-6">
+      <div
+        className={cx(
+          "absolute inset-x-0 top-1/2 flex -translate-y-[60%] items-center justify-center gap-6",
+          ROW,
+        )}
+      >
         <button
           type="button"
           aria-label="Reculer de 5 secondes"
@@ -154,11 +169,11 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
       </div>
 
       <div
-        className="absolute inset-x-3 flex flex-col gap-3 pb-3 md:inset-x-6"
+        className={cx("absolute inset-x-3 flex flex-col gap-3 pb-3 md:inset-x-6", ROW)}
         style={{ bottom: "clamp(56px, 20%, 170px)" }}
       >
         <ProgressBar store={store} controller={ready ? controller : null} />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={cx("flex flex-wrap items-center gap-2", ROW)}>
           <fieldset className={PILL}>
             <legend className="sr-only">Vitesse</legend>
             <button

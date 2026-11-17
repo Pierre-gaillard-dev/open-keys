@@ -98,6 +98,25 @@ describe("player", () => {
     });
   });
 
+  it("hides the controls when playing and on a tap on an empty area, shows them on a tap", async () => {
+    const { song } = playerApi(null);
+    renderApp(`/songs/${song.id}/play`);
+    const play = await screen.findByRole("button", { name: "Lecture" });
+    await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
+    const controls = screen.getByTestId("player-controls");
+
+    await userEvent.click(screen.getByRole("button", { name: "Ralentir" }));
+    expect(controls.dataset["visible"]).toBe("true");
+    await userEvent.click(controls);
+    expect(controls.dataset["visible"]).toBe("false");
+    // A finger (no pointer move before the tap, unlike a mouse).
+    await userEvent.pointer({ keys: "[TouchA]", target: screen.getByTestId("player-canvas") });
+    expect(controls.dataset["visible"]).toBe("true");
+
+    await userEvent.click(play);
+    await waitFor(() => expect(controls.dataset["visible"]).toBe("false"));
+  });
+
   it("creates an A-B loop from the controls", async () => {
     const { song } = playerApi(null);
     renderApp(`/songs/${song.id}/play`);

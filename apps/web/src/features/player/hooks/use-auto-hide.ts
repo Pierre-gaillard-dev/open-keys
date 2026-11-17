@@ -1,27 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/** Controls shown again during playback (tap, pointer move, key) hide after this delay. */
 export const AUTO_HIDE_DELAY_MS = 3000;
 
 /**
- * Controls visible while paused; while playing they hide after 3 s without interaction.
- * `poke` shows them again (pointer move, tap, key).
+ * Controls of the player: shown on pause, hidden as soon as playback starts (the fade lasts 200 ms),
+ * shown again by `poke` for a few seconds during playback. `hide` dismisses them at any time.
  */
-export function useAutoHide(active: boolean, delayMs = AUTO_HIDE_DELAY_MS) {
+export function useAutoHide(playing: boolean, delayMs = AUTO_HIDE_DELAY_MS) {
   const [visible, setVisible] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const poke = useCallback(() => {
-    setVisible(true);
+  const hide = useCallback(() => {
     clearTimeout(timer.current);
-    if (active) {
+    setVisible(false);
+  }, []);
+
+  const poke = useCallback(() => {
+    clearTimeout(timer.current);
+    setVisible(true);
+    if (playing) {
       timer.current = setTimeout(() => setVisible(false), delayMs);
     }
-  }, [active, delayMs]);
+  }, [playing, delayMs]);
 
   useEffect(() => {
-    poke();
+    clearTimeout(timer.current);
+    setVisible(!playing);
     return () => clearTimeout(timer.current);
-  }, [poke]);
+  }, [playing]);
 
-  return { visible, poke, hide: useCallback(() => active && setVisible(false), [active]) };
+  return { visible, poke, hide };
 }
