@@ -14,7 +14,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // The update is applied on demand (UpdateBanner): never reload during practice.
+      // A new version waits, then the app shell applies it when that interrupts nothing (use-auto-update).
       registerType: "prompt",
       // Registered by the app (virtual:pwa-register/react): no inline script, compatible with the CSP.
       injectRegister: false,

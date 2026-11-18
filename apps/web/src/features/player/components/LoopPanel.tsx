@@ -29,7 +29,49 @@ export interface LoopPanelProps {
   readonly onClose: () => void;
 }
 
-/** Save the current A-B loop with a name, or recall a saved one (UC-10). */
+const AB_BUTTON =
+  "flex h-10 flex-1 items-center justify-center rounded-lg bg-surface-2 px-3 text-sm font-semibold disabled:opacity-40";
+
+/** A, B and the loop switch: set during playback, the panel stays open meanwhile. */
+function LoopMarkers({ store, controller }: Pick<LoopPanelProps, "store" | "controller">) {
+  const loop = useStore(store, (state) => state.loop);
+  const loopEnabled = useStore(store, (state) => state.loopEnabled);
+  const pendingStart = useStore(store, (state) => state.pendingLoopStartMs);
+  return (
+    <fieldset className="m-0 flex gap-2 border-0 p-0">
+      <legend className="sr-only">Boucle A-B</legend>
+      <button
+        type="button"
+        disabled={!controller}
+        onClick={() => controller?.markLoopStart()}
+        className={cx(AB_BUTTON, pendingStart !== null && "text-hand-left")}
+        aria-label="Début de boucle (A)"
+      >
+        A
+      </button>
+      <button
+        type="button"
+        disabled={!controller}
+        onClick={() => controller?.markLoopEnd()}
+        className={AB_BUTTON}
+        aria-label="Fin de boucle (B)"
+      >
+        B
+      </button>
+      <button
+        type="button"
+        aria-pressed={loopEnabled}
+        disabled={!(controller && loop)}
+        onClick={() => controller?.toggleLoop()}
+        className={cx(AB_BUTTON, "flex-[2]", loopEnabled && "bg-fg text-bg")}
+      >
+        Boucle
+      </button>
+    </fieldset>
+  );
+}
+
+/** Set an A-B loop, save it with a name, or recall a saved one (UC-10). */
 export function LoopPanel({ songId, store, controller, savedLoops, onClose }: LoopPanelProps) {
   const loop = useStore(store, (state) => state.loop);
   const saveLoop = useSaveLoop();
@@ -71,7 +113,7 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
   return (
     <section
       aria-label="Boucles"
-      className="flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-black/60"
+      className="flex max-h-[calc(100dvh-7.5rem-clamp(56px,20dvh,170px))] [@media(max-height:500px)]:max-h-[calc(100dvh-1rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3 overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-black/60"
     >
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">Boucles</h2>
@@ -79,6 +121,8 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
           <X aria-hidden="true" className="size-4" />
         </IconButton>
       </div>
+
+      <LoopMarkers store={store} controller={controller} />
 
       {loop && loop.id === null && (
         <form onSubmit={save} className="flex flex-col gap-2">
@@ -107,7 +151,7 @@ export function LoopPanel({ songId, store, controller, savedLoops, onClose }: Lo
         </form>
       )}
       {!loop && (
-        <p className="text-sm text-fg-muted">Pose A puis B pendant la lecture pour créer une boucle.</p>
+        <p className="text-sm text-fg-muted">Pose A puis B pendant la lecture pour répéter un passage.</p>
       )}
       {loop && (
         <label className="flex items-center justify-between gap-3 text-sm text-fg-soft">

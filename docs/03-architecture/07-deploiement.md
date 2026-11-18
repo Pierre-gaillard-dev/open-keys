@@ -65,8 +65,10 @@ flowchart LR
 - `vite-plugin-pwa` (Workbox, `generateSW`) génère `sw.js` et `manifest.webmanifest`.
 - **Précache** (≈ 3,3 Mo) : shell de l'app (JS, CSS, HTML), polices latines et les 30 échantillons du piano. Les autres sous-ensembles de polices sont mis en cache à la première utilisation.
 - **L'API n'est pas servie par le Service Worker**, sauf les couvertures (cache-first, URL versionnée par le hash). Les données hors-ligne sont dans IndexedDB (voir [flux](./05-flux.md#synchronisation-hors-ligne)).
-- **Mise à jour à la demande** (`registerType: "prompt"`) :
-  - une nouvelle version attend que l'utilisateur clique sur « Mettre à jour », dans la bannière en haut des pages (jamais dans le lecteur, pour ne pas interrompre la pratique) ;
+- **Mise à jour automatique, au bon moment** (`registerType: "prompt"`, appliquée par `use-auto-update.ts`) :
+  - une nouvelle version trouvée dans les 15 s qui suivent l'ouverture de l'app est appliquée tout de suite (rechargement) ;
+  - sinon, elle attend le changement de page suivant, pour ne jamais recharger un formulaire en cours de saisie ;
+  - jamais dans le lecteur (le hook n'est monté que dans le shell des autres pages) : elle s'applique en le quittant ;
   - l'app vérifie la présence d'une nouvelle version toutes les heures.
 - L'enregistrement est fait par l'app (`app/pwa/register-service-worker.ts`), sans script inline (CSP).
 

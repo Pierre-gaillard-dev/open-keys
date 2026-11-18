@@ -7,8 +7,12 @@ const IMAGE_PROPERTY = "P18";
 const OCCUPATION_PROPERTY = "P106";
 /** composer, songwriter, film score composer, pianist */
 const MUSICIAN_OCCUPATIONS: ReadonlySet<string> = new Set(["Q36834", "Q753110", "Q1415090", "Q486748"]);
-const THUMBNAIL_WIDTH = 320;
-const IMAGE_WIDTH = 1024;
+/**
+ * Wikimedia only renders standard widths (330, 500, 960, 1280…): any other one is refused. The API is
+ * asked for the large one, the thumbnail is derived from its URL.
+ */
+const THUMBNAIL_WIDTH = 330;
+const IMAGE_WIDTH = 960;
 
 const searchSchema = z.object({ search: z.array(z.object({ id: z.string() })).default([]) });
 
@@ -110,7 +114,7 @@ export function createWikidataProvider(httpGet: HttpGet): CoverProvider {
       }
       const info = imageInfoSchema.parse(
         await getJson(
-          `${COMMONS_API}?action=query&titles=${encodeURIComponent(`File:${portrait.image}`)}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=${THUMBNAIL_WIDTH}&format=json`,
+          `${COMMONS_API}?action=query&titles=${encodeURIComponent(`File:${portrait.image}`)}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=${IMAGE_WIDTH}&format=json`,
           signal,
         ),
       );
@@ -122,8 +126,9 @@ export function createWikidataProvider(httpGet: HttpGet): CoverProvider {
       const license = imageInfo.extmetadata?.LicenseShortName?.value ?? "see Wikimedia Commons";
       const candidate: CoverCandidate = {
         source: "wikidata",
-        thumbnailUrl: imageInfo.thumburl,
-        imageUrl: imageInfo.thumburl.replace(`/${THUMBNAIL_WIDTH}px-`, `/${IMAGE_WIDTH}px-`),
+        // An original smaller than the large width is served as is (no "960px-" in its URL).
+        thumbnailUrl: imageInfo.thumburl.replace(/\/\d+px-/, `/${THUMBNAIL_WIDTH}px-`),
+        imageUrl: imageInfo.thumburl,
         label: `Portrait · ${portrait.label}`,
         credit: `${author} · ${license} · Wikimedia Commons`,
       };

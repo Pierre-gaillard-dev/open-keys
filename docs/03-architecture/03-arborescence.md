@@ -16,7 +16,7 @@ open-keys/
 │   │   │   │   ├── query-client.ts           # pas de nouvel essai sur 4xx, gestion du 401
 │   │   │   │   ├── router.tsx                # routes typées (TanStack Router), garde d'authentification
 │   │   │   │   ├── layout/AppShell.tsx       # barre du haut (pas de barre latérale) + page courante
-│   │   │   │   ├── pwa/                      # Service Worker : enregistrement, store, bannière de mise à jour
+│   │   │   │   ├── pwa/                      # Service Worker : enregistrement, store, mise à jour automatique
 │   │   │   │   ├── offline/                  # indicateur de synchro, favoris gardés sur l'appareil
 │   │   │   │   ├── global.css                # Tailwind v4 : jetons de couleurs et polices
 │   │   │   │   └── app-flows.test.tsx        # parcours complets : app réelle + API simulée

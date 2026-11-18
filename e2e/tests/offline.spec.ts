@@ -42,10 +42,10 @@ test("airplane mode: practise a favorite, then find the new loop on another devi
   await page.locator(`a[href="/songs/${song.id}"]`).click();
   await page.getByRole("link", { name: /Jouer|Reprendre/ }).click();
   await expect(page.getByRole("button", { name: "Lecture" })).toBeEnabled({ timeout: 30_000 });
+  await page.getByRole("button", { name: /Boucles/ }).click();
   await page.getByRole("button", { name: "Début de boucle (A)" }).click();
   await page.getByRole("button", { name: "Avancer de 5 secondes" }).click();
   await page.getByRole("button", { name: "Fin de boucle (B)" }).click();
-  await page.getByRole("button", { name: /Boucles/ }).click();
   await page.getByLabel("Boucle 0:00 – 0:05").fill("Pont");
   await page.getByRole("button", { name: "Enregistrer la boucle" }).click();
   await expect(page.getByRole("button", { name: /^Pont/ })).toBeVisible();

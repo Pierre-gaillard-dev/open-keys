@@ -29,12 +29,23 @@ describe("analyzeMidi", () => {
     expect(analysis.tracks[1]).toMatchObject({ name: "Left hand", channel: 1, averagePitch: 37.5 });
   });
 
-  it.each(["control track", "Untitled score", "Track 1", "  "])(
-    "ignores the placeholder title %j",
-    (title) => {
-      expect(analyzeMidi(buildMidi([{ notes: scale(60, 2) }], title)).title).toBeNull();
-    },
-  );
+  it.each([
+    "control track",
+    "Untitled score",
+    "Track 1",
+    "  ",
+    "Piste 1",
+    "Grand Piano 1",
+    "Acoustic Grand Piano",
+    "Piano (main droite)",
+    "Staff-2",
+  ])("ignores the placeholder or instrument title %j", (title) => {
+    expect(analyzeMidi(buildMidi([{ notes: scale(60, 2) }], title)).title).toBeNull();
+  });
+
+  it.each(["Piano Man", "Bring Me to Life", "Clair de lune", "Für Elise"])("keeps the title %j", (title) => {
+    expect(analyzeMidi(buildMidi([{ notes: scale(60, 2) }], title)).title).toBe(title);
+  });
 
   it("skips tracks without notes and keeps original indexes", () => {
     const bytes = buildMidi([{ name: "Tempo map", notes: [] }, { notes: scale(60, 2) }]);

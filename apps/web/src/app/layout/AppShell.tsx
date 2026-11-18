@@ -5,7 +5,7 @@ import { useCurrentUser, useLogout } from "../../features/auth";
 import { IconButton } from "../../shared/ui";
 import { SyncStatus } from "../offline/SyncStatus";
 import { useKeepFavoritesOffline } from "../offline/use-keep-favorites-offline";
-import { UpdateBanner } from "../pwa/UpdateBanner";
+import { useAutoUpdate } from "../pwa/use-auto-update";
 
 /** TanStack Router marks the active link with data-status="active" (and aria-current). */
 const NAV_LINK =
@@ -30,10 +30,10 @@ export function AppShell() {
   const logout = useLogout();
   const navigate = useNavigate();
   useKeepFavoritesOffline();
+  useAutoUpdate();
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <UpdateBanner />
       <header className="flex h-16 shrink-0 items-stretch gap-8 border-b border-surface-2 px-4 md:px-10">
         <Logo />
         <nav aria-label="Navigation principale" className="hidden items-stretch gap-7 md:flex">

@@ -65,7 +65,8 @@ describe("player", () => {
     await userEvent.click(await screen.findByRole("link", { name: /Reprendre à 0:12/ }));
 
     expect(await screen.findByRole("heading", { name: song.title, level: 1 })).toBeDefined();
-    expect(await screen.findByText("75 %")).toBeDefined();
+    expect((await screen.findByTestId("tempo-badge")).textContent).toBe("75 %");
+    await userEvent.click(screen.getByRole("button", { name: "Réglages du lecteur" }));
     expect(screen.getByRole("button", { name: "Son de la main gauche" }).getAttribute("aria-pressed")).toBe(
       "false",
     );
@@ -83,11 +84,16 @@ describe("player", () => {
     await userEvent.click(play);
     expect(await screen.findByRole("button", { name: "Pause" })).toBeDefined();
 
-    await userEvent.click(screen.getByRole("button", { name: "Ralentir" }));
-    await userEvent.click(screen.getByRole("button", { name: "Ralentir" }));
-    const rightSound = screen.getByRole("button", { name: "Son de la main droite" });
+    // Speed and hands are in the settings, which stay shown while playing.
+    await userEvent.click(screen.getByRole("button", { name: "Réglages du lecteur" }));
+    const panel = screen.getByRole("region", { name: "Réglages du lecteur" });
+    await userEvent.click(within(panel).getByRole("button", { name: "Ralentir" }));
+    await userEvent.click(within(panel).getByRole("button", { name: "Ralentir" }));
+    const rightSound = within(panel).getByRole("button", { name: "Son de la main droite" });
     await userEvent.click(rightSound);
-    expect(screen.getByText("90 %")).toBeDefined();
+    expect(within(panel).getByText("90 %")).toBeDefined();
+    expect(screen.getByTestId("tempo-badge").textContent).toBe("90 %");
+    expect(screen.getByTestId("player-controls").dataset["visible"]).toBe("true");
     expect(rightSound.getAttribute("aria-pressed")).toBe("false");
 
     await userEvent.click(screen.getByRole("link", { name: "Quitter le lecteur" }));
@@ -106,9 +112,15 @@ describe("player", () => {
     await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
     const controls = screen.getByTestId("player-controls");
 
-    await userEvent.click(screen.getByRole("button", { name: "Ralentir" }));
+    // With a panel open, a tap on an empty area closes the panel first.
+    await userEvent.click(screen.getByRole("button", { name: "Réglages du lecteur" }));
+    await userEvent.click(controls);
+    expect(screen.queryByRole("region", { name: "Réglages du lecteur" })).toBeNull();
     expect(controls.dataset["visible"]).toBe("true");
     await userEvent.click(controls);
+    expect(controls.dataset["visible"]).toBe("false");
+    // The mouse still moving right after the tap does not bring them back.
+    await userEvent.pointer({ coords: { x: 10, y: 10 }, target: screen.getByTestId("player-canvas") });
     expect(controls.dataset["visible"]).toBe("false");
     // A finger (no pointer move before the tap, unlike a mouse).
     await userEvent.pointer({ keys: "[TouchA]", target: screen.getByTestId("player-canvas") });
@@ -158,14 +170,14 @@ describe("player", () => {
     await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
 
     await userEvent.click(screen.getByRole("button", { name: "Avancer de 5 secondes" }));
-    await userEvent.click(screen.getByRole("button", { name: "Début de boucle (A)" }));
-    await userEvent.click(screen.getByRole("button", { name: "Avancer de 5 secondes" }));
-    await userEvent.click(screen.getByRole("button", { name: "Fin de boucle (B)" }));
-
-    expect(screen.getByRole("button", { name: "Boucle" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByText("A 0:05 · B 0:10")).toBeDefined();
     await userEvent.click(screen.getByRole("button", { name: /Boucles/ }));
     const panel = screen.getByRole("region", { name: "Boucles" });
+    await userEvent.click(within(panel).getByRole("button", { name: "Début de boucle (A)" }));
+    await userEvent.click(screen.getByRole("button", { name: "Avancer de 5 secondes" }));
+    await userEvent.click(within(panel).getByRole("button", { name: "Fin de boucle (B)" }));
+
+    expect(within(panel).getByRole("button", { name: "Boucle" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("A 0:05 · B 0:10")).toBeDefined();
     expect(within(panel).getByRole("button", { name: "Enregistrer la boucle" })).toBeDefined();
   });
 
@@ -201,10 +213,10 @@ describe("player", () => {
     renderApp(`/songs/${song.id}/play`);
     const play = await screen.findByRole("button", { name: "Lecture" });
     await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
+    await userEvent.click(screen.getByRole("button", { name: /Boucles/ }));
     await userEvent.click(screen.getByRole("button", { name: "Début de boucle (A)" }));
     await userEvent.click(screen.getByRole("button", { name: "Avancer de 5 secondes" }));
     await userEvent.click(screen.getByRole("button", { name: "Fin de boucle (B)" }));
-    await userEvent.click(screen.getByRole("button", { name: /Boucles/ }));
 
     await userEvent.type(screen.getByLabelText("Boucle 0:00 – 0:05"), "Intro");
     await userEvent.click(screen.getByRole("button", { name: "Enregistrer la boucle" }));

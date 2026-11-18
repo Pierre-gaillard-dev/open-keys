@@ -8,7 +8,8 @@ import { processCoverImage } from "./image-processor";
 import type { CoverCandidate, CoverProvider, CoverQuery } from "./providers/cover-provider.types";
 
 const SUGGESTION_TTL_MS = 60 * 60_000;
-const PROVIDER_TIMEOUT_MS = 5000;
+/** MusicBrainz is throttled to 1 request/s and may try several titles: a few seconds each. */
+const PROVIDER_TIMEOUT_MS = 15_000;
 
 export interface CoversServiceDeps {
   readonly songs: SongsService;

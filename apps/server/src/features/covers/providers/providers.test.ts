@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HttpGet } from "./cover-provider.types";
-import { createMusicBrainzProvider } from "./musicbrainz.provider";
+import { createMusicBrainzProvider, searchVariants } from "./musicbrainz.provider";
 import { createWikidataProvider } from "./wikidata.provider";
 
 type Route = (url: URL, method: string) => unknown;
@@ -36,7 +36,7 @@ describe("createMusicBrainzProvider", () => {
       return method === "HEAD" && url.pathname.includes("with-art");
     });
 
-    const candidates = await createMusicBrainzProvider(httpGet).search(
+    const candidates = await createMusicBrainzProvider(httpGet, 0).search(
       { title: "Gymnopédie", composer: "Satie" },
       signal,
     );
@@ -57,9 +57,115 @@ describe("createMusicBrainzProvider", () => {
   it("escapes quotes in the query", async () => {
     const { httpGet, calls } = fakeHttp(() => ({ "release-groups": [] }));
 
-    await createMusicBrainzProvider(httpGet).search({ title: 'Say "hi"' }, signal);
+    await createMusicBrainzProvider(httpGet, 0).search({ title: 'Say "hi"' }, signal);
 
     expect(decodeURIComponent(calls[0] ?? "")).toContain('releasegroup:"Say \\"hi\\""');
+  });
+
+  it("falls back to the album a recording is on, the most released official one", async () => {
+    const release = (id: string, extra: object = {}) => ({
+      status: "Official",
+      "release-group": { id, title: id, "primary-type": "Album", ...extra },
+    });
+    const { httpGet, calls } = fakeHttp((url, method) => {
+      if (url.pathname.endsWith("/release-group/")) {
+        return { "release-groups": [] };
+      }
+      if (url.pathname.endsWith("/recording/")) {
+        return {
+          recordings: [
+            {
+              score: 100,
+              "artist-credit": [{ name: "Linkin Park" }],
+              releases: [
+                release("live", { "secondary-types": ["Live"] }),
+                release("meteora"),
+                release("meteora"),
+                release("best-of"),
+                { status: "Bootleg", "release-group": { id: "bootleg", "primary-type": "Album" } },
+              ],
+            },
+            { score: 30, releases: [release("other"), release("other"), release("other")] },
+          ],
+        };
+      }
+      return method === "HEAD";
+    });
+
+    const candidates = await createMusicBrainzProvider(httpGet, 0).search(
+      { title: "Numb", composer: "Linkin Park" },
+      signal,
+    );
+
+    expect(candidates.map((candidate) => candidate.label)).toEqual([
+      "meteora — Linkin Park",
+      "best-of — Linkin Park",
+    ]);
+    expect(decodeURIComponent(calls[1] ?? "")).toContain('recording:"Numb" AND artist:"Linkin Park"');
+  });
+
+  it("tries the parts of a composite title until one has a cover", async () => {
+    const { httpGet, calls } = fakeHttp((url, method) => {
+      const query = url.searchParams.get("query") ?? "";
+      if (url.pathname.endsWith("/release-group/")) {
+        return {
+          "release-groups": query.startsWith('releasegroup:"Time" ')
+            ? [{ id: "time", title: "Time", score: 100, "artist-credit": [{ name: "Hans Zimmer" }] }]
+            : [],
+        };
+      }
+      if (url.pathname.endsWith("/recording/")) {
+        return { recordings: [] };
+      }
+      return method === "HEAD";
+    });
+
+    const candidates = await createMusicBrainzProvider(httpGet, 0).search(
+      { title: "Time - Inception (Piano)", composer: "Hans Zimmer" },
+      signal,
+    );
+
+    expect(candidates.map((candidate) => candidate.label)).toEqual(["Time — Hans Zimmer"]);
+    expect(calls.filter((call) => call.includes("musicbrainz.org"))).toHaveLength(3);
+  });
+
+  it("tries again once when MusicBrainz is busy, and reports other failures", async () => {
+    let searches = 0;
+    const busyOnce: HttpGet = (url, init) => {
+      if (url.includes("musicbrainz.org")) {
+        searches++;
+        return Promise.resolve(
+          searches === 1
+            ? new Response(null, { status: 503 })
+            : Response.json({ "release-groups": [{ id: "a", title: "A", score: 100 }] }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: init.method === "HEAD" ? 200 : 404 }));
+    };
+    expect(await createMusicBrainzProvider(busyOnce, 0).search({ title: "A" }, signal)).toHaveLength(1);
+    expect(searches).toBe(2);
+
+    const down: HttpGet = () => Promise.resolve(new Response(null, { status: 500 }));
+    await expect(createMusicBrainzProvider(down, 0).search({ title: "A" }, signal)).rejects.toThrow(
+      "MusicBrainz answered 500",
+    );
+  });
+});
+
+describe("searchVariants", () => {
+  it("reads the artist from community file names and drops arrangement notes", () => {
+    expect(searchVariants({ title: "Evanescence - Bring Me to Life [Piano arr.]" })).toEqual([
+      { artist: "Evanescence", title: "Bring Me to Life" },
+      { title: "Evanescence - Bring Me to Life", artist: undefined },
+    ]);
+    expect(searchVariants({ title: "Evanescence - Bring Me to Life", composer: "Evanescence" })).toEqual([
+      { title: "Bring Me to Life", artist: "Evanescence" },
+    ]);
+    expect(searchVariants({ title: "Time - Inception", composer: "Hans Zimmer" })).toEqual([
+      { title: "Time - Inception", artist: "Hans Zimmer" },
+      { title: "Time", artist: "Hans Zimmer" },
+      { title: "Inception", artist: "Hans Zimmer" },
+    ]);
   });
 });
 
@@ -88,7 +194,7 @@ describe("createWikidataProvider", () => {
             "1": {
               imageinfo: [
                 {
-                  thumburl: "https://upload.wikimedia.org/thumb/a/ab/Satie.jpg/320px-Satie.jpg",
+                  thumburl: "https://thumb.wikimedia.org/thumb/a/ab/Satie.jpg/960px-Satie.jpg",
                   extmetadata: {
                     Artist: { value: '<a href="x">Unknown photographer</a>' },
                     LicenseShortName: { value: "Public domain" },
@@ -113,8 +219,8 @@ describe("createWikidataProvider", () => {
     expect(candidates).toEqual([
       {
         source: "wikidata",
-        thumbnailUrl: "https://upload.wikimedia.org/thumb/a/ab/Satie.jpg/320px-Satie.jpg",
-        imageUrl: "https://upload.wikimedia.org/thumb/a/ab/Satie.jpg/1024px-Satie.jpg",
+        thumbnailUrl: "https://thumb.wikimedia.org/thumb/a/ab/Satie.jpg/330px-Satie.jpg",
+        imageUrl: "https://thumb.wikimedia.org/thumb/a/ab/Satie.jpg/960px-Satie.jpg",
         label: "Portrait · Erik Satie",
         credit: "Unknown photographer · Public domain · Wikimedia Commons",
       },

@@ -2,8 +2,21 @@ import type { MidiAnalysis, MidiTrackSummary } from "./midi.types";
 import { Midi, type Track } from "./tonejs-midi";
 
 const PERCUSSION_CHANNEL = 9;
-/** Placeholder names written by notation software (LilyPond writes "control track" in every Mutopia file). */
-const GENERIC_TITLE = /^(control track|untitled( score)?|track \d*|sequence \d*|tempo track)$/i;
+/**
+ * Words of the placeholder or instrument names that software writes where the title should be: the name
+ * of the first track ("control track" by LilyPond, "Piste 1" by MuseScore, "Grand Piano 1" by DAWs).
+ */
+const TRACK_NAME_WORDS: ReadonlySet<string> = new Set(
+  [
+    "control track tempo conductor sequence untitled score new song midi file out channel ch",
+    "piste pista spur traccia part staff voice instrument canal",
+    "piano pianoforte grand acoustic electric bright upright keyboard keys organ synth lead pad",
+    "strings string violin viola cello bass guitar drums drum kit percussion flute choir ensemble",
+    "vocals melody harmony left right hand lh rh treble main gauche droite mano",
+  ]
+    .join(" ")
+    .split(" "),
+);
 const HEADER = [0x4d, 0x54, 0x68, 0x64]; // "MThd"
 
 export class InvalidMidiError extends Error {
@@ -28,10 +41,14 @@ function parse(bytes: Uint8Array): Midi {
   }
 }
 
-/** The header name, unless it is a placeholder that says nothing about the piece. */
+/** The header name, unless it only names a track or an instrument ("Piste 1", "Grand Piano 1"). */
 function meaningfulTitle(name: string): string | null {
   const title = name.trim();
-  return title && !GENERIC_TITLE.test(title) ? title : null;
+  const words = title
+    .toLowerCase()
+    .split(/[^\p{L}]+/u)
+    .filter((word) => word.length > 0);
+  return words.every((word) => TRACK_NAME_WORDS.has(word)) ? null : title;
 }
 
 function summarizeTrack(track: Track, index: number): MidiTrackSummary {
