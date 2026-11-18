@@ -190,7 +190,7 @@ export function createImportsService(deps: ImportsServiceDeps) {
 
     async confirm(userId: string, songId: string, request: ConfirmImportRequest): Promise<SongDetail> {
       const { coverSuggestionId, ...fields } = request;
-      songs.confirmDraft(userId, songId, fields);
+      await songs.confirmDraft(userId, songId, fields);
       if (coverSuggestionId) {
         try {
           await covers.applySuggestion(songId, coverSuggestionId);

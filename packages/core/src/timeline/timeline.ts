@@ -1,4 +1,4 @@
-import { type Hand, type HandMapping, handForNote } from "../hands";
+import { type Hand, type HandMapping, handForNote, type NoteHands } from "../hands";
 import type { Beat } from "../midi/beat-grid";
 import type { ParsedNotes } from "../midi/parse-notes";
 
@@ -23,11 +23,18 @@ export interface Timeline {
   readonly beats: readonly Beat[];
 }
 
-/** Applies the hand mapping (ignored tracks are dropped) and indexes the notes. */
-export function buildTimeline(parsed: ParsedNotes, mapping: HandMapping): Timeline {
+/**
+ * Applies the hands (ignored tracks are dropped) and indexes the notes. The hand of each note comes
+ * from `noteHands` when the song has a per-note assignment (D28), else from the mapping.
+ */
+export function buildTimeline(
+  parsed: ParsedNotes,
+  mapping: HandMapping,
+  noteHands: NoteHands | null = null,
+): Timeline {
   const notes: PlayableNote[] = [];
-  for (const note of parsed.notes) {
-    const hand = handForNote(mapping, note.trackIndex, note.pitch);
+  for (const [index, note] of parsed.notes.entries()) {
+    const hand = noteHands ? noteHands[index] : handForNote(mapping, note.trackIndex, note.pitch);
     if (hand) {
       notes.push({
         pitch: note.pitch,

@@ -1,4 +1,4 @@
-import { COVER_SOURCES, LIBRARY_SOURCES } from "@open-keys/contracts";
+import { COVER_SOURCES, LIBRARY_SOURCES, NOTE_HANDS_SOURCES } from "@open-keys/contracts";
 import { sql } from "drizzle-orm";
 import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { users } from "../auth/auth.schema";
@@ -80,4 +80,26 @@ export const songTracks = sqliteTable(
     uniqueIndex("song_tracks_song_track_idx").on(table.songId, table.trackIndex),
     check("song_tracks_hand_check", sql`${table.hand} in ('left', 'right', 'ignore')`),
   ],
+);
+
+/**
+ * Hand of every note of a song (D28), one row per song: always read and written as a whole, kept out
+ * of `songs` so the catalogue queries stay light. No row: the hands come from `hand_mode`.
+ */
+export const songHands = sqliteTable(
+  "song_hands",
+  {
+    songId: text("song_id")
+      .primaryKey()
+      .references(() => songs.id, { onDelete: "cascade" }),
+    /** One character per note in canonical order (core `encodeNoteHands`): l, r or - (not played). */
+    hands: text("hands").notNull(),
+    /** Fingerprint of the notes the list was made for: never applied to other notes. */
+    fingerprint: text("fingerprint").notNull(),
+    source: text("source", { enum: NOTE_HANDS_SOURCES }).notNull(),
+    /** Version of the algorithm that computed it. */
+    version: integer("version").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [check("song_hands_source_check", sql`${table.source} in ('auto', 'edited')`)],
 );

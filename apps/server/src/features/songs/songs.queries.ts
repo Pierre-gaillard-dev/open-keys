@@ -3,12 +3,13 @@ import { and, asc, desc, eq, inArray, isNull, or, type SQL, sql } from "drizzle-
 import { containsText, type Database, type Executor } from "../../db";
 import { userSongs } from "../library/library.schema";
 import { songTags, tags } from "../tags/tags.schema";
-import { songs, songTracks } from "./songs.schema";
+import { songHands, songs, songTracks } from "./songs.schema";
 
 export type SongRow = typeof songs.$inferSelect;
 export type NewSongRow = typeof songs.$inferInsert;
 export type SongTrackRow = typeof songTracks.$inferSelect;
 export type NewSongTrackRow = typeof songTracks.$inferInsert;
+export type SongHandsRow = typeof songHands.$inferSelect;
 type EditableSongColumns = Omit<NewSongRow, "id" | "createdBy" | "createdAt">;
 /** Undefined values are skipped by drizzle's set(). */
 export type SongPatch = { [K in keyof EditableSongColumns]?: EditableSongColumns[K] | undefined };
@@ -74,6 +75,19 @@ export function updateTrackHand(
     .set({ hand })
     .where(and(eq(songTracks.id, trackId), eq(songTracks.songId, songId)))
     .run();
+}
+
+export function findSongHands(db: Executor, songId: string): SongHandsRow | null {
+  return db.select().from(songHands).where(eq(songHands.songId, songId)).get() ?? null;
+}
+
+export function saveSongHands(db: Executor, row: SongHandsRow): void {
+  const { songId, ...values } = row;
+  db.insert(songHands).values(row).onConflictDoUpdate({ target: songHands.songId, set: values }).run();
+}
+
+export function deleteSongHands(db: Executor, songId: string): void {
+  db.delete(songHands).where(eq(songHands.songId, songId)).run();
 }
 
 export function findLibrarySummary(db: Executor, userId: string, songId: string): LibrarySummaryRow | null {

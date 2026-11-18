@@ -6,6 +6,8 @@ import { Midi as MidiParser } from "./tonejs-midi";
 export interface ParsedNote {
   readonly trackIndex: number;
   readonly pitch: number;
+  /** Position in the file's own time unit: with the track and the pitch, identifies the note. */
+  readonly ticks: number;
   /** Seconds at 100 % speed. */
   readonly start: number;
   /** Key release: what a falling note shows. */
@@ -77,6 +79,7 @@ export function parseMidiNotes(bytes: Uint8Array): ParsedNotes {
       return {
         trackIndex,
         pitch: note.midi,
+        ticks: note.ticks,
         start: note.time,
         end,
         soundEnd: sustainedEnd(end, ranges),
