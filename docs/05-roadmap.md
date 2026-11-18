@@ -98,7 +98,7 @@ flowchart LR
 - [x] **4.2** Web : statut et favori (catalogue et fiche), reprise de la lecture (UC-12).
 - [x] **4.3** Boucles : sauvegarde, nommage, liste, rappel, suppression.
 - [x] **4.4** `session-tracker` : temps de lecture effective, enregistrement à partir de 10 s, statistiques sur la fiche du morceau. *Les sessions passent par l'outbox (4.7).*
-- [x] **4.5** PWA : manifeste, icônes, Service Worker (shell + échantillons), installation sur Android. *Mise à jour proposée par une bannière, jamais imposée pendant la pratique. Installation à valider sur le Pixel 10 une fois déployé.*
+- [x] **4.5** PWA : manifeste, icônes, Service Worker (shell + échantillons), installation sur Android. *Mise à jour automatique (d'abord proposée par une bannière), jamais pendant la pratique. Installation à valider sur le Pixel 10 une fois déployé.*
 - [x] **4.6** Dexie : cache des MIDI (morceaux ouverts + favoris), catalogue hors-ligne avec badge. *Les autres données (utilisateur, fiches, bibliothèque, boucles) viennent du cache de TanStack Query, sauvegardé dans IndexedDB (D23).*
 - [x] **4.7** Outbox : file d'attente, rejeu (événement online, démarrage, toutes les 60 s), indicateur de synchronisation en attente. *Rejeu aussi dès que la sonde de `/api/health` retrouve l'API, et après chaque écriture.*
 - [x] **4.8** E2E : mode avion → lecture d'un favori → création d'une boucle → retour du réseau → boucle visible sur un autre appareil. *Dans Chromium et Firefox, en CI.*
