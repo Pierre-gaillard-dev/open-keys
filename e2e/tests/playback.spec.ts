@@ -47,3 +47,17 @@ test("slows down and loops a passage", async ({ page }) => {
   await expect.poll(() => position(page), { timeout: 10_000 }).toBeGreaterThan(3000);
   await expect.poll(() => position(page), { timeout: 10_000 }).toBeLessThan(2000);
 });
+
+test("leaves the full screen with the player", async ({ page }) => {
+  const song = await importSong(page.request, "Plein écran");
+  await page.goto(`/songs/${song.id}/play`);
+  await waitForPlayer(page);
+  const fullscreen = () => page.evaluate(() => document.fullscreenElement !== null);
+
+  await page.getByRole("button", { name: "Plein écran" }).click();
+  await expect.poll(fullscreen).toBe(true);
+  await page.getByRole("link", { name: "Quitter le lecteur" }).click();
+
+  await expect(page.getByRole("heading", { name: "Plein écran", level: 1 })).toBeVisible();
+  await expect.poll(fullscreen).toBe(false);
+});
