@@ -53,6 +53,15 @@ flowchart LR
 - Le clavier n'est redessiné qu'au changement de taille ou de zoom. Une surcouche teintée par touche s'allume pendant qu'une note est jouée.
 - Mesuré au spike : **environ 0,1 ms de rendu par image** sur l'Étude op. 10 n°1, avec environ 35 notes à l'écran.
 
+## Écoute au micro (V1.5, D30)
+
+- **`core/listening`** : `Spectrum` (FFT radix-2, fenêtre de Hann, sans allocation par trame), `PitchDetector` et `NoteListener`. Une trame toutes les 1024 échantillons (21 ms à 48 kHz) sur les 8192 derniers (170 ms).
+- **`verify(expected)`** : pour chaque note attendue, sur le spectre sans les autres notes attendues, trois tests. Elle bat ses voisins d'un demi-ton non attendus. Ses harmoniques impaires portent au moins 36 % de sa saillance. L'octave inférieure non attendue en explique moins de 45 %. Une note compte quand elle est entendue dans 2 trames de suite.
+- **`detect()`** : transcription libre (estimation itérative de Klapuri), pour l'affichage du labo seulement.
+- **Banc d'essai** (`pnpm --filter @open-keys/server listening:benchmark [bruit-dB]`, avec les échantillons Salamander, ffmpeg requis) : accords à deux mains justes acceptés à 94 % (médiane 127 ms après la frappe), demi-ton faux refusé à 89 %, octave fausse refusée à 78 %. Un vrai piano dans une vraie pièce (réverbération, bruits) sera plus difficile : à mesurer avec le labo.
+- **Labo micro** (`/lab/micro`, lien dans « Mon compte ») : niveau du micro, notes entendues, et vérification de quelques accords (do4, do majeur, deux mains, octave, grave), avec le délai mesuré.
+- **Capture** : `getUserMedia` sans annulation d'écho, réduction de bruit ni gain automatique, et un AudioWorklet (`public/worklets/mic-capture.js`, fichier servi par l'app pour respecter la CSP) qui transmet les échantillons.
+
 ## Couche d'entrée (V2)
 
 L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaît pas l'origine des événements.
