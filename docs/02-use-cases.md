@@ -144,7 +144,7 @@ flowchart LR
      - changer l'assignation d'une piste ;
      - passer en mode **découpage par hauteur** (une seule piste) et régler la note de séparation, C4 par défaut ;
      - **écouter un aperçu** (le lecteur en version réduite) avec les couleurs de main.
-  3. Le pianiste complète les métadonnées : titre (pré-rempli depuis le MIDI ou le nom de fichier), compositeur, difficulté, tags, source, licence.
+  3. Le pianiste complète les métadonnées : titre (pré-rempli depuis le nom stocké dans le MIDI, sauf s'il ne nomme qu'une piste ou un instrument comme « Piste 1 » ou « Grand Piano 1 », sinon depuis le nom de fichier), compositeur, difficulté, tags, source, licence.
   4. **Couverture** (UC-17) : l'app propose des candidats trouvés automatiquement à partir du titre et du compositeur. Le pianiste en choisit un, en fournit un autre (fichier ou URL) ou n'en met aucun.
   5. Il valide : le morceau passe à l'état `ready`.
 - **Alternatives** :

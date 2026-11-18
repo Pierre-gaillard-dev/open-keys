@@ -34,6 +34,7 @@ describe("titleFromName", () => {
   it.each([
     ["gymnopedie_1.mid", "gymnopedie 1"],
     ["Für-Elise.MIDI", "Für Elise"],
+    ["Evanescence - Bring_Me_to_Life.mid", "Evanescence - Bring Me to Life"],
     [".mid", "Sans titre"],
   ])("%s → %s", (name, title) => {
     expect(titleFromName(name)).toBe(title);

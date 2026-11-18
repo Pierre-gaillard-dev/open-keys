@@ -46,11 +46,12 @@ export type ImportsService = ReturnType<typeof createImportsService>;
 
 const MAX_TITLE_LENGTH = 200;
 
-/** "gymnopedie_1.mid" → "gymnopedie 1" */
+/** "gymnopedie_1.mid" → "gymnopedie 1", "Evanescence - Bring_Me_to_Life.mid" keeps its " - ". */
 export function titleFromName(name: string): string {
   const base = name
     .replace(/\.(mid|midi|kar)$/i, "")
-    .replace(/[_-]+/g, " ")
+    .replace(/_+/g, " ")
+    .replace(/(\S)-+(?=\S)/g, "$1 ")
     .replace(/\s+/g, " ")
     .trim();
   return base.slice(0, MAX_TITLE_LENGTH) || "Sans titre";
