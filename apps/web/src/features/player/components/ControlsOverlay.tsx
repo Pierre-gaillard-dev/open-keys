@@ -1,28 +1,17 @@
 import type { Loop } from "@open-keys/contracts";
 import { Link } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  ListMusic,
-  Maximize,
-  Minimize,
-  Minus,
-  Pause,
-  Play,
-  Plus,
-  ScanSearch,
-  SlidersHorizontal,
-} from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Maximize, Minimize, Pause, Play, Repeat, SlidersHorizontal } from "lucide-react";
 import { useStore } from "zustand";
 import { cx } from "../../../shared/lib/cx";
 import { IconButton } from "../../../shared/ui";
-import { type PlayerController, TEMPO_STEP_PCT } from "../controller/player-controller";
+import type { PlayerController } from "../controller/player-controller";
 import { SEEK_STEP_MS } from "../hooks/use-player-shortcuts";
 import type { PlayerStore } from "../stores/player.store";
-import { HandControl } from "./HandControl";
 import { LoopPanel } from "./LoopPanel";
 import { PlayerOptionsPanel } from "./PlayerOptionsPanel";
 import { ProgressBar } from "./ProgressBar";
+
+export type PlayerPanel = "loops" | "options";
 
 export interface ControlsOverlayProps {
   readonly songId: string;
@@ -32,62 +21,76 @@ export interface ControlsOverlayProps {
   readonly controller: PlayerController | null;
   readonly savedLoops: readonly Loop[];
   readonly visible: boolean;
+  readonly panel: PlayerPanel | null;
+  readonly onPanelChange: (panel: PlayerPanel | null) => void;
   readonly isFullscreen: boolean;
   readonly onToggleFullscreen: () => void;
 }
 
-const PILL = "m-0 flex h-12 items-center rounded-xl border-0 bg-surface-2 px-1";
-const PILL_BUTTON =
-  "flex h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold disabled:opacity-40";
+/** Top of the keyboard: the renderer gives it 20 % of the screen, between 56 and 170 px. */
+const KEYBOARD_TOP = "clamp(56px, 20%, 170px)";
 
 /** Rows spanning the screen: only their children catch taps, the gaps let them through to the background. */
 const ROW = "pointer-events-none *:pointer-events-auto";
+
+const TOP_BUTTON = "flex h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 text-sm font-semibold";
 
 interface PanelButtonsProps {
   readonly songId: string;
   readonly store: PlayerStore;
   readonly controller: PlayerController | null;
   readonly savedLoops: readonly Loop[];
+  readonly panel: PlayerPanel | null;
+  readonly onPanelChange: (panel: PlayerPanel | null) => void;
 }
 
-/** Options and loops, one panel at a time, opened from the top bar. */
-function PanelButtons({ songId, store, controller, savedLoops }: PanelButtonsProps) {
-  const [panel, setPanel] = useState<"loops" | "options" | null>(null);
-  const togglePanel = (next: "loops" | "options") => setPanel((open) => (open === next ? null : next));
+/** Settings and loops, one panel at a time. The buttons show what is not the default. */
+function PanelButtons({ songId, store, controller, savedLoops, panel, onPanelChange }: PanelButtonsProps) {
+  const tempoPct = useStore(store, (state) => state.tempoPct);
+  const loopEnabled = useStore(store, (state) => state.loopEnabled);
+  const toggle = (next: PlayerPanel) => onPanelChange(panel === next ? null : next);
+  const close = () => onPanelChange(null);
   return (
     <div className="relative flex gap-3">
-      <IconButton
-        label="Réglages du lecteur"
+      <button
+        type="button"
+        aria-label="Réglages du lecteur"
         aria-expanded={panel === "options"}
-        onClick={() => togglePanel("options")}
-        className="border-0 bg-surface-2"
+        onClick={() => toggle("options")}
+        className={TOP_BUTTON}
       >
         <SlidersHorizontal aria-hidden="true" className="size-5" />
-      </IconButton>
+        {tempoPct !== 100 && (
+          <span aria-hidden="true" data-testid="tempo-badge" className="tabular-nums">
+            {tempoPct} %
+          </span>
+        )}
+      </button>
       <button
         type="button"
         aria-label={`Boucles (${savedLoops.length})`}
         aria-expanded={panel === "loops"}
-        onClick={() => togglePanel("loops")}
-        className="flex h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 text-sm font-semibold"
+        onClick={() => toggle("loops")}
+        className={cx(TOP_BUTTON, loopEnabled && "bg-fg text-bg")}
       >
-        <ListMusic aria-hidden="true" className="size-4" />
+        <Repeat aria-hidden="true" className="size-4.5" />
         <span aria-hidden="true" className="hidden sm:inline">
-          Boucles ({savedLoops.length})
+          Boucles
         </span>
       </button>
       {panel !== null && (
-        <div className="absolute top-13 right-0 z-10">
+        // On a phone in landscape, a sheet on the whole height: the notes stay visible on the left.
+        <div className="absolute top-13 right-0 z-10 [@media(max-height:500px)]:fixed [@media(max-height:500px)]:top-2 [@media(max-height:500px)]:right-2">
           {panel === "loops" ? (
             <LoopPanel
               songId={songId}
               store={store}
               controller={controller}
               savedLoops={savedLoops}
-              onClose={() => setPanel(null)}
+              onClose={close}
             />
           ) : (
-            <PlayerOptionsPanel store={store} controller={controller} onClose={() => setPanel(null)} />
+            <PlayerOptionsPanel store={store} controller={controller} onClose={close} />
           )}
         </div>
       )}
@@ -96,27 +99,12 @@ function PanelButtons({ songId, store, controller, savedLoops }: PanelButtonsPro
 }
 
 /**
- * Controls drawn over the falling notes (mockups: mobile landscape and PC). The bottom part sits just
- * above the keyboard, whose height follows the renderer's rule (20 % of the screen, 56–170 px).
+ * Controls drawn over the falling notes: the title and the panels at the top, play in the middle,
+ * the progress on the edge between the notes and the keyboard. Settings live in their panels.
  */
 export function ControlsOverlay(props: ControlsOverlayProps) {
-  const {
-    songId,
-    title,
-    composer,
-    store,
-    controller,
-    savedLoops,
-    visible,
-    isFullscreen,
-    onToggleFullscreen,
-  } = props;
+  const { songId, title, composer, store, controller, savedLoops, visible, isFullscreen } = props;
   const status = useStore(store, (state) => state.status);
-  const tempoPct = useStore(store, (state) => state.tempoPct);
-  const loop = useStore(store, (state) => state.loop);
-  const loopEnabled = useStore(store, (state) => state.loopEnabled);
-  const pendingStart = useStore(store, (state) => state.pendingLoopStartMs);
-  const zoom = useStore(store, (state) => state.zoom);
   const playing = status === "playing";
   const ready = controller !== null && status !== "loading" && status !== "error";
 
@@ -132,8 +120,8 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
     >
       <div
         data-player-background
-        className="absolute inset-x-0 top-0 bg-bg/80"
-        style={{ bottom: "clamp(56px, 20%, 170px)" }}
+        className="absolute inset-x-0 top-0 bg-bg/70"
+        style={{ bottom: KEYBOARD_TOP }}
       />
 
       <header className={cx("absolute inset-x-3 top-3 flex items-center gap-3", ROW)}>
@@ -141,7 +129,7 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
           to="/songs/$songId"
           params={{ songId }}
           aria-label="Quitter le lecteur"
-          className="flex size-11 items-center justify-center rounded-xl bg-surface-2"
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-2"
         >
           <ArrowLeft aria-hidden="true" className="size-5" />
         </Link>
@@ -150,17 +138,9 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
           {composer && <p className="truncate text-xs text-fg-muted md:text-sm">{composer}</p>}
         </div>
         <IconButton
-          label={zoom ? "Afficher tout le clavier" : "Zoomer sur les notes du morceau"}
-          aria-pressed={zoom}
-          onClick={() => controller?.toggleZoom()}
-          className="border-0 bg-surface-2"
-        >
-          <ScanSearch aria-hidden="true" className="size-5" />
-        </IconButton>
-        <IconButton
           label={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-          onClick={onToggleFullscreen}
-          className="border-0 bg-surface-2"
+          onClick={props.onToggleFullscreen}
+          className="shrink-0 border-0 bg-surface-2"
         >
           {isFullscreen ? (
             <Minimize aria-hidden="true" className="size-5" />
@@ -168,14 +148,19 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
             <Maximize aria-hidden="true" className="size-5" />
           )}
         </IconButton>
-        <PanelButtons songId={songId} store={store} controller={controller} savedLoops={savedLoops} />
+        <PanelButtons
+          songId={songId}
+          store={store}
+          controller={controller}
+          savedLoops={savedLoops}
+          panel={props.panel}
+          onPanelChange={props.onPanelChange}
+        />
       </header>
 
       <div
-        className={cx(
-          "absolute inset-x-0 top-1/2 flex -translate-y-[60%] items-center justify-center gap-6",
-          ROW,
-        )}
+        className={cx("absolute inset-x-0 flex items-center justify-center gap-6", ROW)}
+        style={{ top: "3.5rem", bottom: KEYBOARD_TOP }}
       >
         <button
           type="button"
@@ -210,70 +195,12 @@ export function ControlsOverlay(props: ControlsOverlayProps) {
         </button>
       </div>
 
+      {/* Its track lies on the top edge of the keyboard (the slider is 24 px high, the track centred). */}
       <div
-        className={cx("absolute inset-x-3 flex flex-col gap-3 pb-3 md:inset-x-6", ROW)}
-        style={{ bottom: "clamp(56px, 20%, 170px)" }}
+        className={cx("absolute inset-x-3 md:inset-x-6", ROW)}
+        style={{ bottom: `calc(${KEYBOARD_TOP} - 12px)` }}
       >
         <ProgressBar store={store} controller={ready ? controller : null} />
-        <div className={cx("flex flex-wrap items-center gap-2", ROW)}>
-          <fieldset className={PILL}>
-            <legend className="sr-only">Vitesse</legend>
-            <button
-              type="button"
-              aria-label="Ralentir"
-              disabled={!ready}
-              onClick={() => controller?.changeTempo(-TEMPO_STEP_PCT)}
-              className={PILL_BUTTON}
-            >
-              <Minus aria-hidden="true" className="size-4" />
-            </button>
-            <output aria-live="polite" className="min-w-14 text-center font-bold">
-              {tempoPct} %
-            </output>
-            <button
-              type="button"
-              aria-label="Accélérer"
-              disabled={!ready}
-              onClick={() => controller?.changeTempo(TEMPO_STEP_PCT)}
-              className={PILL_BUTTON}
-            >
-              <Plus aria-hidden="true" className="size-4" />
-            </button>
-          </fieldset>
-          <fieldset className={PILL}>
-            <legend className="sr-only">Boucle A-B</legend>
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() => controller?.markLoopStart()}
-              className={cx(PILL_BUTTON, pendingStart !== null && "text-hand-left")}
-              aria-label="Début de boucle (A)"
-            >
-              A
-            </button>
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() => controller?.markLoopEnd()}
-              className={PILL_BUTTON}
-              aria-label="Fin de boucle (B)"
-            >
-              B
-            </button>
-            <button
-              type="button"
-              aria-pressed={loopEnabled}
-              disabled={!(ready && loop)}
-              onClick={() => controller?.toggleLoop()}
-              className={cx(PILL_BUTTON, loopEnabled && "bg-fg text-bg")}
-            >
-              Boucle
-            </button>
-          </fieldset>
-          <div className="flex-1" />
-          <HandControl hand="left" store={store} controller={ready ? controller : null} />
-          <HandControl hand="right" store={store} controller={ready ? controller : null} />
-        </div>
       </div>
     </div>
   );

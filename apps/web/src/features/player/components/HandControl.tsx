@@ -7,7 +7,7 @@ import type { PlayerStore } from "../stores/player.store";
 
 const LABELS: Readonly<Record<Hand, string>> = { left: "gauche", right: "droite" };
 
-/** Sound and display of one hand, independently (UC-11). */
+/** Sound, display and volume of one hand, independently (UC-11), in the player settings. */
 export function HandControl({
   hand,
   store,
@@ -19,16 +19,20 @@ export function HandControl({
 }) {
   const settings = useStore(store, (state) => state.hands[hand]);
   const name = LABELS[hand];
+  const volumePct = Math.round(settings.volume * 100);
   const toggleClass = (on: boolean) =>
-    cx("flex size-10 items-center justify-center rounded-lg", on ? "bg-line text-fg" : "text-fg-muted");
+    cx(
+      "flex size-10 shrink-0 items-center justify-center rounded-lg",
+      on ? "bg-surface-2 text-fg" : "text-fg-muted",
+    );
 
   return (
-    <div className="flex h-12 items-center gap-1 rounded-xl bg-surface-2 pr-1 pl-3">
+    <div className="flex items-center gap-1">
       <span
         aria-hidden="true"
-        className={cx("size-2.5 rounded-sm", hand === "left" ? "bg-hand-left" : "bg-hand-right")}
+        className={cx("size-2.5 shrink-0 rounded-sm", hand === "left" ? "bg-hand-left" : "bg-hand-right")}
       />
-      <span className="mr-1 ml-1.5 text-sm font-semibold capitalize">{name}</span>
+      <span className="mr-1 ml-1.5 w-14 shrink-0 text-sm font-semibold capitalize">{name}</span>
       <button
         type="button"
         aria-pressed={settings.audible}
@@ -57,6 +61,23 @@ export function HandControl({
           <EyeOff aria-hidden="true" className="size-4.5" />
         )}
       </button>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        aria-label={`Volume main ${name}`}
+        value={volumePct}
+        disabled={!(controller && settings.audible)}
+        onChange={(event) => controller?.setHandVolume(hand, Number(event.target.value))}
+        className={cx(
+          "ml-2 min-w-0 flex-1 disabled:opacity-40",
+          hand === "left" ? "accent-hand-left" : "accent-hand-right",
+        )}
+      />
+      <output className="w-11 shrink-0 text-right text-sm whitespace-nowrap text-fg-soft tabular-nums">
+        {volumePct} %
+      </output>
     </div>
   );
 }

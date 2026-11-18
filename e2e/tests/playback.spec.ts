@@ -32,11 +32,13 @@ test("slows down and loops a passage", async ({ page }) => {
   await page.goto(`/songs/${song.id}/play`);
   await waitForPlayer(page);
 
+  await page.getByRole("button", { name: "Réglages du lecteur" }).click();
   await page.getByRole("button", { name: "Ralentir" }).click();
+  await page.getByRole("button", { name: "Boucles (0)" }).click();
   await page.getByRole("button", { name: "Début de boucle (A)" }).click();
   await page.getByRole("button", { name: "Avancer de 5 secondes" }).click();
   await page.getByRole("button", { name: "Fin de boucle (B)" }).click();
-  await expect(page.getByText("95 %")).toBeVisible();
+  await expect(page.getByTestId("tempo-badge")).toHaveText("95 %");
   await expect(page.getByText("A 0:00 · B 0:05")).toBeVisible();
 
   await page.getByRole("button", { name: "Lecture" }).click();

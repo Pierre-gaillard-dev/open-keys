@@ -44,4 +44,31 @@ describe("useAutoHide", () => {
     act(() => vi.advanceTimersByTime(AUTO_HIDE_DELAY_MS * 2));
     expect(result.current.visible).toBe(true);
   });
+
+  it("keeps them shown while a panel is open, then hides them after the delay", () => {
+    const { result, rerender } = renderHook(({ hold }) => useAutoHide(true, hold), {
+      initialProps: { hold: true },
+    });
+    act(() => vi.advanceTimersByTime(AUTO_HIDE_DELAY_MS * 2));
+    expect(result.current.visible).toBe(true);
+
+    rerender({ hold: false });
+    act(() => vi.advanceTimersByTime(AUTO_HIDE_DELAY_MS));
+    expect(result.current.visible).toBe(false);
+  });
+
+  it("shows them on a mouse move, not on a finger move nor right after a dismissing tap", () => {
+    const { result } = renderHook(() => useAutoHide(false));
+
+    act(() => result.current.hide());
+    act(() => result.current.pointerMoved("mouse"));
+    act(() => result.current.pointerMoved("touch"));
+    expect(result.current.visible).toBe(false);
+
+    act(() => vi.advanceTimersByTime(1000));
+    act(() => result.current.pointerMoved("touch"));
+    expect(result.current.visible).toBe(false);
+    act(() => result.current.pointerMoved("mouse"));
+    expect(result.current.visible).toBe(true);
+  });
 });

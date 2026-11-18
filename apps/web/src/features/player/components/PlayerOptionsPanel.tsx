@@ -1,11 +1,16 @@
-import type { Hand } from "@open-keys/core";
-import { X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import { useStore } from "zustand";
 import { cx } from "../../../shared/lib/cx";
 import { IconButton, SegmentedControl } from "../../../shared/ui";
-import type { PlayerController } from "../controller/player-controller";
+import {
+  MAX_TEMPO_PCT,
+  MIN_TEMPO_PCT,
+  type PlayerController,
+  TEMPO_STEP_PCT,
+} from "../controller/player-controller";
 import type { PlayerStore } from "../stores/player.store";
 import type { NoteNamesMode } from "../stores/player-preferences";
+import { HandControl } from "./HandControl";
 
 export interface PlayerOptionsPanelProps {
   readonly store: PlayerStore;
@@ -20,7 +25,9 @@ const NOTE_NAMES_OPTIONS: readonly { value: NoteNamesMode; label: string }[] = [
   { value: "both", label: "Les deux" },
 ];
 
-const HAND_LABELS: Readonly<Record<Hand, string>> = { left: "Main gauche", right: "Main droite" };
+const SECTION = "flex flex-col gap-2 border-t border-line pt-4";
+const SECTION_TITLE = "text-xs font-semibold tracking-wide text-fg-muted uppercase";
+const STEP_BUTTON = "flex size-10 items-center justify-center rounded-lg bg-surface-2 disabled:opacity-40";
 
 function Toggle({
   label,
@@ -57,15 +64,48 @@ function Toggle({
   );
 }
 
-/** Count-in, metronome, note names (device preferences) and volume of each hand (per song). */
+function SpeedControl({ store, controller }: Omit<PlayerOptionsPanelProps, "onClose">) {
+  const tempoPct = useStore(store, (state) => state.tempoPct);
+  return (
+    <fieldset className="m-0 flex items-center gap-3 border-0 p-0">
+      <legend className={cx(SECTION_TITLE, "mb-2")}>Vitesse</legend>
+      <button
+        type="button"
+        aria-label="Ralentir"
+        disabled={!controller || tempoPct <= MIN_TEMPO_PCT}
+        onClick={() => controller?.changeTempo(-TEMPO_STEP_PCT)}
+        className={STEP_BUTTON}
+      >
+        <Minus aria-hidden="true" className="size-4" />
+      </button>
+      <output aria-live="polite" className="min-w-16 text-center text-lg font-bold tabular-nums">
+        {tempoPct} %
+      </output>
+      <button
+        type="button"
+        aria-label="Accélérer"
+        disabled={!controller || tempoPct >= MAX_TEMPO_PCT}
+        onClick={() => controller?.changeTempo(TEMPO_STEP_PCT)}
+        className={STEP_BUTTON}
+      >
+        <Plus aria-hidden="true" className="size-4" />
+      </button>
+    </fieldset>
+  );
+}
+
+/**
+ * Everything that is set once and left alone while playing: speed, hands (per song), zoom, note names,
+ * count-in and metronome (device preferences). Scrolls on a phone in landscape.
+ */
 export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptionsPanelProps) {
   const preferences = useStore(store, (state) => state.preferences);
-  const hands = useStore(store, (state) => state.hands);
+  const zoom = useStore(store, (state) => state.zoom);
 
   return (
     <section
       aria-label="Réglages du lecteur"
-      className="flex w-[22rem] max-w-[calc(100vw-2rem)] flex-col gap-4 rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-black/60"
+      className="flex max-h-[calc(100dvh-7.5rem-clamp(56px,20dvh,170px))] [@media(max-height:500px)]:max-h-[calc(100dvh-1rem)] w-[23rem] max-w-[calc(100vw-1.5rem)] flex-col gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-black/60"
     >
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">Réglages</h2>
@@ -74,7 +114,33 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
         </IconButton>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <SpeedControl store={store} controller={controller} />
+
+      <div className={SECTION}>
+        <h3 className={SECTION_TITLE}>Mains</h3>
+        <HandControl hand="left" store={store} controller={controller} />
+        <HandControl hand="right" store={store} controller={controller} />
+      </div>
+
+      <div className={SECTION}>
+        <h3 className={SECTION_TITLE}>Affichage</h3>
+        <Toggle
+          label="Zoom sur le morceau"
+          hint="Le clavier se limite aux notes jouées"
+          pressed={zoom}
+          onToggle={() => controller?.toggleZoom()}
+        />
+        <span className="text-sm font-semibold">Nom des notes</span>
+        <SegmentedControl
+          label="Nom des notes"
+          options={NOTE_NAMES_OPTIONS}
+          value={preferences.noteNames}
+          onChange={(value) => controller?.setNoteNames(value)}
+        />
+      </div>
+
+      <div className={SECTION}>
+        <h3 className={SECTION_TITLE}>Rythme</h3>
         <Toggle
           label="Décompte"
           hint="Une mesure avant de jouer et à chaque tour de boucle"
@@ -87,40 +153,6 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
           pressed={preferences.metronome}
           onToggle={() => controller?.toggleMetronome()}
         />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-semibold">Nom des notes</span>
-        <SegmentedControl
-          label="Nom des notes"
-          options={NOTE_NAMES_OPTIONS}
-          value={preferences.noteNames}
-          onChange={(value) => controller?.setNoteNames(value)}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-semibold">Volume</span>
-        {(["left", "right"] as const).map((hand) => (
-          <label key={hand} className="flex items-center gap-3 text-sm text-fg-soft">
-            <span className={cx("w-24 shrink-0", hand === "left" ? "text-hand-left" : "text-hand-right")}>
-              {HAND_LABELS[hand]}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              aria-label={`Volume ${HAND_LABELS[hand].toLowerCase()}`}
-              value={Math.round(hands[hand].volume * 100)}
-              onChange={(event) => controller?.setHandVolume(hand, Number(event.target.value))}
-              className={cx("flex-1", hand === "left" ? "accent-hand-left" : "accent-hand-right")}
-            />
-            <output className="w-12 text-right whitespace-nowrap tabular-nums">
-              {Math.round(hands[hand].volume * 100)} %
-            </output>
-          </label>
-        ))}
       </div>
     </section>
   );

@@ -7,7 +7,10 @@ function percent(value: number, total: number): string {
   return `${total > 0 ? (value / total) * 100 : 0}%`;
 }
 
-/** Seekable progress (native range input for keyboard and screen readers), with the A-B loop drawn on it. */
+/**
+ * Seekable progress (native range input for keyboard and screen readers), with the A-B loop drawn on it.
+ * The times are above the track: the track lies on the edge of the keyboard.
+ */
 export function ProgressBar({
   store,
   controller,
@@ -22,7 +25,7 @@ export function ProgressBar({
   const pendingStart = useStore(store, (state) => state.pendingLoopStartMs);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col-reverse gap-0.5">
       <div className="relative flex h-6 items-center">
         <div className="absolute inset-x-0 h-1 rounded-full bg-line" />
         <div className="absolute h-1 rounded-full bg-fg" style={{ width: percent(positionMs, durationMs) }} />
@@ -61,7 +64,7 @@ export function ProgressBar({
           style={{ left: percent(positionMs, durationMs) }}
         />
       </div>
-      <div className="flex justify-between text-xs text-fg-muted">
+      <div className="flex justify-between text-xs font-semibold text-fg-soft tabular-nums">
         <span>{formatDuration(positionMs)}</span>
         {loop && (
           <span>

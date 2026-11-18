@@ -1,7 +1,7 @@
 import type { LibraryEntry, Loop, SongDetail } from "@open-keys/contracts";
 import type { Timeline } from "@open-keys/core";
 import { useNavigate } from "@tanstack/react-router";
-import { type PointerEvent, useEffect, useMemo, useRef } from "react";
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { ErrorBanner } from "../../../shared/ui";
 import { useAutoHide } from "../hooks/use-auto-hide";
@@ -16,7 +16,7 @@ import { useWakeLock } from "../hooks/use-wake-lock";
 import type { PlayerRuntime } from "../runtime/browser-runtime";
 import { type InitialPlayerState, loopSelectionOf } from "../stores/player.store";
 import { loadPlayerPreferences } from "../stores/player-preferences";
-import { ControlsOverlay } from "./ControlsOverlay";
+import { ControlsOverlay, type PlayerPanel } from "./ControlsOverlay";
 import { CountInBadge } from "./CountInBadge";
 import { SpeedUpOffer } from "./SpeedUpOffer";
 
@@ -70,7 +70,9 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
   const error = useStore(store, (state) => state.error);
   const playing = status === "playing";
   useWakeLock(playing);
-  const autoHide = useAutoHide(playing);
+  const [panel, setPanel] = useState<PlayerPanel | null>(null);
+  // An open panel keeps the controls shown, even while playing (A and B are set during playback).
+  const autoHide = useAutoHide(playing, panel !== null);
   const fullscreen = useFullscreen();
   const navigate = useNavigate();
 
@@ -93,19 +95,22 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
     }
   }, [controller, savedLoops, lastLoopId, store]);
 
-  // A tap on an empty area dismisses the controls (to watch the notes, even on pause); anything else shows them.
+  // A tap on an empty area closes the open panel, else dismisses the controls (to watch the notes, even
+  // on pause); a tap on hidden controls shows them.
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (autoHide.visible && isBackground(event.target)) {
+    if (!(autoHide.visible && isBackground(event.target))) {
+      autoHide.poke();
+    } else if (panel === null) {
       autoHide.hide();
     } else {
-      autoHide.poke();
+      setPanel(null);
     }
   };
 
   return (
     <div
       className="fixed inset-0 overflow-hidden bg-bg"
-      onPointerMove={autoHide.poke}
+      onPointerMove={(event) => autoHide.pointerMoved(event.pointerType)}
       onPointerDown={onPointerDown}
     >
       <div ref={host} data-player-background className="absolute inset-0" data-testid="player-canvas" />
@@ -117,6 +122,8 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
         controller={controller}
         savedLoops={savedLoops}
         visible={autoHide.visible}
+        panel={panel}
+        onPanelChange={setPanel}
         isFullscreen={fullscreen.isFullscreen}
         onToggleFullscreen={() => void fullscreen.toggle()}
       />

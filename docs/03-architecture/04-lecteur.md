@@ -63,14 +63,18 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
 - **Store Zustand vanilla** : position (rafraîchie toutes les 100 ms pendant la lecture), vitesse, boucle, mains, zoom. Le rendu PixiJS ne passe jamais par React.
 - **Runtime navigateur isolé** (`runtime/browser-runtime.ts`) : AudioContext, sampler, renderer WebGL. Dans les tests de composants, il est remplacé par des faux (`vi.mock`), et tout le reste du lecteur est réel.
 - **Le runtime appartient à la page** (`hooks/use-player-runtime.ts`) : il est créé dès l'ouverture du lecteur, et le décodage des échantillons (l'étape la plus longue, ≈ 1,2 s) se fait pendant le chargement du morceau. La session (`use-player-session.ts`) construit ensuite le moteur et le rendu sur ce runtime.
-- **Contrôles** :
+- **Contrôles**, réduits à l'essentiel (D27) :
+  - en haut : retour, titre, plein écran, **Réglages** et **Boucles**. Le bouton Réglages affiche la vitesse quand elle n'est pas à 100 %, le bouton Boucles s'allume quand une boucle est active ;
+  - au centre : −5 s, lecture/pause, +5 s ;
+  - la **barre de progression** est posée sur le bord entre les notes et le clavier (même règle de hauteur que le rendu : 20 % de l'écran, entre 56 et 170 px), avec les temps au-dessus ;
   - visibles à la pause, **masqués dès le lancement de la lecture** (fondu de 200 ms) ;
-  - un tap sur une zone vide (notes, clavier, espaces entre les boutons) les masque, y compris à la pause, pour regarder les notes ;
-  - un tap, un mouvement de souris ou une touche les réaffiche. Pendant la lecture, ils se masquent à nouveau après 3 s sans interaction ;
-  - la partie basse se place juste au-dessus du clavier, selon la même règle de hauteur que le rendu (20 % de l'écran, entre 56 et 170 px).
+  - un tap sur une zone vide ferme le panneau ouvert, sinon masque les contrôles, y compris à la pause ;
+  - un tap, un mouvement de **souris** ou une touche les réaffiche. Un doigt qui bouge pendant un tap ne compte pas, ni la souris dans les 600 ms qui suivent un tap qui les a masqués. Pendant la lecture, ils se masquent à nouveau après 3 s sans interaction, **sauf tant qu'un panneau est ouvert** (A et B se posent pendant la lecture).
+- **Panneaux** : un seul ouvert à la fois, sous la barre du haut. Sur un écran de moins de 500 px de haut (téléphone en paysage), ils prennent toute la hauteur à droite, et les notes restent visibles à gauche.
 - **Zoom automatique** : activé par défaut quand le plus petit côté de l'écran fait moins de 600 px (téléphone, quelle que soit l'orientation). Le clavier cadre alors la plage du morceau, avec 2 touches de marge.
 - **Raccourcis (PC)** : `Espace` lecture/pause, `←`/`→` ±5 s, `↑`/`↓` vitesse ±5 %, `A`/`B` bornes de boucle, `L` boucle on/off, `1`/`2` son de la main gauche/droite, `Z` zoom, `M` métronome, `C` décompte, `N` nom des notes (aucun → notes → touches → les deux), `F` plein écran, `Échap` quitter.
-- **Réglages** (bouton de la barre du haut) : décompte, métronome, nom des notes, volume de chaque main.
+- **Réglages** : vitesse, mains (son, affichage, volume), zoom, nom des notes, décompte et métronome.
+- **Boucles** : bornes A et B, boucle on/off, vitesse cible, boucles enregistrées.
 - **Plein écran** avec verrouillage en paysage quand le navigateur le permet, et **Wake Lock** pendant la lecture.
 
 ## Confort (V1.2, D25)

@@ -152,6 +152,7 @@ Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste igno
 
 ## Plus tard (non planifié)
 
+- **Répartition des mains par algorithme** : la répartition actuelle (par piste, ou par hauteur autour d'une note pivot) se trompe souvent. Il faut un vrai algorithme qui suit chaque main dans le temps (continuité, écart maximal d'une main, croisements), et au moins sur PC, la possibilité de corriger la main de chaque note dans l'éditeur.
 - Gamification (séries de jours, objectifs quotidiens).
 - Multi-utilisateur (le modèle de données est prêt).
 - Détection au micro (non prioritaire).
