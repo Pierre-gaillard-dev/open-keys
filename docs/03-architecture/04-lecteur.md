@@ -93,6 +93,16 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
 - **Proposition d'accélérer** après **5 tours de suite**, de 5 % et jusqu'à la vitesse cible de la boucle (100 % par défaut). Visible même quand les contrôles sont masqués. « Plus tard » attend 5 nouveaux tours.
 - Vitesse cible réglable dans le panneau des boucles. Les deux vitesses d'une boucle enregistrée sont sauvegardées comme toute modification de boucle (outbox, hors-ligne compris).
 
+## Répartition des mains (`core/hands`, D28)
+
+- **`separateHands`** : les notes sont regroupées en accords (attaques à moins de 35 ms) et triées par hauteur. Pour chaque accord, chaque coupure possible (notes graves à gauche, aiguës à droite) est notée :
+  - déplacement de chaque main depuis sa dernière position ;
+  - écart au-delà d'une dixième dans une main, et plus de 5 touches ; les touches encore tenues comptent moins, car une longue note est souvent tenue par la pédale ;
+  - main gauche au-dessus de la droite, et chaque main hors de son registre habituel.
+- Une **recherche en faisceau** (12 hypothèses) garde les suites les moins coûteuses sur tout le morceau : un passage plus loin peut corriger un choix fait plus tôt. Quelques dizaines de millisecondes par morceau.
+- Les poids (`DEFAULT_SEPARATION_WEIGHTS`) ont été réglés sur la moitié d'un corpus Mutopia et vérifiés sur l'autre moitié. `pnpm --filter @open-keys/server hands:benchmark <dossier>` refait la mesure : à relancer après toute modification, et augmenter alors `HAND_SEPARATION_VERSION`.
+- **Encodage** (`note-hands.ts`) : une main par note dans l'ordre canonique (piste, ticks, hauteur) et l'empreinte de ces notes. `buildTimeline` reçoit les mains décodées ; si elles ne correspondent pas au fichier, la timeline revient aux pistes.
+
 ## Reprise et pratique (`hooks/use-practice-persistence.ts`)
 
 - À la pause, quand l'onglet est masqué et en quittant le lecteur, la bibliothèque est mise à jour : position, vitesse, mains, boucle active et date de pratique. Les requêtes partent avec `keepalive` pour survivre à la fermeture de la page.

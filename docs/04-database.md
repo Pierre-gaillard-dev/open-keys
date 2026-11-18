@@ -69,6 +69,14 @@ Recherche texte : `LIKE` suffit dans le MVP. Table virtuelle FTS5 si le besoin a
 Une ligne par piste MIDI contenant des notes, avec son assignation à une main (`channel` = canal principal de la piste).
 Contrainte d'unicité : `(song_id, track_index)`.
 
+### `song_hands` — feature `songs` (D28)
+La main de chaque note d'un morceau, une ligne par morceau. Sans ligne, les mains viennent de `songs.hand_mode`.
+- `hands` : un caractère par note (`l`, `r`, `-` pour une note d'une piste ignorée), dans l'ordre canonique des notes : piste, position en ticks, hauteur. Cet ordre ne dépend pas de la librairie qui lit le MIDI.
+- `fingerprint` : empreinte (FNV-1a, 32 bits) de cette liste de notes. Le serveur la vérifie sur le fichier avant d'enregistrer, et le lecteur ne l'applique qu'à ces notes-là : sinon, il revient à `hand_mode`.
+- `source` : `auto` (calculée par l'algorithme) ou `edited` (corrigée à la main). `version` : version de l'algorithme qui l'a calculée. Une nouvelle version ne modifie jamais une répartition enregistrée.
+- Table à part plutôt qu'une colonne de `songs` : quelques kilo-octets par morceau, que les requêtes du catalogue n'ont pas à lire. Plutôt qu'une ligne par note : la liste est toujours lue et écrite en entier.
+- En mode note par note, `songs.hand_mode` vaut `split` : c'est le repli si la liste ne correspond plus au fichier.
+
 ### `tags`, `song_tags` — feature `tags`
 Tags libres, en minuscules et nettoyés (`trim`). La table de liaison a une clé primaire composite et des suppressions en cascade.
 

@@ -56,6 +56,15 @@ table practice_sessions {
   }
 }
 
+table song_hands {
+  song_id text [pk, not null]
+  hands text [not null]
+  fingerprint text [not null]
+  source text [not null]
+  version integer [not null]
+  updated_at integer [not null]
+}
+
 table song_tags {
   song_id text [not null]
   tag_id text [not null]
@@ -191,6 +200,8 @@ ref practice_sessions_user_id_users_id_fk: practice_sessions.user_id > users.id 
 ref practice_sessions_song_id_songs_id_fk: practice_sessions.song_id > songs.id [delete: cascade, update: no action]
 
 ref practice_sessions_loop_id_loops_id_fk: practice_sessions.loop_id > loops.id [delete: set null, update: no action]
+
+ref song_hands_song_id_songs_id_fk: song_hands.song_id > songs.id [delete: cascade, update: no action]
 
 ref song_tags_song_id_songs_id_fk: song_tags.song_id > songs.id [delete: cascade, update: no action]
 
