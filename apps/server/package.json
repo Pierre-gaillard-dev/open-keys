@@ -8,7 +8,8 @@
     "start": "node dist/index.mjs",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:dbml": "tsx scripts/generate-dbml.ts"
+    "db:dbml": "tsx scripts/generate-dbml.ts",
+    "hands:benchmark": "tsx scripts/hands-benchmark.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.8",

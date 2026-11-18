@@ -4,22 +4,38 @@ import type { Hand, HandMapping, TrackHand } from "./hands.types";
 /** Middle C (C4). */
 export const DEFAULT_SPLIT_PITCH = 60;
 
+/** General MIDI programs 0 to 7, as @tonejs/midi names them (a track without program change is the first). */
+const PIANO_FAMILY: ReadonlySet<string> = new Set([
+  "acoustic grand piano",
+  "bright acoustic piano",
+  "electric grand piano",
+  "honky-tonk piano",
+  "electric piano 1",
+  "electric piano 2",
+  "harpsichord",
+  "clavi",
+]);
+
+const isPiano = (track: MidiTrackSummary) => PIANO_FAMILY.has(track.instrument?.toLowerCase() ?? "");
+
 /**
  * Initial proposal shown on the import review screen (UC-04):
- * - percussion is ignored;
+ * - percussion is ignored, and so are the other instruments of a band arrangement when it has piano
+ *   tracks (guitar, bass…: not for the hands; the accompaniment comes with V1.4);
  * - two or more playable tracks: the highest one (average pitch) is the right hand, the others the left;
  * - a single playable track: split by pitch at C4.
  */
 export function suggestHandMapping(tracks: readonly MidiTrackSummary[]): HandMapping {
-  const playable = tracks.filter((track) => !track.isPercussion);
+  const melodic = tracks.filter((track) => !track.isPercussion);
+  const pianos = melodic.filter(isPiano);
+  const playable = pianos.length > 0 ? pianos : melodic;
   const highest = playable.reduce<MidiTrackSummary | undefined>(
     (best, track) => (best === undefined || track.averagePitch > best.averagePitch ? track : best),
     undefined,
   );
   const mode = playable.length >= 2 ? "tracks" : "split";
-
   const handOf = (track: MidiTrackSummary): TrackHand => {
-    if (track.isPercussion) {
+    if (!playable.includes(track)) {
       return "ignore";
     }
     if (mode === "split") {
@@ -27,7 +43,6 @@ export function suggestHandMapping(tracks: readonly MidiTrackSummary[]): HandMap
     }
     return track === highest ? "right" : "left";
   };
-
   return {
     mode,
     splitPitch: DEFAULT_SPLIT_PITCH,

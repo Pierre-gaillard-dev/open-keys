@@ -1,10 +1,12 @@
 import type {
   CoverSource,
   ListSongsQuery,
+  NoteHandsInput,
   SongDetail,
   SongSummary,
   UpdateSongRequest,
 } from "@open-keys/contracts";
+import { InvalidMidiError, notesFingerprint, parseMidiNotes } from "@open-keys/core";
 import type { Database, Executor } from "../../db";
 import { AppError } from "../../shared/http";
 import type { Clock } from "../../shared/runtime";
@@ -12,9 +14,11 @@ import type { FileStorage } from "../../shared/storage";
 import type { TagsService } from "../tags";
 import { toSongDetail, toSongSummary } from "./songs.mapper";
 import {
+  deleteSongHands,
   findLibrarySummary,
   findSongById,
   findSongByMidiSha,
+  findSongHands,
   insertSong,
   insertTracks,
   listSongsWithLibrary,
@@ -23,6 +27,7 @@ import {
   type NewSongTrackRow,
   type SongPatch,
   type SongRow,
+  saveSongHands,
   updateSong,
   updateTrackHand,
 } from "./songs.queries";
@@ -54,7 +59,36 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
   const detail = (userId: string, id: string): SongDetail => {
     const song = requireSong(db, id);
     const songTags = tags.tagsBySong([id]).get(id) ?? [];
-    return toSongDetail(song, listTracks(db, id), songTags, findLibrarySummary(db, userId, id));
+    return toSongDetail(
+      song,
+      listTracks(db, id),
+      songTags,
+      findLibrarySummary(db, userId, id),
+      findSongHands(db, id),
+    );
+  };
+
+  const readMidi = async (song: SongRow): Promise<Uint8Array> => {
+    const bytes = await storage.read("midi", song.midiSha256);
+    if (!bytes) {
+      throw new AppError("NOT_FOUND", "MIDI file missing");
+    }
+    return bytes;
+  };
+
+  /** A per-note assignment must have been made for the notes of this very file (D28). */
+  const checkNoteHands = async (song: SongRow, noteHands: NoteHandsInput): Promise<void> => {
+    let notes: ReturnType<typeof parseMidiNotes>["notes"];
+    try {
+      notes = parseMidiNotes(await readMidi(song)).notes;
+    } catch (error) {
+      throw error instanceof InvalidMidiError ? new AppError("VALIDATION_ERROR", error.message) : error;
+    }
+    if (noteHands.hands.length !== notes.length || noteHands.fingerprint !== notesFingerprint(notes)) {
+      throw new AppError("VALIDATION_ERROR", "The hands do not match the notes of this song", {
+        details: [{ path: "noteHands", message: "Computed for other notes: compute them again" }],
+      });
+    }
   };
 
   /** Shared by edition and import confirmation: metadata, tags and hand assignment. */
@@ -64,7 +98,7 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
     fields: UpdateSongRequest,
     extra: SongPatch = {},
   ): void => {
-    const { tags: tagNames, tracks, ...columns } = fields;
+    const { tags: tagNames, tracks, noteHands, ...columns } = fields;
     if (tracks) {
       const known = new Set(listTracks(tx, song.id).map((track) => track.id));
       const unknown = tracks.find((track) => !known.has(track.id));
@@ -80,7 +114,13 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
     if (tagNames) {
       tags.replaceSongTags(tx, song.id, tagNames);
     }
-    updateSong(tx, song.id, { ...columns, ...extra, updatedAt: clock() });
+    const now = clock();
+    if (noteHands === null) {
+      deleteSongHands(tx, song.id);
+    } else if (noteHands) {
+      saveSongHands(tx, { songId: song.id, ...noteHands, updatedAt: now });
+    }
+    updateSong(tx, song.id, { ...columns, ...extra, updatedAt: now });
   };
 
   return {
@@ -92,7 +132,10 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
 
     detail,
 
-    update(userId: string, id: string, fields: UpdateSongRequest): SongDetail {
+    async update(userId: string, id: string, fields: UpdateSongRequest): Promise<SongDetail> {
+      if (fields.noteHands) {
+        await checkNoteHands(requireSong(db, id), fields.noteHands);
+      }
       db.transaction((tx) => applyFields(tx, requireSong(tx, id), fields));
       return detail(userId, id);
     },
@@ -106,11 +149,7 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
 
     async midiFile(id: string): Promise<{ bytes: Uint8Array; sha256: string }> {
       const song = requireSong(db, id);
-      const bytes = await storage.read("midi", song.midiSha256);
-      if (!bytes) {
-        throw new AppError("NOT_FOUND", "MIDI file missing");
-      }
-      return { bytes, sha256: song.midiSha256 };
+      return { bytes: await readMidi(song), sha256: song.midiSha256 };
     },
 
     // ── Used by the imports feature ──
@@ -131,7 +170,10 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
       updateSong(db, id, { deletedAt: null, state: "draft", updatedAt: clock() });
     },
 
-    confirmDraft(userId: string, id: string, fields: UpdateSongRequest): SongDetail {
+    async confirmDraft(userId: string, id: string, fields: UpdateSongRequest): Promise<SongDetail> {
+      if (fields.noteHands) {
+        await checkNoteHands(requireSong(db, id), fields.noteHands);
+      }
       db.transaction((tx) => {
         const song = requireSong(tx, id);
         if (song.state !== "draft") {

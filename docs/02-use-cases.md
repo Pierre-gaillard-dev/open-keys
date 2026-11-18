@@ -85,7 +85,7 @@ flowchart LR
 | UC-03 | Importer un MIDI par URL | MVP |
 | UC-04 | Vérifier un import (pistes, mains, métadonnées) | MVP |
 | UC-05 | Parcourir, rechercher et filtrer le catalogue | MVP |
-| UC-06 | Modifier les métadonnées et l'assignation des mains | MVP |
+| UC-06 | Modifier les métadonnées et l'assignation des mains (correction note par note sur PC, D28) | MVP |
 | UC-07 | Supprimer un morceau | MVP |
 | UC-08 | Regarder et écouter un morceau | MVP |
 | UC-09 | Régler la vitesse | MVP |
@@ -130,7 +130,7 @@ flowchart LR
   2. Le serveur télécharge le fichier si besoin, puis vérifie : taille ≤ 2 Mo, en-tête `MThd`, analyse réussie.
   3. Le serveur calcule le SHA-256. **Si le fichier existe déjà**, il propose d'ouvrir le morceau existant.
   4. Le serveur analyse le fichier (`packages/core`) : pistes, canaux, nombre de notes, plage de notes, durée, métadonnées internes (nom de piste, copyright).
-  5. Le serveur crée un morceau à l'état `draft` avec une **proposition d'assignation des mains**.
+  5. Le serveur crée un morceau à l'état `draft` avec une **proposition d'assignation des mains** : seules les pistes de piano sont jouées quand le fichier en contient (arrangement de groupe), les autres instruments sont ignorés.
   6. Redirection vers UC-04.
 - **Alternatives** :
   - Fichier invalide ou trop gros : erreur explicite, rien n'est conservé.
@@ -139,10 +139,11 @@ flowchart LR
 
 ### UC-04 — Vérifier un import
 - **Scénario** :
-  1. L'écran affiche les pistes (nom, canal, nombre de notes, plage) avec l'assignation proposée : `left`, `right` ou `ignore`.
+  1. L'écran affiche les pistes (nom, canal, nombre de notes, plage) et la répartition proposée. Par défaut, le mode est **note par note** (D28) : l'algorithme donne chaque note à une main, les pistes servent seulement à choisir ce qui est joué ou ignoré. Un piano roll montre le résultat.
   2. Le pianiste peut :
-     - changer l'assignation d'une piste ;
-     - passer en mode **découpage par hauteur** (une seule piste) et régler la note de séparation, C4 par défaut ;
+     - jouer ou ignorer une piste ;
+     - **sur PC**, corriger la main de notes choisies dans le piano roll (rectangle de sélection à la souris, Maj pour ajouter), puis « Recalculer automatiquement » pour revenir au résultat de l'algorithme ;
+     - passer en mode **par piste** (une main par piste) ou **par hauteur** (note de séparation, C4 par défaut) ;
      - **écouter un aperçu** (le lecteur en version réduite) avec les couleurs de main.
   3. Le pianiste complète les métadonnées : titre (pré-rempli depuis le nom stocké dans le MIDI, sauf s'il ne nomme qu'une piste ou un instrument comme « Piste 1 » ou « Grand Piano 1 », sinon depuis le nom de fichier), compositeur, difficulté, tags, source, licence.
   4. **Couverture** (UC-17) : l'app propose des candidats trouvés automatiquement à partir du titre et du compositeur. Le pianiste en choisit un, en fournit un autre (fichier ou URL) ou n'en met aucun.

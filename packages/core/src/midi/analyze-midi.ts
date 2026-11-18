@@ -41,9 +41,16 @@ function parse(bytes: Uint8Array): Midi {
   }
 }
 
-/** The header name, unless it only names a track or an instrument ("Piste 1", "Grand Piano 1"). */
-function meaningfulTitle(name: string): string | null {
+/**
+ * The header name, unless it only names a track or an instrument ("Piste 1", "Grand Piano 1"), or is
+ * the name of a track that plays notes ("Elec. Piano (Classic)"): the title is carried by a track
+ * without notes, the conductor track of type 1 files.
+ */
+function meaningfulTitle(name: string, playedTrackNames: readonly (string | null)[]): string | null {
   const title = name.trim();
+  if (playedTrackNames.includes(title)) {
+    return null;
+  }
   const words = title
     .toLowerCase()
     .split(/[^\p{L}]+/u)
@@ -81,7 +88,10 @@ export function analyzeMidi(bytes: Uint8Array): MidiAnalysis {
     ...midi.tracks.flatMap((t) => t.notes.map((note) => note.time + note.duration)),
   );
   return {
-    title: meaningfulTitle(midi.header.name),
+    title: meaningfulTitle(
+      midi.header.name,
+      tracks.map((track) => track.name),
+    ),
     durationMs: Math.round(Math.max(midi.duration, lastNoteEnd) * 1000),
     noteCount: tracks.reduce((sum, track) => sum + track.noteCount, 0),
     minPitch: Math.min(...tracks.map((track) => track.minPitch)),

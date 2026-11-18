@@ -22,6 +22,13 @@
       "when": 1794921406776,
       "tag": "0002_online_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1795007935205,
+      "tag": "0003_song_hands",
+      "breakpoints": true
     }
   ]
 }

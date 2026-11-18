@@ -1,3 +1,5 @@
+import type { SongDetail } from "@open-keys/contracts";
+import { buildMidi, scale } from "@open-keys/core/testing";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -139,6 +141,9 @@ describe("song page", () => {
   });
 });
 
+/** Draft tracks are 1 ("upper") and 2 ("lower"): track 0 is the empty conductor track. */
+const draftMidi = () => buildMidi([{ notes: [] }, { notes: scale(67, 6) }, { notes: scale(43, 6) }]);
+
 describe("import", () => {
   it("imports a file, reviews it and adds it to the catalogue", async () => {
     const draft = songDetail({ state: "draft", title: "gymnopedie 1", composer: null, tags: [] });
@@ -148,8 +153,16 @@ describe("import", () => {
       "GET /api/auth/me": () => ({ json: USER }),
       "POST /api/imports/file": () => ({ status: 201, json: draft }),
       [`GET /api/songs/${draft.id}`]: () => ({ json: stored }),
+      [`GET /api/songs/${draft.id}/midi`]: () => ({ bytes: draftMidi() }),
       [`POST /api/imports/${draft.id}/confirm`]: (request) => {
-        stored = { ...draft, ...(request.body as object), state: "ready", tracks: draft.tracks };
+        const { noteHands, ...fields } = request.body as { noteHands: object };
+        stored = {
+          ...draft,
+          ...fields,
+          noteHands: { ...(noteHands as SongDetail["noteHands"] & object), updatedAt: 2 },
+          state: "ready",
+          tracks: draft.tracks,
+        };
         return { json: stored };
       },
       [`GET /api/songs/${draft.id}/practice-stats`]: () => ({
@@ -168,8 +181,11 @@ describe("import", () => {
     await userEvent.type(title, "Gymnopédie n°1");
     await userEvent.type(screen.getByLabelText("Compositeur"), "Erik Satie");
     await userEvent.type(screen.getByLabelText("Tags"), "Lent{Enter}");
+    // A new import is split note by note (D28): the tracks are only played or ignored.
+    expect(await screen.findByRole("img", { name: /6 notes à gauche, 6 à droite/ })).toBeDefined();
     const lowerTrack = screen.getByRole("radiogroup", { name: "Main de la piste lower" });
     await userEvent.click(within(lowerTrack).getByRole("radio", { name: "Ignorer" }));
+    expect(screen.getByRole("img", { name: /0 notes à gauche, 6 à droite/ })).toBeDefined();
     await userEvent.click(screen.getByRole("button", { name: "Ajouter au catalogue" }));
 
     expect(await screen.findByRole("heading", { name: "Gymnopédie n°1", level: 1 })).toBeDefined();
@@ -179,12 +195,18 @@ describe("import", () => {
       difficulty: 2,
       license: null,
       tags: ["lent"],
-      handMode: "tracks",
+      handMode: "split",
       splitPitch: 60,
       tracks: [
         { id: upper?.id, hand: "right" },
         { id: lower?.id, hand: "ignore" },
       ],
+      noteHands: {
+        hands: "rrrrrr------",
+        fingerprint: expect.stringMatching(/^[0-9a-f]{8}$/),
+        source: "auto",
+        version: 1,
+      },
     });
   });
 

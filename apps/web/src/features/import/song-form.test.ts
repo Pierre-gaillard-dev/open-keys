@@ -18,7 +18,7 @@ const song: SongDetail = {
   cover: null,
   library: null,
   createdAt: 1,
-  state: "draft",
+  state: "ready",
   sourceType: "url",
   sourceUrl: "https://example.org/g.mid",
   sourceLibrary: null,
@@ -26,6 +26,7 @@ const song: SongDetail = {
   credit: null,
   handMode: "tracks",
   splitPitch: 60,
+  noteHands: null,
   tracks: [
     {
       id: TRACK_A,
@@ -76,6 +77,13 @@ describe("song form", () => {
         ],
       },
     });
+  });
+
+  it("starts a new import in the per-note mode, the split by pitch as fallback", () => {
+    const values = toFormValues({ ...song, state: "draft" });
+
+    expect(values.handsChoice).toBe("auto");
+    expect(toEditableFields(values, null)).toMatchObject({ fields: { handMode: "split", noteHands: null } });
   });
 
   it("reports invalid fields with their path", () => {

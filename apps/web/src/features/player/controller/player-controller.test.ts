@@ -20,6 +20,7 @@ function setup(initial: Parameters<typeof createPlayerStore>[0] = { durationMs: 
   const notes = Array.from({ length: 10 }, (_, i) => ({
     trackIndex: 0,
     pitch: 60,
+    ticks: i * 480,
     start: i,
     end: i + 0.5,
     soundEnd: i + 0.5,

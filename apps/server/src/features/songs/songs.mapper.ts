@@ -1,5 +1,5 @@
 import type { Cover, SongDetail, SongSummary } from "@open-keys/contracts";
-import type { LibrarySummaryRow, SongRow, SongTrackRow } from "./songs.queries";
+import type { LibrarySummaryRow, SongHandsRow, SongRow, SongTrackRow } from "./songs.queries";
 
 export function coverOf(song: SongRow): Cover | null {
   if (!(song.coverSha256 && song.coverSource)) {
@@ -38,6 +38,7 @@ export function toSongDetail(
   tracks: readonly SongTrackRow[],
   tags: readonly string[],
   library: LibrarySummaryRow | null,
+  hands: SongHandsRow | null,
 ): SongDetail {
   return {
     ...toSongSummary(song, tags, library),
@@ -60,6 +61,13 @@ export function toSongDetail(
       maxPitch: track.maxPitch,
       hand: track.hand,
     })),
+    noteHands: hands && {
+      hands: hands.hands,
+      fingerprint: hands.fingerprint,
+      source: hands.source,
+      version: hands.version,
+      updatedAt: hands.updatedAt,
+    },
     midiUrl: `/api/songs/${song.id}/midi`,
     updatedAt: song.updatedAt,
   };

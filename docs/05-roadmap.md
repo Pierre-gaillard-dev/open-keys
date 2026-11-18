@@ -129,6 +129,13 @@ flowchart LR
 - [x] Vitesse cible et meilleure vitesse par boucle, montée en vitesse proposée (+5 %).
 - [x] Tableau de bord : temps de pratique par jour et par semaine, morceaux en cours, historique.
 
+## V1.3b — Répartition des mains (D28)
+
+- [x] **Algorithme** dans `packages/core` : recherche en faisceau accord par accord (déplacements, écarts, doigts, croisements, registre). 92,4 % des notes à la bonne main sur 206 pièces de Mutopia, contre 84,3 % pour la coupure à C4 (`pnpm --filter @open-keys/server hands:benchmark <dossier>`).
+- [x] **Pistes de piano** seules proposées pour les mains dans un arrangement de groupe.
+- [x] **Enregistrement** de la main de chaque note (`song_hands`), vérifié sur le fichier, jamais recalculé sans demande.
+- [x] **Écran de vérification et édition** : mode note par note par défaut, piano roll, corrections sur PC, « Recalculer automatiquement ».
+
 ## V1.4 — Accompagnement (MIDI à plusieurs instruments)
 
 Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste ignorée n'est ni affichée ni entendue, et toutes les pistes jouées ont le son du piano.
@@ -152,7 +159,6 @@ Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste igno
 
 ## Plus tard (non planifié)
 
-- **Répartition des mains par algorithme** : la répartition actuelle (par piste, ou par hauteur autour d'une note pivot) se trompe souvent. Il faut un vrai algorithme qui suit chaque main dans le temps (continuité, écart maximal d'une main, croisements), et au moins sur PC, la possibilité de corriger la main de chaque note dans l'éditeur.
 - Gamification (séries de jours, objectifs quotidiens).
 - Multi-utilisateur (le modèle de données est prêt).
 - Détection au micro (non prioritaire).

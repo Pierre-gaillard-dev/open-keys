@@ -17,6 +17,13 @@ const SOURCE_LABELS: Readonly<Record<SongDetail["sourceType"], string>> = {
 };
 
 /** Library name (UC-20) or host of the URL, linked to the page of the piece when there is one. */
+function handsLabel(song: SongDetail): string {
+  if (song.noteHands) {
+    return song.noteHands.source === "edited" ? "Note par note, corrigée" : "Note par note, automatique";
+  }
+  return song.handMode === "tracks" ? `Par piste (${song.tracks.length})` : "Par hauteur";
+}
+
 function SourceValue({ song }: { readonly song: SongDetail }) {
   const label = song.sourceLibrary
     ? LIBRARY_SOURCE_LABELS[song.sourceLibrary]
@@ -49,9 +56,7 @@ function SongInfo({ song }: { readonly song: SongDetail }) {
       </InfoRow>
       {song.credit && <InfoRow label="Crédit">{song.credit}</InfoRow>}
       <InfoRow label="Licence">{song.license ?? "Non renseignée"}</InfoRow>
-      <InfoRow label="Mains">
-        {song.handMode === "tracks" ? `Par piste (${song.tracks.length})` : "Par hauteur"}
-      </InfoRow>
+      <InfoRow label="Mains">{handsLabel(song)}</InfoRow>
       <InfoRow label="Notes">{song.noteCount}</InfoRow>
       {song.cover?.credit && <InfoRow label="Couverture">{song.cover.credit}</InfoRow>}
     </dl>

@@ -4,6 +4,7 @@ import {
   songDetailSchema,
   songSummarySchema,
 } from "@open-keys/contracts";
+import { encodeNoteHands, HAND_SEPARATION_VERSION, parseMidiNotes } from "@open-keys/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { twoHandMidi } from "../../test/fixtures";
@@ -164,6 +165,37 @@ describe("PATCH /api/songs/:id", () => {
       { name: "classique", songCount: 2 },
       { name: "lent", songCount: 1 },
     ]);
+  });
+});
+
+describe("PATCH /api/songs/:id (hands per note, D28)", () => {
+  it("stores the hand of every note, checked against the song's own notes", async () => {
+    const [gymnopedie] = await seedCatalogue();
+    const midi = new Uint8Array(
+      await (await server.request(`/api/songs/${gymnopedie?.id}/midi`)).arrayBuffer(),
+    );
+    const { notes } = parseMidiNotes(midi);
+    const encoded = encodeNoteHands(
+      notes,
+      notes.map((note) => (note.pitch >= 60 ? "right" : "left")),
+    );
+    const noteHands = { ...encoded, source: "edited", version: HAND_SEPARATION_VERSION };
+
+    const saved = await server.json("PATCH", `/api/songs/${gymnopedie?.id}`, { noteHands });
+
+    expect(saved.status).toBe(200);
+    expect(songDetailSchema.parse(await saved.json()).noteHands).toMatchObject(noteHands);
+
+    const other = { ...noteHands, fingerprint: "00000000" };
+    const refused = await server.json("PATCH", `/api/songs/${gymnopedie?.id}`, { noteHands: other });
+    expect(refused.status).toBe(400);
+    const shorter = { ...noteHands, hands: noteHands.hands.slice(1) };
+    expect((await server.json("PATCH", `/api/songs/${gymnopedie?.id}`, { noteHands: shorter })).status).toBe(
+      400,
+    );
+
+    const removed = await server.json("PATCH", `/api/songs/${gymnopedie?.id}`, { noteHands: null });
+    expect(songDetailSchema.parse(await removed.json()).noteHands).toBeNull();
   });
 });
 

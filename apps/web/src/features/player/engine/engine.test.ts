@@ -59,12 +59,13 @@ function timeline(count = 10): Timeline {
     ...Array.from({ length: count }, (_, i) => ({
       trackIndex: 0,
       pitch: 60 + i,
+      ticks: i * 480,
       start: i,
       end: i + 0.5,
       soundEnd: i + 0.8,
       velocity: 0.8,
     })),
-    { trackIndex: 1, pitch: 40, start: 0.5, end: 1, soundEnd: 1, velocity: 0.8 },
+    { trackIndex: 1, pitch: 40, ticks: 240, start: 0.5, end: 1, soundEnd: 1, velocity: 0.8 },
   ].sort((a, b) => a.start - b.start);
   return buildTimeline(
     { durationS: count, notes, beats: beats(count) },

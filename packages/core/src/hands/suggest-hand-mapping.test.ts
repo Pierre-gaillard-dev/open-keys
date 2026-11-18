@@ -3,12 +3,17 @@ import type { MidiTrackSummary } from "../midi";
 import type { HandMapping } from "./hands.types";
 import { DEFAULT_SPLIT_PITCH, handForNote, suggestHandMapping } from "./suggest-hand-mapping";
 
-function track(index: number, averagePitch: number, isPercussion = false): MidiTrackSummary {
+function track(
+  index: number,
+  averagePitch: number,
+  isPercussion = false,
+  instrument: string | null = null,
+): MidiTrackSummary {
   return {
     index,
     channel: isPercussion ? 9 : 0,
     name: null,
-    instrument: null,
+    instrument,
     isPercussion,
     noteCount: 10,
     minPitch: averagePitch - 5,
@@ -42,6 +47,18 @@ describe("suggestHandMapping", () => {
       { trackIndex: 0, hand: "right" },
       { trackIndex: 1, hand: "ignore" },
     ]);
+  });
+
+  it("keeps only the piano tracks of a band arrangement for the hands", () => {
+    const mapping = suggestHandMapping([
+      track(0, 76, false, "acoustic grand piano"),
+      track(1, 49, false, "electric guitar (clean)"),
+      track(2, 30, false, "electric bass (finger)"),
+      track(3, 42, true, "standard kit"),
+    ]);
+
+    expect(mapping.mode).toBe("split");
+    expect(mapping.tracks.map((t) => t.hand)).toEqual(["right", "ignore", "ignore", "ignore"]);
   });
 
   it("splits a single track at middle C", () => {

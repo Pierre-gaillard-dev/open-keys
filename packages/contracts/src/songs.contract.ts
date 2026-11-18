@@ -30,6 +30,31 @@ export const songTrackSchema = z.object({
 
 export type SongTrack = z.infer<typeof songTrackSchema>;
 
+export const NOTE_HANDS_SOURCES = ["auto", "edited"] as const;
+/** Upper bound of a song's notes (an orchestral MIDI file stays far below). */
+export const MAX_SONG_NOTES = 200_000;
+
+/**
+ * Hand of every note (D28), encoded by `encodeNoteHands` (core): one character per note in canonical
+ * order (`l`, `r`, `-` not played) and the fingerprint of these notes. Computed by the algorithm
+ * (`auto`) or corrected by hand (`edited`).
+ */
+export const noteHandsInputSchema = z.object({
+  hands: z
+    .string()
+    .max(MAX_SONG_NOTES)
+    .regex(/^[lr-]*$/),
+  fingerprint: z.string().regex(/^[0-9a-f]{8}$/),
+  source: z.enum(NOTE_HANDS_SOURCES),
+  version: z.number().int().min(1),
+});
+
+export type NoteHandsInput = z.infer<typeof noteHandsInputSchema>;
+
+export const noteHandsSchema = noteHandsInputSchema.extend({ updatedAt: timestampSchema });
+
+export type StoredNoteHands = z.infer<typeof noteHandsSchema>;
+
 export const songLibrarySummarySchema = z.object({
   status: songStatusSchema,
   isFavorite: z.boolean(),
@@ -66,6 +91,8 @@ export const songDetailSchema = songSummarySchema.extend({
   handMode: handModeSchema,
   splitPitch: pianoPitchSchema,
   tracks: z.array(songTrackSchema),
+  /** Hand of every note: when set, it replaces `handMode` for the tracks not ignored. */
+  noteHands: noteHandsSchema.nullable(),
   /** API path of the MIDI file. */
   midiUrl: z.string(),
   updatedAt: timestampSchema,
@@ -101,6 +128,8 @@ export const songEditableFieldsSchema = z.object({
   handMode: handModeSchema,
   splitPitch: pianoPitchSchema,
   tracks: trackHandsSchema,
+  /** Per-note hands (automatic or corrected), null to go back to `handMode`; absent: unchanged. */
+  noteHands: noteHandsInputSchema.nullable().optional(),
 });
 
 export const updateSongRequestSchema = songEditableFieldsSchema.partial();

@@ -43,6 +43,15 @@ describe("analyzeMidi", () => {
     expect(analyzeMidi(buildMidi([{ notes: scale(60, 2) }], title)).title).toBeNull();
   });
 
+  it("ignores the name of a track that plays notes (single-track files)", () => {
+    const bytes = buildMidi(
+      [{ name: "Elec. Piano (Classic)", notes: scale(60, 2) }],
+      "Elec. Piano (Classic)",
+    );
+
+    expect(analyzeMidi(bytes).title).toBeNull();
+  });
+
   it.each(["Piano Man", "Bring Me to Life", "Clair de lune", "Für Elise"])("keeps the title %j", (title) => {
     expect(analyzeMidi(buildMidi([{ notes: scale(60, 2) }], title)).title).toBe(title);
   });
