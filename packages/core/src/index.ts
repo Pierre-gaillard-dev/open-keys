@@ -1,9 +1,13 @@
 export {
+  DEFAULT_SEPARATION_WEIGHTS,
   DEFAULT_SPLIT_PITCH,
   type Hand,
   type HandMapping,
   type HandMode,
+  type HandNote,
   handForNote,
+  type SeparationWeights,
+  separateHands,
   suggestHandMapping,
   type TrackHand,
 } from "./hands";
