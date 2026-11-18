@@ -3,6 +3,7 @@ import { csrf } from "hono/csrf";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import type { Env } from "./config/env";
+import { createInvitationsRoutes, createInviteRoutes, createUsersRoutes } from "./features/accounts";
 import { createAuthRoutes, requireAuth } from "./features/auth";
 import { createCoversRoutes } from "./features/covers";
 import { createHealthRoutes } from "./features/health";
@@ -29,6 +30,8 @@ export const PROTECTED_PREFIXES = [
   "/loops",
   "/practice-sessions",
   "/sources",
+  "/users",
+  "/invitations",
 ] as const;
 
 export interface AppDependencies {
@@ -60,6 +63,9 @@ export function createApp({ env, logger, services }: AppDependencies) {
       "/auth",
       createAuthRoutes(services.auth, { secureCookie: env.COOKIE_SECURE, trustProxy: env.TRUST_PROXY }),
     )
+    .route("/invite", createInviteRoutes(services.accounts, env.COOKIE_SECURE))
+    .route("/users", createUsersRoutes(services.accounts))
+    .route("/invitations", createInvitationsRoutes(services.accounts))
     .route("/songs", createSongsRoutes(services.songs))
     .route("/songs", createCoversRoutes(services.covers, env.MAX_COVER_SIZE))
     .route("/songs", createSongPracticeRoutes(services.practice))

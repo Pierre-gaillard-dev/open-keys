@@ -18,7 +18,16 @@ export function requireAuth(service: AuthService, secureCookie: boolean) {
       writeSessionCookie(c, token, session.expiresAt, secureCookie);
     }
     c.set("user", session.user);
+    c.set("sessionId", session.sessionId);
     c.set("logger", c.var.logger.child({ userId: session.user.id }));
     await next();
   });
 }
+
+/** After requireAuth: only an admin goes through (D29). */
+export const requireAdmin = createMiddleware<AuthedEnv>(async (c, next) => {
+  if (c.var.user.role !== "admin") {
+    throw new AppError("FORBIDDEN", "Reserved to the administrator");
+  }
+  await next();
+});

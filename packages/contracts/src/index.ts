@@ -1,3 +1,4 @@
+export * from "./accounts.contract";
 export * from "./auth.contract";
 export * from "./common.contract";
 export * from "./covers.contract";

@@ -54,7 +54,7 @@ export function createCoversRoutes(service: CoversService, maxCoverSize: number)
         if (!(file instanceof File)) {
           throw invalidCoverBody();
         }
-        await service.setFromUpload(songId, new Uint8Array(await file.arrayBuffer()));
+        await service.setFromUpload(c.var.user, songId, new Uint8Array(await file.arrayBuffer()));
         return c.body(null, 204);
       }
       const parsed = setCoverRequestSchema.safeParse(await c.req.json().catch(() => undefined));
@@ -62,14 +62,14 @@ export function createCoversRoutes(service: CoversService, maxCoverSize: number)
         throw invalidCoverBody();
       }
       if ("url" in parsed.data) {
-        await service.setFromUrl(songId, parsed.data.url);
+        await service.setFromUrl(c.var.user, songId, parsed.data.url);
       } else {
-        await service.applySuggestion(songId, parsed.data.suggestionId);
+        await service.applySuggestion(c.var.user, songId, parsed.data.suggestionId);
       }
       return c.body(null, 204);
     })
     .delete("/:id/cover", validate("param", songIdParamSchema), (c) => {
-      service.remove(c.req.valid("param").id);
+      service.remove(c.var.user, c.req.valid("param").id);
       return c.body(null, 204);
     });
 }

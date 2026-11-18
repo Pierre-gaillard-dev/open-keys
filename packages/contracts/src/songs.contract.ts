@@ -93,6 +93,8 @@ export const songDetailSchema = songSummarySchema.extend({
   tracks: z.array(songTrackSchema),
   /** Hand of every note: when set, it replaces `handMode` for the tracks not ignored. */
   noteHands: noteHandsSchema.nullable(),
+  /** The current user may edit and delete it: who imported it, or an admin (D29). */
+  canEdit: z.boolean(),
   /** API path of the MIDI file. */
   midiUrl: z.string(),
   updatedAt: timestampSchema,

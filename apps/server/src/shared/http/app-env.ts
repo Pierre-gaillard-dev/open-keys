@@ -13,5 +13,7 @@ export interface AppEnv {
 export interface AuthedEnv {
   Variables: AppEnv["Variables"] & {
     user: AuthUser;
+    /** Session of the request: kept open when the password changes. */
+    sessionId: string;
   };
 }

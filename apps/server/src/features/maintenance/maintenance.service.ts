@@ -2,6 +2,7 @@ import type { Database } from "../../db";
 import type { Logger } from "../../shared/logger";
 import type { Clock } from "../../shared/runtime";
 import type { FileKind, FileStorage } from "../../shared/storage";
+import type { AccountsService } from "../accounts";
 import type { AuthService } from "../auth";
 import type { TagsService } from "../tags";
 import {
@@ -26,6 +27,7 @@ export interface MaintenanceServiceDeps {
   readonly clock: Clock;
   readonly logger: Logger;
   readonly auth: AuthService;
+  readonly accounts: AccountsService;
   readonly tags: TagsService;
 }
 
@@ -33,13 +35,15 @@ export interface MaintenanceReport {
   readonly drafts: number;
   readonly deletedSongs: number;
   readonly sessions: number;
+  readonly invitations: number;
   readonly tags: number;
   readonly files: number;
 }
 
 export type MaintenanceService = ReturnType<typeof createMaintenanceService>;
 
-export function createMaintenanceService({ db, storage, clock, logger, auth, tags }: MaintenanceServiceDeps) {
+export function createMaintenanceService(deps: MaintenanceServiceDeps) {
+  const { db, storage, clock, logger, auth, accounts, tags } = deps;
   const purgeOrphanFiles = async (): Promise<number> => {
     const referenced = referencedFiles(db);
     const keep: Record<FileKind, Set<string>> = { midi: referenced.midi, cover: referenced.covers };
@@ -65,6 +69,7 @@ export function createMaintenanceService({ db, storage, clock, logger, auth, tag
         drafts,
         deletedSongs,
         sessions: auth.purgeExpiredSessions(),
+        invitations: accounts.purgeStaleInvitations(),
         tags: tags.purgeUnused(),
         files: await purgeOrphanFiles(),
       };

@@ -17,7 +17,7 @@ export function createSourcesRoutes(service: SourcesService) {
       });
     })
     .post("/pieces/:id/import", validate("param", sourcePieceParamSchema), async (c) => {
-      const result = await service.importPiece(c.var.user.id, c.req.valid("param").id);
+      const result = await service.importPiece(c.var.user, c.req.valid("param").id);
       return c.json<SongDetail>(result.song, result.created ? 201 : 200);
     });
 }

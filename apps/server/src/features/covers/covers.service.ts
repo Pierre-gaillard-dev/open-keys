@@ -1,4 +1,4 @@
-import type { CoverSuggestion } from "@open-keys/contracts";
+import type { AuthUser, CoverSuggestion } from "@open-keys/contracts";
 import { AppError, type SafeFetch } from "../../shared/http";
 import type { Logger } from "../../shared/logger";
 import type { Clock, IdGenerator } from "../../shared/runtime";
@@ -76,7 +76,8 @@ export function createCoversService(deps: CoversServiceDeps) {
       });
     },
 
-    async applySuggestion(songId: string, suggestionId: string): Promise<void> {
+    async applySuggestion(actor: AuthUser, songId: string, suggestionId: string): Promise<void> {
+      songs.requireEditable(actor, songId);
       forgetExpired();
       const entry = suggestions.get(suggestionId);
       if (!entry) {
@@ -88,18 +89,21 @@ export function createCoversService(deps: CoversServiceDeps) {
       await store(songId, image, { source: candidate.source, credit: candidate.credit });
     },
 
-    async setFromUrl(songId: string, url: string): Promise<void> {
+    async setFromUrl(actor: AuthUser, songId: string, url: string): Promise<void> {
+      songs.requireEditable(actor, songId);
       await store(songId, await download(url), { source: "url", credit: null });
     },
 
-    async setFromUpload(songId: string, image: Uint8Array): Promise<void> {
+    async setFromUpload(actor: AuthUser, songId: string, image: Uint8Array): Promise<void> {
+      songs.requireEditable(actor, songId);
       if (image.byteLength > maxCoverSize) {
         throw new AppError("PAYLOAD_TOO_LARGE", `Images are limited to ${maxCoverSize} bytes`);
       }
       await store(songId, image, { source: "upload", credit: null });
     },
 
-    remove(songId: string): void {
+    remove(actor: AuthUser, songId: string): void {
+      songs.requireEditable(actor, songId);
       songs.setCover(songId, null);
     },
 

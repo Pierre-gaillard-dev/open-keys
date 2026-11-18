@@ -1,9 +1,14 @@
+import { USER_ROLES } from "@open-keys/contracts";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  /** Checked by the application: a CHECK constraint added later would mean rebuilding the table (D29). */
+  role: text("role", { enum: USER_ROLES }).notNull().default("member"),
+  /** A disabled account can no longer log in; its data stays (its imports remain in the catalogue). */
+  disabledAt: integer("disabled_at"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
