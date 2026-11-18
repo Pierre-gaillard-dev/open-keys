@@ -1,7 +1,10 @@
 import type { SongDetail, ValidationIssue } from "@open-keys/contracts";
-import { type FormEvent, type ReactNode, useState } from "react";
+import type { TrackHand } from "@open-keys/core";
+import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { ApiError } from "../../../shared/api";
 import { Button, ErrorBanner, SectionTitle, SegmentedControl, TextField } from "../../../shared/ui";
+import { useSongNotes } from "../api/import.queries";
+import { effectiveHands, mappingOf, noteHandsRequest } from "../hands-assignment";
 import {
   type DifficultyChoice,
   type SongEditableFields,
@@ -10,8 +13,8 @@ import {
   toFormValues,
 } from "../song-form";
 import { CoverPicker } from "./CoverPicker";
+import { HandsSection } from "./HandsSection";
 import { TagsInput } from "./TagsInput";
-import { TrackHandsEditor } from "./TrackHandsEditor";
 
 const DIFFICULTY_OPTIONS: { value: DifficultyChoice; label: string }[] = [
   { value: "none", label: "—" },
@@ -60,11 +63,34 @@ export function SongEditor({
   const set = <Key extends keyof SongFormValues>(key: Key, value: SongFormValues[Key]) =>
     setValues((current) => ({ ...current, [key]: value }));
 
+  // Per-note mode (D28): the notes of the file, and the hand each one gets.
+  const perNote = values.handsChoice === "auto";
+  const notes = useSongNotes(song);
+  const mappingFor = (trackHands: Readonly<Record<string, TrackHand>>) =>
+    mappingOf(song.tracks, trackHands, "tracks", values.splitPitch);
+  const hands = useMemo(
+    () =>
+      perNote && notes.data
+        ? effectiveHands(
+            values.assignment,
+            song,
+            notes.data,
+            mappingOf(song.tracks, values.trackHands, "tracks", values.splitPitch),
+          )
+        : null,
+    [perNote, notes.data, values.assignment, values.trackHands, values.splitPitch, song],
+  );
+  const waitingForNotes = perNote && values.assignment.kind !== "stored" && !hands;
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const result = toEditableFields(values);
+    const result = toEditableFields(
+      values,
+      noteHandsRequest(values.handsChoice, values.assignment, hands, notes.data),
+    );
     setLocalIssues(result.success ? [] : result.issues);
-    if (result.success) {
+    // The notes are read in a moment: the form is checked meanwhile, sent once they are there.
+    if (result.success && !waitingForNotes) {
       onSubmit(result.fields, coverSuggestionId);
     }
   };
@@ -77,14 +103,22 @@ export function SongEditor({
     >
       <div className="flex flex-col gap-8">
         <Section title="Répartition des mains">
-          <TrackHandsEditor
-            tracks={song.tracks}
-            mode={values.handMode}
+          <HandsSection
+            song={song}
+            choice={values.handsChoice}
             splitPitch={values.splitPitch}
-            hands={values.trackHands}
-            onModeChange={(mode) => set("handMode", mode)}
+            trackHands={values.trackHands}
+            assignment={values.assignment}
+            notes={notes.data}
+            notesError={notes.error}
+            hands={hands}
+            mappingFor={mappingFor}
+            onChoiceChange={(choice) => set("handsChoice", choice)}
             onSplitPitchChange={(pitch) => set("splitPitch", pitch)}
-            onHandChange={(trackId, hand) => set("trackHands", { ...values.trackHands, [trackId]: hand })}
+            onTrackHandsChange={(trackHands, assignment) =>
+              setValues((current) => ({ ...current, trackHands, assignment }))
+            }
+            onAssignmentChange={(assignment) => set("assignment", assignment)}
           />
         </Section>
       </div>

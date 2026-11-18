@@ -1,5 +1,7 @@
-import type { ConfirmImportRequest, SetCoverRequest } from "@open-keys/contracts";
+import type { ConfirmImportRequest, SetCoverRequest, SongDetail } from "@open-keys/contracts";
+import { type ParsedNote, parseMidiNotes } from "@open-keys/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiBytes } from "../../../shared/api";
 import { songKeys, tagsQuery } from "../../catalog";
 import {
   confirmImport,
@@ -10,6 +12,20 @@ import {
   setCover,
   uploadCover,
 } from "./import.api";
+
+/**
+ * Notes of a song, for the hand editor (D28). Not kept on the device: drafts are temporary, and the
+ * player caches the file of the songs it opens.
+ */
+export function useSongNotes(song: Pick<SongDetail, "id" | "midiUrl">) {
+  return useQuery({
+    queryKey: ["songs", song.id, "notes"] as const,
+    queryFn: async (): Promise<readonly ParsedNote[]> => parseMidiNotes(await apiBytes(song.midiUrl)).notes,
+    // The file of a song never changes.
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: 5 * 60_000,
+  });
+}
 
 export function useImportFile() {
   return useMutation({ mutationFn: importFile });

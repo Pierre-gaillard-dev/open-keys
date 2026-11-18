@@ -1,5 +1,5 @@
 import type { SongDetail } from "@open-keys/contracts";
-import { buildTimeline, parseMidiNotes, type Timeline } from "@open-keys/core";
+import { buildTimeline, decodeNoteHands, parseMidiNotes, type Timeline } from "@open-keys/core";
 import { useQuery } from "@tanstack/react-query";
 import { isNetworkError } from "../../../shared/api";
 import { midiCache } from "../../../shared/offline";
@@ -30,11 +30,17 @@ export function useTimeline(song: SongDetail | undefined) {
         throw new Error("No song");
       }
       const parsed = parseMidiNotes(await midiCache.get(song));
-      return buildTimeline(parsed, {
-        mode: song.handMode,
-        splitPitch: song.splitPitch,
-        tracks: song.tracks.map((track) => ({ trackIndex: track.trackIndex, hand: track.hand })),
-      });
+      // The hand of every note when the song has one (D28), unless made for other notes.
+      const noteHands = song.noteHands ? decodeNoteHands(parsed.notes, song.noteHands) : null;
+      return buildTimeline(
+        parsed,
+        {
+          mode: song.handMode,
+          splitPitch: song.splitPitch,
+          tracks: song.tracks.map((track) => ({ trackIndex: track.trackIndex, hand: track.hand })),
+        },
+        noteHands,
+      );
     },
   });
 }

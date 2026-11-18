@@ -1,6 +1,12 @@
-import { type SongDetail, songEditableFieldsSchema, type ValidationIssue } from "@open-keys/contracts";
-import type { HandMode, TrackHand } from "@open-keys/core";
+import {
+  type NoteHandsInput,
+  type SongDetail,
+  songEditableFieldsSchema,
+  type ValidationIssue,
+} from "@open-keys/contracts";
+import type { TrackHand } from "@open-keys/core";
 import type { z } from "zod";
+import { type Assignment, type HandsChoice, initialAssignment, initialHandsChoice } from "./hands-assignment";
 
 export type DifficultyChoice = "none" | "1" | "2" | "3" | "4" | "5";
 
@@ -11,9 +17,11 @@ export interface SongFormValues {
   readonly difficulty: DifficultyChoice;
   readonly license: string;
   readonly tags: readonly string[];
-  readonly handMode: HandMode;
+  readonly handsChoice: HandsChoice;
   readonly splitPitch: number;
   readonly trackHands: Readonly<Record<string, TrackHand>>;
+  /** Hand of every note, in the per-note mode (D28). */
+  readonly assignment: Assignment;
 }
 
 export type SongEditableFields = z.infer<typeof songEditableFieldsSchema>;
@@ -46,25 +54,31 @@ export function toFormValues(song: SongDetail): SongFormValues {
     difficulty: toDifficultyChoice(song.difficulty),
     license: song.license ?? "",
     tags: song.tags,
-    handMode: song.handMode,
+    handsChoice: initialHandsChoice(song),
     splitPitch: song.splitPitch,
     trackHands: Object.fromEntries(song.tracks.map((track) => [track.id, track.hand])),
+    assignment: initialAssignment(song),
   };
 }
 
 const emptyToNull = (value: string): string | null => (value.trim() === "" ? null : value.trim());
 
-/** Form values → request fields, validated with the same contract as the server. */
-export function toEditableFields(values: SongFormValues): SongFormResult {
+/**
+ * Form values → request fields, validated with the same contract as the server. `noteHands` is the
+ * encoded per-note assignment (undefined: unchanged). In the per-note mode, the mode stored for the
+ * tracks is the split by pitch: the fallback if the assignment ever stops matching the file.
+ */
+export function toEditableFields(values: SongFormValues, noteHands?: NoteHandsInput | null): SongFormResult {
   const parsed = songEditableFieldsSchema.safeParse({
     title: values.title,
     composer: emptyToNull(values.composer),
     difficulty: values.difficulty === "none" ? null : Number(values.difficulty),
     license: emptyToNull(values.license),
     tags: values.tags,
-    handMode: values.handMode,
+    handMode: values.handsChoice === "auto" ? "split" : values.handsChoice,
     splitPitch: values.splitPitch,
     tracks: Object.entries(values.trackHands).map(([id, hand]) => ({ id, hand })),
+    ...(noteHands === undefined ? {} : { noteHands }),
   });
   if (parsed.success) {
     return { success: true, fields: parsed.data };
