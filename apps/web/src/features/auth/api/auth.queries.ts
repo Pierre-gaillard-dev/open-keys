@@ -1,5 +1,6 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { clearOfflineData } from "../../../shared/offline";
+import type { AuthUser } from "@open-keys/contracts";
+import { type QueryClient, queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clearOfflineData, switchUser } from "../../../shared/offline";
 import { fetchCurrentUser, login, logout } from "./auth.api";
 
 export const currentUserQuery = queryOptions({
@@ -12,11 +13,22 @@ export function useCurrentUser() {
   return useQuery(currentUserQuery);
 }
 
+/**
+ * An account is now logged in (login form, invitation link). If another one used this device, what
+ * was cached for it is dropped first (D29).
+ */
+export async function onLoggedIn(queryClient: QueryClient, user: AuthUser): Promise<void> {
+  if (await switchUser(user.id)) {
+    queryClient.clear();
+  }
+  queryClient.setQueryData(currentUserQuery.queryKey, user);
+}
+
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: login,
-    onSuccess: (user) => queryClient.setQueryData(currentUserQuery.queryKey, user),
+    onSuccess: (user) => onLoggedIn(queryClient, user),
   });
 }
 

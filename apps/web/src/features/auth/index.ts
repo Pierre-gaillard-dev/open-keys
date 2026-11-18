@@ -1,2 +1,2 @@
-export { currentUserQuery, useCurrentUser, useLogout } from "./api/auth.queries";
+export { currentUserQuery, onLoggedIn, useCurrentUser, useLogout } from "./api/auth.queries";
 export { LoginPage, type LoginPageProps } from "./pages/LoginPage";

@@ -102,15 +102,18 @@ export function SongDetailPage({ songId }: { readonly songId: string }) {
         {data && (
           <div className="flex gap-2">
             <FavoriteToggle songId={songId} />
-            <Link
-              to="/songs/$songId/edit"
-              params={{ songId }}
-              aria-label="Modifier le morceau"
-              className={buttonClasses("secondary")}
-            >
-              <Pencil aria-hidden="true" className="size-4" />{" "}
-              <span className="hidden md:inline">Modifier</span>
-            </Link>
+            {/* D29: who imported the song, or the administrator. */}
+            {data.canEdit && (
+              <Link
+                to="/songs/$songId/edit"
+                params={{ songId }}
+                aria-label="Modifier le morceau"
+                className={buttonClasses("secondary")}
+              >
+                <Pencil aria-hidden="true" className="size-4" />{" "}
+                <span className="hidden md:inline">Modifier</span>
+              </Link>
+            )}
           </div>
         )}
       </div>
@@ -158,9 +161,11 @@ export function SongDetailPage({ songId }: { readonly songId: string }) {
               <SongInfo song={data} />
             </section>
             {deletion.error && <ErrorBanner error={deletion.error} />}
-            <Button variant="danger" className="self-start" onClick={remove} disabled={deletion.isPending}>
-              <Trash2 aria-hidden="true" className="size-4" /> Supprimer
-            </Button>
+            {data.canEdit && (
+              <Button variant="danger" className="self-start" onClick={remove} disabled={deletion.isPending}>
+                <Trash2 aria-hidden="true" className="size-4" /> Supprimer
+              </Button>
+            )}
           </section>
         </div>
       )}
