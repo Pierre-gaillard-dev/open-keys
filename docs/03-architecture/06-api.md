@@ -4,14 +4,23 @@
 
 Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les schémas de `packages/contracts`.
 
-- **Authentification** : la session est exigée pour tous les préfixes listés dans `PROTECTED_PREFIXES` (`app.ts`) : `/songs`, `/imports`, `/tags`, `/library`, `/loops`, `/practice-sessions`. Elle est appliquée par préfixe, donc aucune route ne peut être oubliée, et un test vérifie le 401 sur chacune. Seules `/health`, `/auth/login` et `/auth/logout` sont publiques.
+- **Authentification** : la session est exigée pour tous les préfixes listés dans `PROTECTED_PREFIXES` (`app.ts`) : `/songs`, `/imports`, `/tags`, `/library`, `/loops`, `/practice-sessions`, `/sources`, `/users`, `/invitations`. Elle est appliquée par préfixe, donc aucune route ne peut être oubliée, et un test vérifie le 401 sur chacune. Seules `/health`, `/auth/login`, `/auth/logout` et `/invite/:token` sont publiques. `/users` et `/invitations` sont de plus réservées à l'administrateur (`requireAdmin`, 403 sinon).
+- **Droits sur le catalogue** (D29) : `PATCH`/`DELETE /songs/:id`, `PUT`/`DELETE /songs/:id/cover` et `POST /imports/:id/confirm` répondent 403 sauf à celui qui a importé le morceau et à l'administrateur. `GET /songs/:id` renvoie `canEdit` pour l'interface.
 - **Origine** : les envois de formulaire (multipart) venant d'une autre origine que `PUBLIC_URL` sont refusés (403). Les requêtes JSON d'un autre site sont de toute façon bloquées par CORS, que l'API n'accorde jamais.
 
 | Méthode | Route | Rôle |
 |---|---|---|
 | POST | `/auth/login` | Connexion |
 | POST | `/auth/logout` | Déconnexion |
-| GET | `/auth/me` | Utilisateur courant |
+| GET | `/auth/me` | Utilisateur courant, avec son rôle (`admin`, `member`) |
+| PUT | `/auth/password` | `{ currentPassword, newPassword }` : 204, les autres sessions du compte sont fermées |
+| GET | `/users` | Comptes (administrateur) |
+| PATCH | `/users/:id` | `{ disabled }` : désactiver ou réactiver un compte (pas le sien) |
+| GET | `/invitations` | Liens en attente (administrateur) |
+| POST | `/invitations` | `{ userId? }` : lien d'invitation, ou de nouveau mot de passe pour `userId` → 201 avec `path`, montré une seule fois |
+| DELETE | `/invitations/:id` | Révoquer un lien |
+| GET | `/invite/:token` | Public : nature du lien (`account` ou `reset`) et compte concerné, 404 s'il a expiré ou servi |
+| POST | `/invite/:token` | Public : `{ username?, password }` → compte créé (ou mot de passe changé), connexion (cookie), 201 |
 | GET | `/songs` | Liste (`q`, `tags`, `status`, `favorite`, `difficulty`, `sort`) |
 | GET | `/songs/:id` | Détail, avec les pistes et l'assignation des mains |
 | GET | `/songs/:id/midi` | Fichier MIDI (ETag = sha256, `Cache-Control: immutable`) |

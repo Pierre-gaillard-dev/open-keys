@@ -15,6 +15,22 @@ table auth_sessions {
   }
 }
 
+table invitations {
+  id text [pk, not null]
+  token_hash text [not null, unique]
+  kind text [not null]
+  user_id text
+  created_by text [not null]
+  created_at integer [not null]
+  expires_at integer [not null]
+  used_at integer
+
+  indexes {
+    expires_at [name: 'invitations_expires_at_idx']
+    
+  }
+}
+
 table loops {
   id text [pk, not null]
   user_id text [not null]
@@ -185,11 +201,17 @@ table users {
   id text [pk, not null]
   username text [not null, unique]
   password_hash text [not null]
+  role text [not null, default: 'member']
+  disabled_at integer
   created_at integer [not null]
   updated_at integer [not null]
 }
 
 ref auth_sessions_user_id_users_id_fk: auth_sessions.user_id > users.id [delete: cascade, update: no action]
+
+ref invitations_user_id_users_id_fk: invitations.user_id > users.id [delete: cascade, update: no action]
+
+ref invitations_created_by_users_id_fk: invitations.created_by > users.id [delete: cascade, update: no action]
 
 ref loops_user_id_users_id_fk: loops.user_id > users.id [delete: cascade, update: no action]
 

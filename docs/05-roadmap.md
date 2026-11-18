@@ -136,7 +136,39 @@ flowchart LR
 - [x] **Enregistrement** de la main de chaque note (`song_hands`), vérifié sur le fichier, jamais recalculé sans demande.
 - [x] **Écran de vérification et édition** : mode note par note par défaut, piano roll, corrections sur PC, « Recalculer automatiquement ».
 
-## V1.4 — Accompagnement (MIDI à plusieurs instruments)
+## V1.4 — Multi-utilisateur
+
+Quelques comptes pour le cercle proche, sur la même instance. Les données personnelles (bibliothèque, boucles, sessions) ont déjà un `user_id` (D3).
+
+- [x] Rôles `admin` / `member` et création des comptes par lien d'invitation à usage unique (D29).
+- [x] Administration des comptes (désactivation, lien de nouveau mot de passe) et changement de mot de passe.
+- [x] Droits sur le catalogue : commun, modifié et supprimé par celui qui a importé ou l'administrateur.
+- [x] Données personnelles séparées sur un appareil partagé (cache vidé au changement de compte, écritures en attente par auteur).
+
+## V1.5 — Détection au micro
+
+Jouer sur un vrai piano sans câble : le micro du téléphone ou du PC entend les notes jouées.
+
+- [ ] **Spike** : détection polyphonique dans le navigateur (modèle léger type Basic Pitch en WebAssembly/WebGPU, ou analyse spectrale), précision et latence mesurées sur un vrai piano, sur le Pixel 10 et sur PC.
+- [ ] Interface `InputSource` (notes jouées, horodatées sur l'horloge audio), créée ici et reprise par l'entrée MIDI de la V2. Première implémentation : `MicrophoneInput` (`getUserMedia`, sans annulation d'écho ni réduction de bruit).
+- [ ] Vérification des notes jouées : juste / manquée / en trop, avec une tolérance adaptée à la latence du micro.
+- [ ] Mode attente : la lecture s'arrête jusqu'à ce que la bonne note soit entendue.
+- [ ] Score et précision dans `practice_sessions`.
+
+## V2 — Entrée MIDI
+
+**Prérequis** : interface USB-MIDI (DIN 5 broches) + adaptateur USB-OTG.
+
+- [ ] **Décision au démarrage** : Capacitor + plugin MIDI natif Android (recommandé, puisque Firefox n'a pas Web MIDI) ou Chrome dédié.
+- [ ] Implémentations de l'`InputSource` de la V1.5 : `WebMidiInput` (PC), `NativeMidiInput` (Capacitor), `ScreenKeyboardInput` (tests). Vérification des notes, mode attente et score déjà faits pour le micro.
+- [ ] Vérification des notes : fenêtre de tolérance ±100 ms, retour visuel (juste / manquée / en trop).
+- [ ] Mode attente (avec gestion des accords).
+- [ ] Score et précision dans `practice_sessions`.
+- [ ] Pause avec une touche dédiée du piano (par exemple A0).
+
+## Après l'audio → piano — Accompagnement (MIDI à plusieurs instruments)
+
+Mis de côté : il prendra tout son sens avec la version qui extrait le piano d'un vrai morceau (MP3, Opus) et rejoue l'audio d'origine.
 
 Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste ignorée n'est ni affichée ni entendue, et toutes les pistes jouées ont le son du piano.
 
@@ -146,19 +178,7 @@ Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste igno
 - [ ] **Son des instruments** : échantillons General MIDI libres (FluidR3 GM, licence à confirmer au démarrage), chargés à la demande pour les seuls instruments du morceau et mis en cache par le Service Worker. Kit de batterie GM pour le canal 10. Un instrument sans échantillons est joué au piano.
 - [ ] Volume de l'accompagnement (avec le volume par main de la V1.2).
 
-## V2 — Entrée MIDI
-
-**Prérequis** : interface USB-MIDI (DIN 5 broches) + adaptateur USB-OTG.
-
-- [ ] **Décision au démarrage** : Capacitor + plugin MIDI natif Android (recommandé, puisque Firefox n'a pas Web MIDI) ou Chrome dédié.
-- [ ] `InputSource` : `WebMidiInput` (PC), `NativeMidiInput` (Capacitor), `ScreenKeyboardInput` (tests).
-- [ ] Vérification des notes : fenêtre de tolérance ±100 ms, retour visuel (juste / manquée / en trop).
-- [ ] Mode attente (avec gestion des accords).
-- [ ] Score et précision dans `practice_sessions`.
-- [ ] Pause avec une touche dédiée du piano (par exemple A0).
-
 ## Plus tard (non planifié)
 
 - Gamification (séries de jours, objectifs quotidiens).
-- Multi-utilisateur (le modèle de données est prêt).
-- Détection au micro (non prioritaire).
+- **Audio → piano** : générer une reprise piano à partir d'un vrai morceau (Etude, AMT-APC, Pop2Piano…) et la jouer avec l'audio d'origine. Spike en attente de fichiers audio de test.
