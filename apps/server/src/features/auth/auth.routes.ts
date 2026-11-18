@@ -1,4 +1,4 @@
-import { type AuthUser, loginRequestSchema } from "@open-keys/contracts";
+import { type AuthUser, changePasswordRequestSchema, loginRequestSchema } from "@open-keys/contracts";
 import { Hono } from "hono";
 import { type AppEnv, clientIp, validate } from "../../shared/http";
 import { requireAuth } from "./auth.middleware";
@@ -26,5 +26,15 @@ export function createAuthRoutes(service: AuthService, { secureCookie, trustProx
       clearSessionCookie(c, secureCookie);
       return c.body(null, 204);
     })
-    .get("/me", requireAuth(service, secureCookie), (c) => c.json<AuthUser>(c.var.user));
+    .get("/me", requireAuth(service, secureCookie), (c) => c.json<AuthUser>(c.var.user))
+    .put(
+      "/password",
+      requireAuth(service, secureCookie),
+      validate("json", changePasswordRequestSchema),
+      async (c) => {
+        const { currentPassword, newPassword } = c.req.valid("json");
+        await service.changePassword(c.var.user.id, c.var.sessionId, currentPassword, newPassword);
+        return c.body(null, 204);
+      },
+    );
 }

@@ -18,6 +18,8 @@ export interface OutboxOptions {
   readonly onSynced?: () => void;
   /** The session expired: writes stay queued until the user logs in again. */
   readonly onUnauthorized?: () => void;
+  /** Account logged in on this device, null when logged out: only its writes are sent (D29). */
+  readonly currentUserId?: () => string | null;
 }
 
 type SendOutcome = "sent" | "dropped" | "stop";
@@ -54,6 +56,7 @@ export class Outbox {
   async put(path: string, body: unknown): Promise<void> {
     await this.#db.transaction("rw", this.#db.outbox, async () => {
       await this.#db.outbox.where("path").equals(path).delete();
+      const userId = this.#options.currentUserId?.() ?? undefined;
       await this.#db.outbox.add({
         id: newId(),
         path,
@@ -61,6 +64,7 @@ export class Outbox {
         createdAt: Date.now(),
         attempts: 0,
         lastError: null,
+        ...(userId ? { userId } : {}),
       });
     });
     await this.#refreshCount();
@@ -131,8 +135,20 @@ export class Outbox {
     }
   }
 
+  /** The oldest write of the account logged in (writes of another account wait for it). */
   #oldest(): Promise<OutboxEntry | undefined> {
-    return this.#db.outbox.orderBy("createdAt").first();
+    const getUserId = this.#options.currentUserId;
+    if (!getUserId) {
+      return this.#db.outbox.orderBy("createdAt").first();
+    }
+    const userId = getUserId();
+    if (userId === null) {
+      return Promise.resolve(undefined);
+    }
+    return this.#db.outbox
+      .orderBy("createdAt")
+      .filter((entry) => entry.userId === undefined || entry.userId === userId)
+      .first();
   }
 
   async #send(entry: OutboxEntry): Promise<SendOutcome> {

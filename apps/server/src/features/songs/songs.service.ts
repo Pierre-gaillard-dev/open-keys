@@ -1,4 +1,5 @@
 import type {
+  AuthUser,
   CoverSource,
   ListSongsQuery,
   NoteHandsInput,
@@ -56,15 +57,27 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
     return song;
   };
 
-  const detail = (userId: string, id: string): SongDetail => {
+  /** D29: who imported a song, or an admin, may edit and delete it. */
+  const canEdit = (actor: AuthUser, song: SongRow) => actor.role === "admin" || song.createdBy === actor.id;
+
+  const requireEditable = (tx: Executor, actor: AuthUser, id: string): SongRow => {
+    const song = requireSong(tx, id);
+    if (!canEdit(actor, song)) {
+      throw new AppError("FORBIDDEN", "Only who imported this song, or the administrator, may change it");
+    }
+    return song;
+  };
+
+  const detail = (actor: AuthUser, id: string): SongDetail => {
     const song = requireSong(db, id);
     const songTags = tags.tagsBySong([id]).get(id) ?? [];
     return toSongDetail(
       song,
       listTracks(db, id),
       songTags,
-      findLibrarySummary(db, userId, id),
+      findLibrarySummary(db, actor.id, id),
       findSongHands(db, id),
+      canEdit(actor, song),
     );
   };
 
@@ -132,17 +145,18 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
 
     detail,
 
-    async update(userId: string, id: string, fields: UpdateSongRequest): Promise<SongDetail> {
+    async update(actor: AuthUser, id: string, fields: UpdateSongRequest): Promise<SongDetail> {
+      const song = requireEditable(db, actor, id);
       if (fields.noteHands) {
-        await checkNoteHands(requireSong(db, id), fields.noteHands);
+        await checkNoteHands(song, fields.noteHands);
       }
       db.transaction((tx) => applyFields(tx, requireSong(tx, id), fields));
-      return detail(userId, id);
+      return detail(actor, id);
     },
 
     /** Soft delete: the song disappears now, its data is purged after 30 days. */
-    remove(id: string): void {
-      requireSong(db, id);
+    remove(actor: AuthUser, id: string): void {
+      requireEditable(db, actor, id);
       const now = clock();
       updateSong(db, id, { deletedAt: now, updatedAt: now });
     },
@@ -165,14 +179,15 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
       });
     },
 
-    /** Re-importing a deleted song brings it back (with its history) for review. */
-    restoreAsDraft(id: string): void {
-      updateSong(db, id, { deletedAt: null, state: "draft", updatedAt: clock() });
+    /** Re-importing a deleted song brings it back (with its history) for review, by its new importer. */
+    restoreAsDraft(id: string, userId: string): void {
+      updateSong(db, id, { deletedAt: null, state: "draft", createdBy: userId, updatedAt: clock() });
     },
 
-    async confirmDraft(userId: string, id: string, fields: UpdateSongRequest): Promise<SongDetail> {
+    async confirmDraft(actor: AuthUser, id: string, fields: UpdateSongRequest): Promise<SongDetail> {
+      const draft = requireEditable(db, actor, id);
       if (fields.noteHands) {
-        await checkNoteHands(requireSong(db, id), fields.noteHands);
+        await checkNoteHands(draft, fields.noteHands);
       }
       db.transaction((tx) => {
         const song = requireSong(tx, id);
@@ -181,13 +196,17 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
         }
         applyFields(tx, song, fields, { state: "ready" });
       });
-      return detail(userId, id);
+      return detail(actor, id);
     },
 
     // ── Used by the covers feature ──
 
     requireSong(id: string): SongRow {
       return requireSong(db, id);
+    },
+
+    requireEditable(actor: AuthUser, id: string): SongRow {
+      return requireEditable(db, actor, id);
     },
 
     setCover(id: string, cover: SongCover | null): void {

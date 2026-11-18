@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-router";
 import { Suspense, useCallback } from "react";
 import { z } from "zod";
+import { AccountPage, InvitePage } from "../features/account";
 import { currentUserQuery, LoginPage } from "../features/auth";
 import { CatalogPage, type CatalogSearch, catalogSearchSchema, SongDetailPage } from "../features/catalog";
 import { ImportPage, ImportReviewPage, OnlineSearchPage, SongEditPage } from "../features/import";
@@ -56,6 +57,15 @@ const loginRoute = createRoute({
   component: function LoginRoute() {
     const { redirect: redirectTo } = loginRoute.useSearch();
     return <LoginPage redirectTo={redirectTo} />;
+  },
+});
+
+/** The link received by a new member (or for a forgotten password): no session needed (UC-35). */
+const inviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/invite/$token",
+  component: function InviteRoute() {
+    return <InvitePage token={inviteRoute.useParams().token} />;
   },
 });
 
@@ -141,6 +151,12 @@ const progressRoute = createRoute({
   component: ProgressPage,
 });
 
+const accountRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/account",
+  component: AccountPage,
+});
+
 const importReviewRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/import/$songId",
@@ -151,6 +167,7 @@ const importReviewRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  inviteRoute,
   appRoute.addChildren([
     shellRoute.addChildren([
       catalogRoute,
@@ -160,6 +177,7 @@ const routeTree = rootRoute.addChildren([
       onlineSearchRoute,
       importReviewRoute,
       progressRoute,
+      accountRoute,
     ]),
     playerRoute,
   ]),

@@ -1,4 +1,5 @@
 import {
+  type AuthUser,
   LIBRARY_SOURCES,
   type LibrarySource,
   type SearchSourcesQuery,
@@ -170,10 +171,10 @@ export function createSourcesService(deps: SourcesServiceDeps) {
       return providerOf(piece.source).midi(piece.midiRef);
     },
 
-    async importPiece(userId: string, id: string): Promise<ImportResult> {
+    async importPiece(actor: AuthUser, id: string): Promise<ImportResult> {
       const piece = pieceOrFail(id);
       const bytes = await providerOf(piece.source).midi(piece.midiRef);
-      return imports.importFromLibrary(userId, bytes, {
+      return imports.importFromLibrary(actor, bytes, {
         library: piece.source,
         pieceId: piece.id,
         pageUrl: piece.pageUrl,

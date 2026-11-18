@@ -33,7 +33,10 @@ users ─┬─< auth_sessions
 ## 3. Détail des tables
 
 ### `users` — feature `auth`
-Comptes. Un seul dans le MVP, créé par le seed à partir des variables d'environnement.
+Comptes. Le premier est créé au démarrage à partir des variables d'environnement, avec le rôle `admin` ; les suivants par invitation (V1.4), avec le rôle `member`. `role` et `disabled_at` sont vérifiés par l'application, sans contrainte CHECK : en ajouter une à une table existante obligerait à la reconstruire. Identifiant unique sans tenir compte de la casse (vérifié à la création).
+
+### `invitations` — feature `accounts` (D29)
+Liens à usage unique créés par l'administrateur : `kind` = `account` (nouveau compte) ou `reset` (nouveau mot de passe pour `user_id`). Seul `token_hash` (SHA-256) est stocké. `used_at` est rempli à l'utilisation. Les liens utilisés ou expirés (7 jours) sont purgés par la maintenance.
 
 ### `auth_sessions` — feature `auth`
 | Colonne | Note |
@@ -168,4 +171,3 @@ Un fichier qu'aucune ligne de `songs` ne référence plus est purgé par une tâ
 | Version | Changement |
 |---|---|
 | V2 | Remplissage de `practice_sessions.accuracy` / `score`. Éventuellement une table `session_events` pour l'analyse détaillée des erreurs |
-| Multi-utilisateur | Rien à migrer pour les données personnelles. Seule décision à prendre : catalogue commun ou `songs.owner_id` |

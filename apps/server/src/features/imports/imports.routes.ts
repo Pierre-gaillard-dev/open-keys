@@ -30,14 +30,14 @@ export function createImportsRoutes(service: ImportsService, maxMidiSize: number
         });
       }
       const result = await service.importFile(
-        c.var.user.id,
+        c.var.user,
         new Uint8Array(await file.arrayBuffer()),
         file.name,
       );
       return c.json<SongDetail>(result.song, result.created ? 201 : 200);
     })
     .post("/url", validate("json", importUrlRequestSchema), async (c) => {
-      const result = await service.importUrl(c.var.user.id, c.req.valid("json").url);
+      const result = await service.importUrl(c.var.user, c.req.valid("json").url);
       return c.json<SongDetail>(result.song, result.created ? 201 : 200);
     })
     .post(
@@ -45,7 +45,7 @@ export function createImportsRoutes(service: ImportsService, maxMidiSize: number
       validate("param", songIdParamSchema),
       validate("json", confirmImportRequestSchema),
       async (c) => {
-        const song = await service.confirm(c.var.user.id, c.req.valid("param").id, c.req.valid("json"));
+        const song = await service.confirm(c.var.user, c.req.valid("param").id, c.req.valid("json"));
         return c.json<SongDetail>(song);
       },
     );

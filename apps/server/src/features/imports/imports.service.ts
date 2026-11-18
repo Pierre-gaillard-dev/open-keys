@@ -1,4 +1,4 @@
-import type { ConfirmImportRequest, LibrarySource, SongDetail } from "@open-keys/contracts";
+import type { AuthUser, ConfirmImportRequest, LibrarySource, SongDetail } from "@open-keys/contracts";
 import { analyzeMidi, InvalidMidiError, type MidiAnalysis, suggestHandMapping } from "@open-keys/core";
 import { AppError, type SafeFetch } from "../../shared/http";
 import type { Logger } from "../../shared/logger";
@@ -110,7 +110,7 @@ export function createImportsService(deps: ImportsServiceDeps) {
   };
 
   const importBytes = async (
-    userId: string,
+    actor: AuthUser,
     bytes: Uint8Array,
     source: ImportSource,
   ): Promise<ImportResult> => {
@@ -128,9 +128,9 @@ export function createImportsService(deps: ImportsServiceDeps) {
     }
     if (existing) {
       if (existing.deletedAt !== null) {
-        songs.restoreAsDraft(existing.id);
+        songs.restoreAsDraft(existing.id, actor.id);
       }
-      return { song: songs.detail(userId, existing.id), created: false };
+      return { song: songs.detail(actor, existing.id), created: false };
     }
 
     await storage.put("midi", bytes);
@@ -141,7 +141,7 @@ export function createImportsService(deps: ImportsServiceDeps) {
     songs.createDraft(
       {
         id: songId,
-        createdBy: userId,
+        createdBy: actor.id,
         state: "draft",
         ...draftOrigin(analysis, source),
         midiSha256: sha256,
@@ -169,37 +169,37 @@ export function createImportsService(deps: ImportsServiceDeps) {
       })),
     );
     logger.info("MIDI imported as draft", { songId, sourceType: source.type, notes: analysis.noteCount });
-    return { song: songs.detail(userId, songId), created: true };
+    return { song: songs.detail(actor, songId), created: true };
   };
 
   return {
-    importFile(userId: string, bytes: Uint8Array, filename: string): Promise<ImportResult> {
-      return importBytes(userId, bytes, { type: "upload", filename });
+    importFile(actor: AuthUser, bytes: Uint8Array, filename: string): Promise<ImportResult> {
+      return importBytes(actor, bytes, { type: "upload", filename });
     },
 
-    async importUrl(userId: string, url: string): Promise<ImportResult> {
-      return importBytes(userId, await downloadMidi(url), { type: "url", url });
+    async importUrl(actor: AuthUser, url: string): Promise<ImportResult> {
+      return importBytes(actor, await downloadMidi(url), { type: "url", url });
     },
 
     /** A piece of an online library, already downloaded by its provider (UC-20). */
-    importFromLibrary(userId: string, bytes: Uint8Array, piece: LibraryPiece): Promise<ImportResult> {
-      return importBytes(userId, bytes, { type: "library", piece });
+    importFromLibrary(actor: AuthUser, bytes: Uint8Array, piece: LibraryPiece): Promise<ImportResult> {
+      return importBytes(actor, bytes, { type: "library", piece });
     },
 
     downloadMidi,
 
-    async confirm(userId: string, songId: string, request: ConfirmImportRequest): Promise<SongDetail> {
+    async confirm(actor: AuthUser, songId: string, request: ConfirmImportRequest): Promise<SongDetail> {
       const { coverSuggestionId, ...fields } = request;
-      await songs.confirmDraft(userId, songId, fields);
+      await songs.confirmDraft(actor, songId, fields);
       if (coverSuggestionId) {
         try {
-          await covers.applySuggestion(songId, coverSuggestionId);
+          await covers.applySuggestion(actor, songId, coverSuggestionId);
         } catch (error) {
           // The import itself succeeded: a missing cover can be chosen again from the song page.
           logger.warn("Cover suggestion could not be applied", { songId, error });
         }
       }
-      return songs.detail(userId, songId);
+      return songs.detail(actor, songId);
     },
   };
 }

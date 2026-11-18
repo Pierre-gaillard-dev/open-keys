@@ -105,6 +105,10 @@ flowchart LR
 | UC-25 | Volume par main | V1.2 |
 | UC-26 | Vitesse cible par boucle | V1.3 |
 | UC-27 | Tableau de bord de pratique | V1.3 |
+| UC-34 | Inviter quelqu'un (lien à usage unique) | V1.4 |
+| UC-35 | Rejoindre l'app ou choisir un nouveau mot de passe depuis un lien | V1.4 |
+| UC-36 | Changer son mot de passe | V1.4 |
+| UC-37 | Gérer les comptes (désactiver, mot de passe oublié) | V1.4 |
 | UC-30 | Connecter un clavier MIDI | V2 |
 | UC-31 | Mode attente (la lecture attend la bonne note) | V2 |
 | UC-32 | Score et précision de session | V2 |
@@ -239,6 +243,15 @@ flowchart LR
 
 ### UC-16 — Temps de pratique
 - Sur la fiche d'un morceau : temps total, nombre de sessions, date de la dernière pratique.
+
+### UC-34 à UC-37 — Multi-utilisateur (V1.4, D29)
+- **Inviter** (UC-34, administrateur) : « Mon compte » → « Inviter quelqu'un » crée un lien à usage unique, valable 7 jours, affiché une seule fois, à copier ou partager.
+- **Rejoindre** (UC-35) : le lien ouvre une page sans connexion. La personne choisit son identifiant (unique, quelle que soit la casse) et son mot de passe (10 caractères minimum), puis arrive connectée sur le catalogue, comme **membre**.
+- **Mot de passe oublié** : l'administrateur crée depuis la liste des comptes un lien du même type pour ce compte. Le nouveau mot de passe déconnecte tous ses appareils.
+- **Changer son mot de passe** (UC-36) : depuis « Mon compte », avec le mot de passe actuel. Les autres appareils sont déconnectés, celui-ci reste connecté.
+- **Gérer les comptes** (UC-37, administrateur) : liste des comptes, désactivation et réactivation. Un compte désactivé est déconnecté partout et ne peut plus se connecter. Ses imports restent au catalogue, ses données personnelles sont gardées.
+- **Catalogue commun** : tout le monde voit, joue et importe tous les morceaux. Seuls celui qui a importé un morceau et l'administrateur peuvent le modifier ou le supprimer.
+- **Données personnelles** (bibliothèque, favoris, boucles, progression) propres à chaque compte, y compris sur un appareil partagé : à la connexion d'un autre compte, le cache de l'appareil est vidé, et les écritures en attente du précédent ne partent qu'avec sa propre session.
 
 ### UC-30 à UC-33 — V2 (aperçu)
 - La couche `InputSource` reçoit des événements `noteOn`/`noteOff` (Web MIDI, plugin natif Capacitor, ou clavier à l'écran pour les tests).

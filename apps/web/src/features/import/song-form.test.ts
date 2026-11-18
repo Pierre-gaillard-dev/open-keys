@@ -27,6 +27,7 @@ const song: SongDetail = {
   handMode: "tracks",
   splitPitch: 60,
   noteHands: null,
+  canEdit: true,
   tracks: [
     {
       id: TRACK_A,

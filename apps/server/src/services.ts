@@ -1,5 +1,6 @@
 import type { Env } from "./config/env";
 import type { Database } from "./db";
+import { createAccountsService } from "./features/accounts";
 import {
   createAuthService,
   createLoginRateLimiter,
@@ -51,6 +52,7 @@ export function createServices(infra: Infrastructure) {
     rateLimiter: createLoginRateLimiter(clock, infra.loginPolicy),
     logger,
   });
+  const accounts = createAccountsService({ db, auth, clock, newId, logger });
   const tags = createTagsService(db, newId);
   const songs = createSongsService({ db, clock, storage, tags });
   const covers = createCoversService({
@@ -75,7 +77,7 @@ export function createServices(infra: Infrastructure) {
   });
   const practice = createPracticeService({ db, clock, songs });
   const library = createLibraryService({ db, songs, practice });
-  const maintenance = createMaintenanceService({ db, storage, clock, logger, auth, tags });
+  const maintenance = createMaintenanceService({ db, storage, clock, logger, auth, accounts, tags });
   const sources = createSourcesService({
     db,
     providers: infra.sourceProviders({ download: imports.downloadMidi }),
@@ -84,5 +86,5 @@ export function createServices(infra: Infrastructure) {
     logger,
   });
 
-  return { auth, tags, songs, covers, imports, practice, library, maintenance, sources };
+  return { auth, accounts, tags, songs, covers, imports, practice, library, maintenance, sources };
 }

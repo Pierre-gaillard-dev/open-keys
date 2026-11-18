@@ -18,6 +18,8 @@ export interface OutboxEntry {
   readonly createdAt: number;
   readonly attempts: number;
   readonly lastError: string | null;
+  /** Who made the write (D29): sent only with that account's session. Absent before V1.4. */
+  readonly userId?: string;
 }
 
 /** Last state of the TanStack Query cache, restored at startup (offline reads). */
@@ -39,6 +41,14 @@ export class OfflineDb extends Dexie {
       outbox: "id, path, createdAt",
       queryCache: "id",
     });
+  }
+
+  /**
+   * What was cached for another account on this device (D29): its pending writes stay, to be sent when
+   * it logs in again.
+   */
+  async clearCachedData(): Promise<void> {
+    await Promise.all([this.midiFiles.clear(), this.queryCache.clear()]);
   }
 
   /** Everything of the previous session (logout). */

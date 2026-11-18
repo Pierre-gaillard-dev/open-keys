@@ -18,6 +18,7 @@ export function createApp(history?: RouterHistory) {
   router = createAppRouter(queryClient, history);
   outbox.configure({
     onUnauthorized,
+    currentUserId: () => queryClient.getQueryData(currentUserQuery.queryKey)?.id ?? null,
     onSynced: () => {
       void queryClient.invalidateQueries({ queryKey: ["library"] });
       void queryClient.invalidateQueries({ queryKey: ["songs"] });

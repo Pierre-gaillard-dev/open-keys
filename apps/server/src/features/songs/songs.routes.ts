@@ -15,17 +15,17 @@ export function createSongsRoutes(service: SongsService) {
       c.json<SongSummary[]>(service.list(c.var.user.id, c.req.valid("query"))),
     )
     .get("/:id", validate("param", songIdParamSchema), (c) =>
-      c.json<SongDetail>(service.detail(c.var.user.id, c.req.valid("param").id)),
+      c.json<SongDetail>(service.detail(c.var.user, c.req.valid("param").id)),
     )
     .patch(
       "/:id",
       validate("param", songIdParamSchema),
       validate("json", updateSongRequestSchema),
       async (c) =>
-        c.json<SongDetail>(await service.update(c.var.user.id, c.req.valid("param").id, c.req.valid("json"))),
+        c.json<SongDetail>(await service.update(c.var.user, c.req.valid("param").id, c.req.valid("json"))),
     )
     .delete("/:id", validate("param", songIdParamSchema), (c) => {
-      service.remove(c.req.valid("param").id);
+      service.remove(c.var.user, c.req.valid("param").id);
       return c.body(null, 204);
     })
     .get("/:id/midi", validate("param", songIdParamSchema), async (c) => {

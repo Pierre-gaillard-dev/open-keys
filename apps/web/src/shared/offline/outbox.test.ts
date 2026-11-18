@@ -128,4 +128,28 @@ describe("Outbox", () => {
     expect(api.requests.map((r) => r.path).sort()).toEqual(["/api/library/A", "/api/library/B"]);
     expect(await db.outbox.count()).toBe(0);
   });
+
+  it("sends only the writes of the account logged in, keeps the others for later (D29)", async () => {
+    const api = fakeServer();
+    let userId: string | null = "A";
+    const outbox = new Outbox(db, { currentUserId: () => userId });
+    onlineManager.setOnline(false);
+    await outbox.put("/library/song-1", { by: "A" });
+
+    // Another account logs in on the device: A's write is not sent with its session.
+    userId = "B";
+    await outbox.put("/library/song-2", { by: "B" });
+    onlineManager.setOnline(true);
+    await outbox.flush();
+    expect(bodies(api)).toEqual([["/api/library/song-2", { by: "B" }]]);
+    expect(await db.outbox.count()).toBe(1);
+
+    userId = null;
+    await outbox.flush();
+    expect(api.requests).toHaveLength(1);
+
+    userId = "A";
+    await outbox.flush();
+    expect(bodies(api).at(-1)).toEqual(["/api/library/song-1", { by: "A" }]);
+  });
 });

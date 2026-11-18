@@ -1,4 +1,4 @@
-import { and, count, eq, gt, lte } from "drizzle-orm";
+import { and, asc, count, eq, gt, isNull, lte, ne, sql } from "drizzle-orm";
 import type { Database } from "../../db";
 import { authSessions, users } from "./auth.schema";
 
@@ -10,8 +10,33 @@ export function countUsers(db: Database): number {
   return db.select({ value: count() }).from(users).get()?.value ?? 0;
 }
 
+/** Usernames are unique whatever the case: "Pierre" and "pierre" are the same account. */
 export function findUserByUsername(db: Database, username: string): UserRow | undefined {
-  return db.select().from(users).where(eq(users.username, username)).get();
+  return db.select().from(users).where(sql`lower(${users.username}) = ${username.toLowerCase()}`).get();
+}
+
+export function findUserById(db: Database, id: string): UserRow | undefined {
+  return db.select().from(users).where(eq(users.id, id)).get();
+}
+
+export function listUsers(db: Database): UserRow[] {
+  return db.select().from(users).orderBy(asc(users.createdAt)).all();
+}
+
+export function updateUser(
+  db: Database,
+  id: string,
+  patch: Partial<Pick<UserRow, "passwordHash" | "disabledAt" | "updatedAt">>,
+): void {
+  db.update(users).set(patch).where(eq(users.id, id)).run();
+}
+
+/** Every session of a user, but the one kept (the session that changed the password). */
+export function deleteSessionsOfUser(db: Database, userId: string, keepSessionId?: string): void {
+  const filter = keepSessionId
+    ? and(eq(authSessions.userId, userId), ne(authSessions.id, keepSessionId))
+    : eq(authSessions.userId, userId);
+  db.delete(authSessions).where(filter).run();
 }
 
 export function insertUser(db: Database, user: NewUserRow): void {
@@ -29,10 +54,13 @@ export function findActiveSession(db: Database, tokenHash: string, now: number) 
       expiresAt: authSessions.expiresAt,
       userId: users.id,
       username: users.username,
+      role: users.role,
     })
     .from(authSessions)
     .innerJoin(users, eq(users.id, authSessions.userId))
-    .where(and(eq(authSessions.tokenHash, tokenHash), gt(authSessions.expiresAt, now)))
+    .where(
+      and(eq(authSessions.tokenHash, tokenHash), gt(authSessions.expiresAt, now), isNull(users.disabledAt)),
+    )
     .get();
 }
 

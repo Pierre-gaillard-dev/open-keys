@@ -10,7 +10,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 
 | Élément | Valeur |
 |---|---|
-| Utilisateur | Une seule personne (l'auteur), développeur, sans connaissance du solfège |
+| Utilisateur | L'auteur, développeur, sans connaissance du solfège ; depuis la V1.4, quelques proches invités (D29) |
 | Instrument | Yamaha P-120 : MIDI IN/OUT en DIN 5 broches, pas d'USB, pas de câble pour l'instant |
 | Appareils | Pixel 10 (Firefox), PC Windows 11, PC Ubuntu |
 | Usage principal | Téléphone en paysage sur un trépied posé sur le piano, à environ 50 cm des yeux |
@@ -46,7 +46,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 - **Couverture** : WebP 720×720, suggérée automatiquement (pochette via MusicBrainz, portrait du compositeur via Wikidata), ou fournie à la main. Couverture générée si absente.
 - **Pratique** : réglages par morceau (vitesse, mains, position), boucles nommées, sessions et temps de pratique, statut (à apprendre / en cours / maîtrisé).
 - **Hors-ligne** : application installable (PWA), morceaux consultés et favoris disponibles sans réseau, file d'attente de synchronisation pour les données de pratique.
-- **Authentification** mono-utilisateur, avec un modèle de données prêt pour plusieurs utilisateurs.
+- **Authentification** mono-utilisateur, avec un modèle de données prêt pour plusieurs utilisateurs (multi-utilisateur en V1.4, D29).
 
 ### Plus tard, par ordre de priorité
 1. Zoom automatique du clavier sur la plage de notes utilisée (**V1.1**)
@@ -101,6 +101,7 @@ Une application personnelle pour **apprendre le piano sans savoir lire une parti
 | D26 | Progression | Meilleure vitesse d'une boucle = jouée 3 tours de suite ; proposition de +5 % après 5 tours, jusqu'à la cible. Historique renvoyé brut par l'API (`GET /practice-sessions`), regroupé par jour et par semaine côté client. Histogramme en HTML accessible (boutons, infobulle, tableau), sans librairie de graphiques | Sans entrée MIDI, le seul signal fiable est d'aller au bout de la boucle. Les jours dépendent du fuseau horaire de l'appareil, que le serveur ne connaît pas. Une librairie de graphiques pour un seul histogramme alourdirait le bundle |
 | D27 | Lecteur épuré | Seuls lecture, ±5 s, la progression et trois boutons (plein écran, Réglages, Boucles) restent à l'écran. Vitesse, mains et zoom passent dans Réglages ; A, B et boucle on/off dans Boucles. La progression est posée sur le bord du clavier. Un panneau ouvert garde les contrôles affichés | Ces réglages se font une fois par session : affichés en permanence, ils encombraient l'écran au-dessus des notes et masquaient le bouton lecture sur téléphone | 
 | D28 | Mains note par note | Un algorithme déterministe dans `core` (recherche en faisceau, coûts de déplacement, d'écart, de doigts, de croisement et de registre, réglés sur un corpus Mutopia) donne une main à chaque note. Le résultat est calculé une fois, à l'import ou sur demande, et enregistré par morceau (`song_hands`) avec l'empreinte des notes. Il est corrigeable note par note sur PC. Le MIDI d'origine n'est jamais réécrit | Les modèles entraînés publiés (~91 %) dépendent d'un jeu de données réservé à la recherche (PIG), pour quelques points de plus que notre 92,4 %. Recalculer à chaque lecture changerait une bonne répartition à chaque évolution de l'algorithme. Réécrire le MIDI casserait le dédoublonnage par empreinte et perdrait les autres instruments (V1.4) |
+| D29 | Multi-utilisateur | Comptes créés seulement par lien d'invitation de l'administrateur (usage unique, 7 jours, jeton haché), pas d'inscription ouverte. Deux rôles, `admin` (le compte initial) et `member`. Catalogue commun ; modification et suppression d'un morceau par celui qui l'a importé ou l'administrateur. Mot de passe oublié : lien de réinitialisation créé par l'administrateur (pas d'e-mail). Comptes désactivés plutôt que supprimés. Sur un appareil partagé, le cache est vidé quand un autre compte se connecte, et chaque écriture en attente ne part qu'avec la session de son auteur | Instance privée pour un cercle restreint : pas de serveur d'e-mails, l'administrateur transmet les liens lui-même. Un catalogue commun évite d'importer deux fois le même fichier (dédoublonnage par empreinte). Supprimer un compte casserait les morceaux qu'il a importés (`created_by`). Sans étiquette d'auteur, une écriture restée hors-ligne partirait avec la session d'un autre compte |
 
 ## 8. Risques
 

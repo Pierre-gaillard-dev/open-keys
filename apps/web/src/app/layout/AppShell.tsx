@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { BarChart3, LogOut } from "lucide-react";
+import { BarChart3, LogOut, UserRound } from "lucide-react";
 import { Suspense } from "react";
 import { useCurrentUser, useLogout } from "../../features/auth";
 import { IconButton } from "../../shared/ui";
@@ -56,7 +56,16 @@ export function AppShell() {
           >
             <BarChart3 aria-hidden="true" className="size-4" />
           </Link>
-          {user.data && <span className="hidden text-sm text-fg-muted sm:inline">{user.data.username}</span>}
+          {user.data && (
+            <Link
+              to="/account"
+              aria-label={`Mon compte (${user.data.username})`}
+              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-line px-3 text-sm text-fg-soft hover:text-fg data-[status=active]:text-fg"
+            >
+              <UserRound aria-hidden="true" className="size-4" />
+              <span className="hidden sm:inline">{user.data.username}</span>
+            </Link>
+          )}
           <IconButton
             label="Se déconnecter"
             onClick={() => logout.mutate(undefined, { onSettled: () => void navigate({ to: "/login" }) })}

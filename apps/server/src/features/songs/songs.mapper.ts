@@ -39,6 +39,7 @@ export function toSongDetail(
   tags: readonly string[],
   library: LibrarySummaryRow | null,
   hands: SongHandsRow | null,
+  canEdit: boolean,
 ): SongDetail {
   return {
     ...toSongSummary(song, tags, library),
@@ -68,6 +69,7 @@ export function toSongDetail(
       version: hands.version,
       updatedAt: hands.updatedAt,
     },
+    canEdit,
     midiUrl: `/api/songs/${song.id}/midi`,
     updatedAt: song.updatedAt,
   };

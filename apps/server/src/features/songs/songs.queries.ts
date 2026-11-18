@@ -10,7 +10,7 @@ export type NewSongRow = typeof songs.$inferInsert;
 export type SongTrackRow = typeof songTracks.$inferSelect;
 export type NewSongTrackRow = typeof songTracks.$inferInsert;
 export type SongHandsRow = typeof songHands.$inferSelect;
-type EditableSongColumns = Omit<NewSongRow, "id" | "createdBy" | "createdAt">;
+type EditableSongColumns = Omit<NewSongRow, "id" | "createdAt">;
 /** Undefined values are skipped by drizzle's set(). */
 export type SongPatch = { [K in keyof EditableSongColumns]?: EditableSongColumns[K] | undefined };
 
