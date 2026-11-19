@@ -1,4 +1,5 @@
 import { USER_ROLES } from "@open-keys/contracts";
+import { NOTE_NAMINGS } from "@open-keys/core";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
@@ -9,6 +10,8 @@ export const users = sqliteTable("users", {
   role: text("role", { enum: USER_ROLES }).notNull().default("member"),
   /** A disabled account can no longer log in; its data stays (its imports remain in the catalogue). */
   disabledAt: integer("disabled_at"),
+  /** Note names shown to this account (C D E or Do Ré Mi), checked by the application like `role`. */
+  noteNaming: text("note_naming", { enum: NOTE_NAMINGS }).notNull().default("english"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });

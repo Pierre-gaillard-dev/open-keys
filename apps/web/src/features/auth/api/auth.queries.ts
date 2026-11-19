@@ -1,4 +1,5 @@
 import type { AuthUser } from "@open-keys/contracts";
+import type { NoteNaming } from "@open-keys/core";
 import { type QueryClient, queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clearOfflineData, switchUser } from "../../../shared/offline";
 import { fetchCurrentUser, login, logout } from "./auth.api";
@@ -11,6 +12,11 @@ export const currentUserQuery = queryOptions({
 
 export function useCurrentUser() {
   return useQuery(currentUserQuery);
+}
+
+/** Note names of the current account (C D E or Do Ré Mi), wherever a note is named. */
+export function useNoteNaming(): NoteNaming {
+  return useCurrentUser().data?.noteNaming ?? "english";
 }
 
 /**

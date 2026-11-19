@@ -203,6 +203,7 @@ table users {
   password_hash text [not null]
   role text [not null, default: 'member']
   disabled_at integer
+  note_naming text [not null, default: 'english']
   created_at integer [not null]
   updated_at integer [not null]
 }

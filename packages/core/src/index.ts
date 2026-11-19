@@ -31,7 +31,16 @@ export {
   type ParsedNotes,
   parseMidiNotes,
 } from "./midi";
-export { isBlackKey, MAX_MIDI_PITCH, MIN_MIDI_PITCH, midiToNoteName, pitchClassName } from "./music";
+export {
+  isBlackKey,
+  MAX_MIDI_PITCH,
+  MIN_MIDI_PITCH,
+  midiToNoteName,
+  NOTE_NAMINGS,
+  type NoteNaming,
+  octaveOf,
+  pitchClassName,
+} from "./music";
 export {
   buildTimeline,
   type CountIn,

@@ -1,6 +1,8 @@
 import {
   firstNoteIndexAtOrAfter,
   type Hand,
+  midiToNoteName,
+  type NoteNaming,
   type PlayableNote,
   pitchClassName,
   type Timeline,
@@ -38,6 +40,16 @@ const BLACK_KEY_HEIGHT_RATIO = 0.62;
 const FONT_FAMILY = "Inter Variable, system-ui, sans-serif";
 /** Note names are only written where they fit (narrow keys when the whole keyboard is shown). */
 const MIN_NAMED_KEY_WIDTH = 11;
+
+/** Below this size a name is not written: it could not be read. */
+const MIN_FONT_SIZE = 6;
+
+/**
+ * Font size for `text` to fit `width`: at most `max` and `share` of the width, and smaller for longer
+ * names ("Sol#" is twice "G#"; a character is about 0.55 em wide).
+ */
+const fittedFontSize = (text: string, width: number, max: number, share: number) =>
+  Math.min(max, width * share, (1.8 * width) / Math.max(1, text.length));
 const NOTE_NAME_COLOR = 0x0b0e13;
 
 const namesOnKeys = (mode: NoteNamesMode) => mode === "keys" || mode === "both";
@@ -58,6 +70,8 @@ export interface RendererOptions {
   readonly zoom: boolean;
   /** Note names on the falling notes and/or the keys (UC-23). */
   readonly noteNames: NoteNamesMode;
+  /** C D E or Do Ré Mi (setting of the account). */
+  readonly noteNaming: NoteNaming;
 }
 
 /** Draws the falling notes and the keyboard. Reads the clock every frame: React never drives it. */
@@ -104,7 +118,9 @@ export class FallingNotesRenderer {
 
   setOptions(options: RendererOptions): void {
     const layoutChanged =
-      options.zoom !== this.#options.zoom || options.noteNames !== this.#options.noteNames;
+      options.zoom !== this.#options.zoom ||
+      options.noteNames !== this.#options.noteNames ||
+      options.noteNaming !== this.#options.noteNaming;
     this.#options = options;
     if (layoutChanged && this.#initialized) {
       this.#relayout();
@@ -186,18 +202,20 @@ export class FallingNotesRenderer {
       return this.#octaveLabel(key, bottom);
     }
     if (namesOnKeys(this.#options.noteNames) && key.width >= MIN_NAMED_KEY_WIDTH) {
+      // Null when the name does not fit the key.
       return this.#keyName(key, bottom);
     }
     return null;
   }
 
-  /** "C4" under every C, so the screen maps to the real keyboard. */
+  /** "C4" (or "Do3") under every C, so the screen maps to the real keyboard. */
   #octaveLabel(key: KeyGeometry, bottom: number): Text {
+    const text = midiToNoteName(key.pitch, this.#options.noteNaming);
     const label = new Text({
-      text: `C${Math.floor(key.pitch / 12) - 1}`,
+      text,
       style: {
         fontFamily: FONT_FAMILY,
-        fontSize: Math.min(12, key.width * 0.45),
+        fontSize: fittedFontSize(text, key.width, 12, 0.45),
         fontWeight: key.pitch === MIDDLE_C ? "700" : "500",
         fill: key.pitch === MIDDLE_C ? COLORS.blackKey : COLORS.label,
       },
@@ -208,12 +226,17 @@ export class FallingNotesRenderer {
   }
 
   /** Letter of a key (UC-23); the Cs keep their octave label. */
-  #keyName(key: KeyGeometry, bottom: number): Text {
+  #keyName(key: KeyGeometry, bottom: number): Text | null {
+    const text = pitchClassName(key.pitch, this.#options.noteNaming);
+    const fontSize = fittedFontSize(text, key.width, 12, key.isBlack ? 0.5 : 0.45);
+    if (fontSize < MIN_FONT_SIZE) {
+      return null;
+    }
     const label = new Text({
-      text: pitchClassName(key.pitch),
+      text,
       style: {
         fontFamily: FONT_FAMILY,
-        fontSize: Math.min(12, key.width * (key.isBlack ? 0.5 : 0.45)),
+        fontSize,
         fontWeight: "600",
         fill: key.isBlack ? COLORS.whiteKey : COLORS.label,
       },
@@ -262,10 +285,12 @@ export class FallingNotesRenderer {
 
   /** Name at the bottom of a falling note, when shown and when it fits. Returns true when a label was used. */
   #nameNote(note: PlayableNote, key: KeyGeometry, sprite: Sprite, index: number): boolean {
-    const fontSize = Math.min(13, Math.floor(key.width * 0.5));
+    const name = pitchClassName(note.pitch, this.#options.noteNaming);
+    const fontSize = Math.floor(fittedFontSize(name, key.width, 13, 0.5));
     if (
       !namesOnNotes(this.#options.noteNames) ||
       key.width < MIN_NAMED_KEY_WIDTH ||
+      fontSize < MIN_FONT_SIZE ||
       sprite.height < fontSize + 6
     ) {
       return false;
@@ -280,7 +305,6 @@ export class FallingNotesRenderer {
       this.#namePool.push(label);
       this.#noteNames.addChild(label);
     }
-    const name = pitchClassName(note.pitch);
     if (label.text !== name) {
       label.text = name;
     }

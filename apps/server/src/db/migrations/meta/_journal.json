@@ -36,6 +36,13 @@
       "when": 1795012606796,
       "tag": "0004_multi_users",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795080789743,
+      "tag": "0005_note_naming",
+      "breakpoints": true
     }
   ]
 }

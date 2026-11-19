@@ -4,8 +4,9 @@ import { buttonClasses, SectionTitle } from "../../../shared/ui";
 import { useCurrentUser } from "../../auth";
 import { AccountsAdmin } from "../components/AccountsAdmin";
 import { ChangePasswordForm } from "../components/ChangePasswordForm";
+import { NoteNamingSetting } from "../components/NoteNamingSetting";
 
-/** UC-36 and, for the administrator, UC-34 / UC-37. */
+/** UC-36, the account settings and, for the administrator, UC-34 / UC-37. */
 export function AccountPage() {
   const user = useCurrentUser().data;
   if (!user) {
@@ -21,6 +22,10 @@ export function AccountPage() {
       </header>
       <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="flex flex-col gap-8">
+          <section className="flex flex-col gap-3">
+            <SectionTitle>Noms des notes</SectionTitle>
+            <NoteNamingSetting value={user.noteNaming} />
+          </section>
           <section className="flex flex-col gap-3">
             <SectionTitle>Mot de passe</SectionTitle>
             <ChangePasswordForm />

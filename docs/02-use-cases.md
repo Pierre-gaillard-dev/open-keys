@@ -100,7 +100,7 @@ flowchart LR
 | UC-20 | Rechercher et importer depuis une bibliothèque en ligne (Mutopia, MAESTRO, xivmidi) | V1.1 |
 | UC-21 | Zoom automatique du clavier | V1.1 |
 | UC-22 | Décompte avant le départ | V1.2 |
-| UC-23 | Afficher le nom des notes (C, D, E…) | V1.2 |
+| UC-23 | Afficher le nom des notes (C, D, E… ou Do, Ré, Mi…) | V1.2 |
 | UC-24 | Métronome | V1.2 |
 | UC-25 | Volume par main | V1.2 |
 | UC-26 | Vitesse cible par boucle | V1.3 |
@@ -227,7 +227,7 @@ flowchart LR
 
 ### UC-22 à UC-25 — Confort (V1.2)
 - **Décompte** (UC-22) : une mesure de clics avant de jouer et à chaque retour en début de boucle, avec un grand chiffre au centre de l'écran. Les notes descendent déjà pendant le décompte.
-- **Nom des notes** (UC-23) : en notation anglaise (C, D, E…, dièses), sur les notes qui tombent, sur les touches, ou les deux.
+- **Nom des notes** (UC-23) : sur les notes qui tombent, sur les touches, ou les deux. La notation est un réglage du compte, dans « Mon compte » : anglaise (C, D, E…) ou française (Do, Ré, Mi…), avec des dièses. Elle s'applique partout où une note est nommée : lecteur, import, labo micro. En français, l'octave suit la convention française : le do du milieu est Do3, alors qu'il est C4 en anglais.
 - **Métronome** (UC-24) : un clic par temps, calé sur la mesure du fichier, temps fort accentué.
 - **Volume par main** (UC-25) : de 0 à 100 %, mémorisé avec les autres réglages des mains du morceau.
 - Décompte, métronome et nom des notes sont des réglages de l'appareil, valables pour tous les morceaux. Ils s'activent depuis le bouton « Réglages » du lecteur, ou au clavier (`C`, `M`, `N`).

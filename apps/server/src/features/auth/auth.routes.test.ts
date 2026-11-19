@@ -120,6 +120,28 @@ describe("sessions", () => {
   });
 });
 
+describe("PUT /api/auth/preferences", () => {
+  it("keeps the note names of the account, English by default", async () => {
+    server = await createTestServer();
+    await server.login();
+    const me = async () => authUserSchema.parse(await (await server.request("/api/auth/me")).json());
+    expect((await me()).noteNaming).toBe("english");
+
+    const response = await server.json("PUT", "/api/auth/preferences", { noteNaming: "latin" });
+
+    expect(response.status).toBe(200);
+    expect(authUserSchema.parse(await response.json()).noteNaming).toBe("latin");
+    expect((await me()).noteNaming).toBe("latin");
+    expect((await server.json("PUT", "/api/auth/preferences", { noteNaming: "german" })).status).toBe(400);
+  });
+
+  it("needs a session", async () => {
+    server = await createTestServer();
+    const response = await server.json("PUT", "/api/auth/preferences", { noteNaming: "latin" });
+    expect(response.status).toBe(401);
+  });
+});
+
 describe("initial user", () => {
   it("is created only when no user exists", async () => {
     server = await createTestServer();

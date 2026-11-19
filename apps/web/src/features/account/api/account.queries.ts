@@ -1,6 +1,6 @@
 import type { AcceptInvitationRequest } from "@open-keys/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { onLoggedIn } from "../../auth";
+import { currentUserQuery, onLoggedIn } from "../../auth";
 import {
   acceptInvite,
   changePassword,
@@ -10,6 +10,7 @@ import {
   fetchUsers,
   revokeInvitation,
   setUserDisabled,
+  updatePreferences,
 } from "./account.api";
 
 /** Administration data (D29): never kept on the device, the root "admin" is not persisted. */
@@ -20,6 +21,15 @@ export const adminKeys = {
 
 export function useChangePassword() {
   return useMutation({ mutationFn: changePassword });
+}
+
+/** The account is updated at once on the screen: every note name follows. */
+export function useUpdatePreferences() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updatePreferences,
+    onSuccess: (user) => queryClient.setQueryData(currentUserQuery.queryKey, user),
+  });
 }
 
 export function useUsers(enabled: boolean) {

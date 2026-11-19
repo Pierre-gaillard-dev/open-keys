@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { AuthUser, UserAccount } from "@open-keys/contracts";
+import type { AuthUser, UpdatePreferencesRequest, UserAccount } from "@open-keys/contracts";
 import type { Database } from "../../db";
 import { AppError } from "../../shared/http";
 import type { Logger } from "../../shared/logger";
@@ -64,14 +64,17 @@ export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-const toAuthUser = (user: Pick<UserRow, "id" | "username" | "role">): AuthUser => ({
+const toAuthUser = (user: Pick<UserRow, "id" | "username" | "role" | "noteNaming">): AuthUser => ({
   id: user.id,
   username: user.username,
   role: user.role,
+  noteNaming: user.noteNaming,
 });
 
 const toAccount = (user: UserRow): UserAccount => ({
-  ...toAuthUser(user),
+  id: user.id,
+  username: user.username,
+  role: user.role,
   createdAt: user.createdAt,
   disabled: user.disabledAt !== null,
 });
@@ -138,7 +141,7 @@ export function createAuthService({ db, clock, newId, hasher, rateLimiter, logge
       if (!session) {
         return undefined;
       }
-      const user = toAuthUser({ id: session.userId, username: session.username, role: session.role });
+      const user = toAuthUser({ ...session, id: session.userId });
       const { sessionId } = session;
       if (now + SESSION_TTL_MS - session.expiresAt < REFRESH_AFTER_MS) {
         return { sessionId, user, expiresAt: session.expiresAt, refreshed: false };
@@ -188,6 +191,13 @@ export function createAuthService({ db, clock, newId, hasher, rateLimiter, logge
       logger.info("Password changed", { userId });
     },
 
+    /** Settings of the account (note names), the same on every device. */
+    updatePreferences(userId: string, preferences: UpdatePreferencesRequest): AuthUser {
+      const user = requireUser(userId);
+      updateUser(db, userId, { noteNaming: preferences.noteNaming, updatedAt: clock() });
+      return toAuthUser({ ...user, ...preferences });
+    },
+
     // ── Used by the accounts feature (D29) ──
 
     listAccounts(): UserAccount[] {
@@ -231,6 +241,7 @@ export function createAuthService({ db, clock, newId, hasher, rateLimiter, logge
         passwordHash: await hasher.hash(password),
         role: "member",
         disabledAt: null,
+        noteNaming: "english",
         createdAt: now,
         updatedAt: now,
       };

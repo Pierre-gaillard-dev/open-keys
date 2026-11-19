@@ -1,3 +1,4 @@
+import { NOTE_NAMINGS } from "@open-keys/core";
 import { z } from "zod";
 import { ulidSchema } from "./common.contract";
 
@@ -23,10 +24,14 @@ export const usernameSchema = z
 /** A new password (accounts and changes): long rather than complicated. */
 export const newPasswordSchema = z.string().min(10, "10 caractères minimum").max(256);
 
+export const noteNamingSchema = z.enum(NOTE_NAMINGS);
+
 export const authUserSchema = z.object({
   id: ulidSchema,
   username: z.string(),
   role: userRoleSchema,
+  /** Note names shown everywhere for this account: C D E or Do Ré Mi. */
+  noteNaming: noteNamingSchema,
 });
 
 export type AuthUser = z.infer<typeof authUserSchema>;
@@ -37,3 +42,8 @@ export const changePasswordRequestSchema = z.object({
 });
 
 export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
+
+/** Settings of the account, the same on every device. */
+export const updatePreferencesRequestSchema = z.object({ noteNaming: noteNamingSchema });
+
+export type UpdatePreferencesRequest = z.infer<typeof updatePreferencesRequestSchema>;

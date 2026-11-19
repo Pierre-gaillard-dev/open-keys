@@ -1,9 +1,10 @@
 import type { LibraryEntry, Loop, SongDetail } from "@open-keys/contracts";
-import type { Timeline } from "@open-keys/core";
+import type { NoteNaming, Timeline } from "@open-keys/core";
 import { useNavigate } from "@tanstack/react-router";
 import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { ErrorBanner } from "../../../shared/ui";
+import { useNoteNaming } from "../../auth";
 import { useAutoHide } from "../hooks/use-auto-hide";
 import { useFullscreen } from "../hooks/use-fullscreen";
 import { useLoopProgress } from "../hooks/use-loop-progress";
@@ -34,7 +35,11 @@ export interface PlayerViewProps {
   readonly samples: SamplesStatus;
 }
 
-function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPlayerState {
+function initialState(
+  timeline: Timeline,
+  entry: LibraryEntry | null,
+  noteNaming: NoteNaming,
+): InitialPlayerState {
   const durationMs = Math.round(timeline.durationS * 1000);
   const position = entry?.lastPositionMs ?? 0;
   return {
@@ -45,6 +50,7 @@ function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPl
     // On a phone, 88 keys are tiny: frame the piece's range (docs: zoom auto, priority 1).
     zoom: Math.min(window.innerWidth, window.innerHeight) < PHONE_SHORT_SIDE_PX,
     preferences: loadPlayerPreferences(),
+    noteNaming,
   };
 }
 
@@ -64,7 +70,11 @@ function isBackground(target: EventTarget): boolean {
 export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, samples }: PlayerViewProps) {
   const host = useRef<HTMLDivElement>(null);
   // Read once: the store is created from it on mount (later library updates come from this player).
-  const initial = useMemo(() => initialState(timeline, libraryEntry), [timeline, libraryEntry]);
+  const noteNaming = useNoteNaming();
+  const initial = useMemo(
+    () => initialState(timeline, libraryEntry, noteNaming),
+    [timeline, libraryEntry, noteNaming],
+  );
   const { store, tracker, controller } = usePlayerSession(timeline, initial, host, runtime, samples);
   usePracticePersistence(song.id, store, tracker, libraryEntry);
   useSavePreferences(store);

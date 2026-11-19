@@ -3,6 +3,7 @@ import { Check, Mic, MicOff, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cx } from "../../../shared/lib/cx";
 import { Button, ErrorBanner, SectionTitle, SegmentedControl } from "../../../shared/ui";
+import { useNoteNaming } from "../../auth";
 import { type MicrophoneStream, openMicrophone } from "../audio/microphone";
 
 /** Screen refresh of the measures: the analysis runs at ~47 frames per second, React is told 10 times. */
@@ -11,7 +12,7 @@ const DISPLAY_INTERVAL_MS = 100;
 const REQUIRED_FRAMES = 2;
 
 const TARGETS = {
-  single: { label: "Do4", pitches: [60] },
+  single: { label: "Do du milieu", pitches: [60] },
   triad: { label: "Do majeur", pitches: [60, 64, 67] },
   hands: { label: "Deux mains", pitches: [45, 52, 60, 64, 69] },
   octave: { label: "Octave", pitches: [48, 60] },
@@ -68,6 +69,7 @@ const EMPTY: Display = { level: -100, notes: [], heard: new Set(), completedAfte
  * notes asked for (wait mode). Measures to collect on the Pixel and the PC, next to the piano.
  */
 export function MicLabPage() {
+  const naming = useNoteNaming();
   const [target, setTarget] = useState<TargetKey>("triad");
   const [display, setDisplay] = useState<Display>(EMPTY);
   const [running, setRunning] = useState(false);
@@ -188,7 +190,7 @@ export function MicLabPage() {
                 )}
               >
                 {ok && <Check aria-hidden="true" className="size-4 text-hand-left" />}
-                {midiToNoteName(pitch)}
+                {midiToNoteName(pitch, naming)}
               </span>
             );
           })}
@@ -208,7 +210,7 @@ export function MicLabPage() {
         <ul className="flex flex-col gap-1.5">
           {display.notes.slice(0, 8).map((note) => (
             <li key={note.pitch} className="flex items-center gap-3 text-sm">
-              <span className="w-12 font-semibold tabular-nums">{midiToNoteName(note.pitch)}</span>
+              <span className="w-12 font-semibold tabular-nums">{midiToNoteName(note.pitch, naming)}</span>
               <span
                 className="h-2 rounded-full bg-hand-right"
                 style={{
