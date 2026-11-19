@@ -54,6 +54,9 @@ function initialState(
   };
 }
 
+/** A finger moving less than this between down and up is a tap, not a scroll or a swipe. */
+const TAP_SLOP_PX = 10;
+
 /**
  * Elements that react to a tap: a tap inside them never dismisses the controls. A panel counts as a
  * whole: a finger set on its text or its gaps to scroll it is not a tap on an empty area.
@@ -109,11 +112,27 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
   }, [controller, savedLoops, lastLoopId, store]);
 
   // A tap on an empty area closes the open panel, else dismisses the controls (to watch the notes, even
-  // on pause); a tap on hidden controls shows them.
+  // on pause); a touch on hidden controls shows them. Only a tap closes or dismisses, never the start of
+  // a gesture: a finger scrolling a panel moves, or is cancelled by the browser when it scrolls.
+  const backgroundPress = useRef<{ id: number; x: number; y: number } | null>(null);
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!(autoHide.visible && isBackground(event.target))) {
+    backgroundPress.current = null;
+    if (autoHide.visible && isBackground(event.target)) {
+      backgroundPress.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    } else {
       autoHide.poke();
-    } else if (panel === null) {
+    }
+  };
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const press = backgroundPress.current;
+    backgroundPress.current = null;
+    const tapped =
+      press?.id === event.pointerId &&
+      Math.hypot(event.clientX - press.x, event.clientY - press.y) <= TAP_SLOP_PX;
+    if (!tapped) {
+      return;
+    }
+    if (panel === null) {
       autoHide.hide();
     } else {
       setPanel(null);
@@ -125,6 +144,10 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
       className="fixed inset-0 overflow-hidden bg-bg"
       onPointerMove={(event) => autoHide.pointerMoved(event.pointerType)}
       onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => {
+        backgroundPress.current = null;
+      }}
     >
       <div ref={host} data-player-background className="absolute inset-0" data-testid="player-canvas" />
       <ControlsOverlay

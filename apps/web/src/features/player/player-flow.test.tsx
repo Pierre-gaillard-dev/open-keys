@@ -120,6 +120,16 @@ describe("player", () => {
       target: within(panel).getByRole("heading", { name: "Réglages" }),
     });
     expect(screen.getByRole("region", { name: "Réglages du lecteur" })).toBeTruthy();
+    // A finger scrolling from an empty area (it moves, or the browser cancels it) closes nothing.
+    await userEvent.pointer([
+      { keys: "[TouchA>]", target: controls, coords: { x: 50, y: 300 } },
+      { pointerName: "TouchA", target: controls, coords: { x: 50, y: 200 } },
+      { keys: "[/TouchA]", target: controls, coords: { x: 50, y: 200 } },
+    ]);
+    fireEvent.pointerDown(controls, { pointerId: 7 });
+    fireEvent.pointerCancel(controls, { pointerId: 7 });
+    fireEvent.pointerUp(controls, { pointerId: 7 });
+    expect(screen.getByRole("region", { name: "Réglages du lecteur" })).toBeTruthy();
     // With a panel open, a tap on an empty area closes the panel first.
     await userEvent.click(controls);
     expect(screen.queryByRole("region", { name: "Réglages du lecteur" })).toBeNull();

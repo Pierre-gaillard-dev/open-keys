@@ -77,7 +77,7 @@ L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaî
   - au centre : −5 s, lecture/pause, +5 s ;
   - la **barre de progression** est posée sur le bord entre les notes et le clavier (même règle de hauteur que le rendu : 20 % de l'écran, entre 56 et 170 px), avec les temps au-dessus ;
   - visibles à la pause, **masqués dès le lancement de la lecture** (fondu de 200 ms) ;
-  - un tap sur une zone vide ferme le panneau ouvert, sinon masque les contrôles, y compris à la pause ;
+  - un tap sur une zone vide ferme le panneau ouvert, sinon masque les contrôles, y compris à la pause. Seul un vrai tap compte : le doigt se lève à moins de 10 px de l'endroit où il s'est posé. Un défilement ne ferme donc jamais rien, même s'il commence dans le vide ou sur le texte d'un panneau : le doigt bouge, ou le navigateur annule le pointeur (`pointercancel`) quand il fait défiler ;
   - un tap, un mouvement de **souris** ou une touche les réaffiche. Un doigt qui bouge pendant un tap ne compte pas, ni la souris dans les 600 ms qui suivent un tap qui les a masqués. Pendant la lecture, ils se masquent à nouveau après 3 s sans interaction, **sauf tant qu'un panneau est ouvert** (A et B se posent pendant la lecture).
 - **Panneaux** : un seul ouvert à la fois, sous la barre du haut. Sur un écran de moins de 500 px de haut (téléphone en paysage), ils prennent toute la hauteur à droite, et les notes restent visibles à gauche.
 - **Zoom automatique** : activé par défaut quand le plus petit côté de l'écran fait moins de 600 px (téléphone, quelle que soit l'orientation). Le clavier cadre alors la plage du morceau, avec 2 touches de marge.
