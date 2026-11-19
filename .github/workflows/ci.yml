@@ -64,8 +64,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/apt-archives
-          key: apt-${{ runner.os }}-${{ env.ImageOS }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: apt-${{ runner.os }}-${{ env.ImageOS }}-
+          key: apt-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: apt-${{ runner.os }}-
 
       - name: Restore the browsers
         id: browsers
