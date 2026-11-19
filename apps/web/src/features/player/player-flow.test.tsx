@@ -112,8 +112,15 @@ describe("player", () => {
     await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
     const controls = screen.getByTestId("player-controls");
 
-    // With a panel open, a tap on an empty area closes the panel first.
+    // A finger set on the text of a panel (to scroll it) keeps it open.
     await userEvent.click(screen.getByRole("button", { name: "Réglages du lecteur" }));
+    const panel = screen.getByRole("region", { name: "Réglages du lecteur" });
+    await userEvent.pointer({
+      keys: "[TouchA]",
+      target: within(panel).getByRole("heading", { name: "Réglages" }),
+    });
+    expect(screen.getByRole("region", { name: "Réglages du lecteur" })).toBeTruthy();
+    // With a panel open, a tap on an empty area closes the panel first.
     await userEvent.click(controls);
     expect(screen.queryByRole("region", { name: "Réglages du lecteur" })).toBeNull();
     expect(controls.dataset["visible"]).toBe("true");

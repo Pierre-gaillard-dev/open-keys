@@ -80,7 +80,10 @@ function PanelButtons({ songId, store, controller, savedLoops, panel, onPanelCha
       </button>
       {panel !== null && (
         // On a phone in landscape, a sheet on the whole height: the notes stay visible on the left.
-        <div className="absolute top-13 right-0 z-10 [@media(max-height:500px)]:fixed [@media(max-height:500px)]:top-2 [@media(max-height:500px)]:right-2">
+        <div
+          data-player-panel
+          className="absolute top-13 right-0 z-10 [@media(max-height:500px)]:fixed [@media(max-height:500px)]:top-2 [@media(max-height:500px)]:right-2"
+        >
           {panel === "loops" ? (
             <LoopPanel
               songId={songId}
