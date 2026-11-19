@@ -63,6 +63,21 @@ describe("invitation link (UC-35)", () => {
 });
 
 describe("account page", () => {
+  it("switches the note names of the account to Do Ré Mi", async () => {
+    const api = installFakeApi({
+      "GET /api/auth/me": () => ({ json: MEMBER }),
+      "PUT /api/auth/preferences": () => ({ json: { ...MEMBER, noteNaming: "latin" } }),
+    });
+    renderApp("/account");
+
+    const latin = await screen.findByRole("radio", { name: "Do Ré Mi" });
+    expect(screen.getByRole("radio", { name: "C D E" }).getAttribute("aria-checked")).toBe("true");
+    await userEvent.click(latin);
+
+    await waitFor(() => expect(latin.getAttribute("aria-checked")).toBe("true"));
+    expect(api.calls("PUT", "/api/auth/preferences")[0]?.body).toEqual({ noteNaming: "latin" });
+  });
+
   it("lets the administrator invite someone, the link being shown once", async () => {
     const api = installFakeApi({
       "GET /api/auth/me": () => ({ json: USER }),

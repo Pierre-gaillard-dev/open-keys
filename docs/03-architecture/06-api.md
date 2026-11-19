@@ -12,8 +12,9 @@ Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les s
 |---|---|---|
 | POST | `/auth/login` | Connexion |
 | POST | `/auth/logout` | Déconnexion |
-| GET | `/auth/me` | Utilisateur courant, avec son rôle (`admin`, `member`) |
+| GET | `/auth/me` | Utilisateur courant, avec son rôle (`admin`, `member`) et ses réglages (`noteNaming`) |
 | PUT | `/auth/password` | `{ currentPassword, newPassword }` : 204, les autres sessions du compte sont fermées |
+| PUT | `/auth/preferences` | `{ noteNaming: "english" \| "latin" }` : réglages du compte, renvoie l'utilisateur courant |
 | GET | `/users` | Comptes (administrateur) |
 | PATCH | `/users/:id` | `{ disabled }` : désactiver ou réactiver un compte (pas le sien) |
 | GET | `/invitations` | Liens en attente (administrateur) |

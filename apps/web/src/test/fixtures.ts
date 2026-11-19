@@ -1,7 +1,17 @@
 import type { SongDetail, SongSummary } from "@open-keys/contracts";
 
-export const USER = { id: "01JD00000000000000000000A1", username: "pierre", role: "admin" as const };
-export const MEMBER = { id: "01JD00000000000000000000A2", username: "claire", role: "member" as const };
+export const USER = {
+  id: "01JD00000000000000000000A1",
+  username: "pierre",
+  role: "admin" as const,
+  noteNaming: "english" as const,
+};
+export const MEMBER = {
+  id: "01JD00000000000000000000A2",
+  username: "claire",
+  role: "member" as const,
+  noteNaming: "english" as const,
+};
 
 let counter = 0;
 function id(): string {

@@ -26,7 +26,7 @@ export function listUsers(db: Database): UserRow[] {
 export function updateUser(
   db: Database,
   id: string,
-  patch: Partial<Pick<UserRow, "passwordHash" | "disabledAt" | "updatedAt">>,
+  patch: Partial<Pick<UserRow, "passwordHash" | "disabledAt" | "noteNaming" | "updatedAt">>,
 ): void {
   db.update(users).set(patch).where(eq(users.id, id)).run();
 }
@@ -55,6 +55,7 @@ export function findActiveSession(db: Database, tokenHash: string, now: number) 
       userId: users.id,
       username: users.username,
       role: users.role,
+      noteNaming: users.noteNaming,
     })
     .from(authSessions)
     .innerJoin(users, eq(users.id, authSessions.userId))

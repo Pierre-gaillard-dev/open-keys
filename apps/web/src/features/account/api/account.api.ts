@@ -9,6 +9,7 @@ import {
   type InviteInfo,
   invitationSchema,
   inviteInfoSchema,
+  type UpdatePreferencesRequest,
   type UserAccount,
   userAccountSchema,
 } from "@open-keys/contracts";
@@ -17,6 +18,10 @@ import { apiRequest } from "../../../shared/api";
 
 export function changePassword(request: ChangePasswordRequest): Promise<void> {
   return apiRequest("PUT", "/auth/password", { body: request });
+}
+
+export function updatePreferences(request: UpdatePreferencesRequest): Promise<AuthUser> {
+  return apiRequest("PUT", "/auth/preferences", { body: request, schema: authUserSchema });
 }
 
 export function fetchUsers(): Promise<UserAccount[]> {

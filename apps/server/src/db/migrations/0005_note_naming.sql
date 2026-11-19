@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `note_naming` text DEFAULT 'english' NOT NULL;

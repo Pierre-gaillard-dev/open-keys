@@ -1,4 +1,5 @@
 import { DEFAULT_HANDS_SETTINGS, type HandsSettings, type Loop } from "@open-keys/contracts";
+import type { NoteNaming } from "@open-keys/core";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "./player-preferences";
 
@@ -42,6 +43,8 @@ export interface PlayerState {
   readonly hands: HandsSettings;
   readonly zoom: boolean;
   readonly preferences: PlayerPreferences;
+  /** Note names of the account (C D E or Do Ré Mi): set by the account, not by the player. */
+  readonly noteNaming: NoteNaming;
   /** Clicks left before the music starts (count-in), null otherwise. Changes once per beat. */
   readonly countInBeatsLeft: number | null;
   /** Full turns of the loop in a row at the current speed (UC-26). */
@@ -59,6 +62,7 @@ export interface InitialPlayerState {
   readonly hands?: HandsSettings;
   readonly zoom?: boolean;
   readonly preferences?: PlayerPreferences;
+  readonly noteNaming?: NoteNaming;
 }
 
 export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
@@ -74,6 +78,7 @@ export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
     hands: initial.hands ?? DEFAULT_HANDS_SETTINGS,
     zoom: initial.zoom ?? false,
     preferences: initial.preferences ?? DEFAULT_PLAYER_PREFERENCES,
+    noteNaming: initial.noteNaming ?? "english",
     countInBeatsLeft: null,
     loopRuns: 0,
     speedUpOffer: null,

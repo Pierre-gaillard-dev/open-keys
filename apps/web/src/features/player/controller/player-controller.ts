@@ -31,11 +31,14 @@ const toSeconds = (ms: number) => ms / 1000;
 const toMs = (seconds: number) => Math.round(seconds * 1000);
 
 /** What the renderer shows, from the player state. */
-export function rendererOptions(state: Pick<PlayerState, "hands" | "zoom" | "preferences">): RendererOptions {
+export function rendererOptions(
+  state: Pick<PlayerState, "hands" | "zoom" | "preferences" | "noteNaming">,
+): RendererOptions {
   return {
     visibleHands: { left: state.hands.left.visible, right: state.hands.right.visible },
     zoom: state.zoom,
     noteNames: state.preferences.noteNames,
+    noteNaming: state.noteNaming,
   };
 }
 

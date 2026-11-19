@@ -3,6 +3,7 @@ import { midiToNoteName, type TrackHand } from "@open-keys/core";
 import { Minus, Plus } from "lucide-react";
 import { cx } from "../../../shared/lib/cx";
 import { IconButton, SegmentedControl } from "../../../shared/ui";
+import { useNoteNaming } from "../../auth";
 import type { HandsChoice } from "../hands-assignment";
 
 const HAND_STYLES: Readonly<Record<TrackHand, string>> = {
@@ -87,6 +88,7 @@ function HandChoice({
 /** Hand assignment (UC-04): note by note (D28), by track, or by pitch around a split note. */
 export function TrackHandsEditor(props: TrackHandsEditorProps) {
   const { tracks, mode, splitPitch, hands, onModeChange, onSplitPitchChange, onHandChange } = props;
+  const naming = useNoteNaming();
   const changeSplit = (delta: number) =>
     onSplitPitchChange(Math.min(HIGHEST_SPLIT, Math.max(LOWEST_SPLIT, splitPitch + delta)));
 
@@ -111,8 +113,8 @@ export function TrackHandsEditor(props: TrackHandsEditorProps) {
       {mode === "split" && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-3">
           <p className="text-sm text-fg-soft">
-            Notes à partir de <strong className="text-fg">{midiToNoteName(splitPitch)}</strong> à droite, en
-            dessous à gauche.
+            Notes à partir de <strong className="text-fg">{midiToNoteName(splitPitch, naming)}</strong> à
+            droite, en dessous à gauche.
           </p>
           <div className="flex gap-1.5">
             <IconButton label="Descendre la séparation d'un demi-ton" onClick={() => changeSplit(-1)}>
@@ -142,8 +144,8 @@ export function TrackHandsEditor(props: TrackHandsEditorProps) {
                   {track.name ? ` · « ${track.name} »` : ""}
                 </span>
                 <span className="text-xs text-fg-muted">
-                  canal {track.channel + 1} · {track.noteCount} notes · {midiToNoteName(track.minPitch)} –{" "}
-                  {midiToNoteName(track.maxPitch)}
+                  canal {track.channel + 1} · {track.noteCount} notes ·{" "}
+                  {midiToNoteName(track.minPitch, naming)} – {midiToNoteName(track.maxPitch, naming)}
                 </span>
               </div>
               <HandChoice
