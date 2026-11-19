@@ -58,13 +58,40 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The Ubuntu mirror is sometimes very slow (54 MB in 2 min 15 s): the packages the browsers and the
+      # sound card need are kept in the GitHub cache, apt only downloads what changed.
+      - name: Restore the system packages
+        uses: actions/cache@v6
+        with:
+          path: ~/apt-archives
+          key: apt-${{ runner.os }}-${{ env.ImageOS }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: apt-${{ runner.os }}-${{ env.ImageOS }}-
+
+      - name: Restore the browsers
+        id: browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
       - name: Install the browsers
-        run: pnpm --filter @open-keys/e2e exec playwright install --with-deps chromium firefox
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter @open-keys/e2e exec playwright install chromium firefox
 
       # No sound card on the runner: Firefox's AudioContext never starts without an audio server.
+      - name: System packages (browsers, virtual sound card)
+        run: |
+          mkdir -p ~/apt-archives/partial
+          echo "Dir::Cache::Archives \"$HOME/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99-ci-archives
+          echo 'man-db man-db/auto-update boolean false' | sudo debconf-set-selections
+          pnpm --filter @open-keys/e2e exec playwright install-deps chromium firefox
+          sudo apt-get install --yes --no-install-recommends pulseaudio
+          # Saved by the cache step at the end of the job: readable by the runner, without the apt lock.
+          sudo rm -f ~/apt-archives/lock ~/apt-archives/partial/*
+          sudo chown -R "$USER" ~/apt-archives
+
       - name: Virtual sound card
         run: |
-          sudo apt-get install --yes --no-install-recommends pulseaudio
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=e2e
           pactl set-default-sink e2e
