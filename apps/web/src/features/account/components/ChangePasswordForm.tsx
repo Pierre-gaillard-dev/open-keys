@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { ApiError } from "../../../shared/api";
-import { Button, ErrorBanner, TextField } from "../../../shared/ui";
+import { Button, ErrorBanner, PasswordField } from "../../../shared/ui";
 import { useChangePassword } from "../api/account.queries";
 import { type NewPassword, newPasswordIssues, PasswordFields } from "./PasswordFields";
 
@@ -39,9 +39,8 @@ export function ChangePasswordForm() {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-      <TextField
+      <PasswordField
         label="Mot de passe actuel"
-        type="password"
         autoComplete="current-password"
         required
         value={current}
