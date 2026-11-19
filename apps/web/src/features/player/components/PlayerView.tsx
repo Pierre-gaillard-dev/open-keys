@@ -48,8 +48,11 @@ function initialState(timeline: Timeline, entry: LibraryEntry | null): InitialPl
   };
 }
 
-/** Elements that react to a tap: a tap inside them never dismisses the controls. */
-const INTERACTIVE = "a, button, input, label, fieldset, form, [role='region']";
+/**
+ * Elements that react to a tap: a tap inside them never dismisses the controls. A panel counts as a
+ * whole: a finger set on its text or its gaps to scroll it is not a tap on an empty area.
+ */
+const INTERACTIVE = "a, button, input, label, fieldset, form, [role='region'], [data-player-panel]";
 
 /** True when the nearest meaningful ancestor of the tapped element is a background, not a control. */
 function isBackground(target: EventTarget): boolean {
