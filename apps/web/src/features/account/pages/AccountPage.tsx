@@ -1,4 +1,6 @@
-import { SectionTitle } from "../../../shared/ui";
+import { Link } from "@tanstack/react-router";
+import { Mic } from "lucide-react";
+import { buttonClasses, SectionTitle } from "../../../shared/ui";
 import { useCurrentUser } from "../../auth";
 import { AccountsAdmin } from "../components/AccountsAdmin";
 import { ChangePasswordForm } from "../components/ChangePasswordForm";
@@ -18,10 +20,18 @@ export function AccountPage() {
         </p>
       </header>
       <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-        <section className="flex flex-col gap-3">
-          <SectionTitle>Mot de passe</SectionTitle>
-          <ChangePasswordForm />
-        </section>
+        <div className="flex flex-col gap-8">
+          <section className="flex flex-col gap-3">
+            <SectionTitle>Mot de passe</SectionTitle>
+            <ChangePasswordForm />
+          </section>
+          <section className="flex flex-col gap-3">
+            <SectionTitle>Essais</SectionTitle>
+            <Link to="/lab/micro" className={`${buttonClasses("secondary")} self-start`}>
+              <Mic aria-hidden="true" className="size-4" /> Labo micro
+            </Link>
+          </section>
+        </div>
         {user.role === "admin" && <AccountsAdmin me={user} />}
       </div>
     </div>

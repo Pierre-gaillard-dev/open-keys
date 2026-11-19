@@ -1,5 +1,5 @@
 import { newPasswordSchema } from "@open-keys/contracts";
-import { TextField } from "../../../shared/ui";
+import { PasswordField } from "../../../shared/ui";
 
 export interface NewPassword {
   readonly password: string;
@@ -28,9 +28,8 @@ export interface PasswordFieldsProps {
 export function PasswordFields({ value, errors, onChange }: PasswordFieldsProps) {
   return (
     <>
-      <TextField
+      <PasswordField
         label="Nouveau mot de passe"
-        type="password"
         autoComplete="new-password"
         hint="10 caractères minimum : une phrase est plus simple à retenir."
         required
@@ -38,9 +37,8 @@ export function PasswordFields({ value, errors, onChange }: PasswordFieldsProps)
         error={errors.password}
         onChange={(event) => onChange({ ...value, password: event.target.value })}
       />
-      <TextField
+      <PasswordField
         label="Confirmer le mot de passe"
-        type="password"
         autoComplete="new-password"
         required
         value={value.confirmation}

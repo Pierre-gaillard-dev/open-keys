@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
-import { Button, ErrorBanner, TextField } from "../../../shared/ui";
+import { Button, ErrorBanner, PasswordField, TextField } from "../../../shared/ui";
 import { useLogin } from "../api/auth.queries";
 
 export interface LoginPageProps {
@@ -47,10 +47,9 @@ export function LoginPage({ redirectTo }: LoginPageProps) {
           value={username}
           onChange={(event) => setUsername(event.target.value)}
         />
-        <TextField
+        <PasswordField
           label="Mot de passe"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}

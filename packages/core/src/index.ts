@@ -19,6 +19,7 @@ export {
   type TrackHand,
 } from "./hands";
 export { createUlidGenerator, isUlid, type RandomBytes } from "./ids";
+export * from "./listening";
 export {
   analyzeMidi,
   type Beat,

@@ -15,6 +15,7 @@ import { AccountPage, InvitePage } from "../features/account";
 import { currentUserQuery, LoginPage } from "../features/auth";
 import { CatalogPage, type CatalogSearch, catalogSearchSchema, SongDetailPage } from "../features/catalog";
 import { ImportPage, ImportReviewPage, OnlineSearchPage, SongEditPage } from "../features/import";
+import { MicLabPage } from "../features/listening";
 import { PlayerPage } from "../features/player";
 import { ProgressPage } from "../features/progress";
 import { buttonClasses, ErrorBanner } from "../shared/ui";
@@ -157,6 +158,13 @@ const accountRoute = createRoute({
   component: AccountPage,
 });
 
+/** V1.5 spike: microphone tests next to a real piano. */
+const micLabRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/lab/micro",
+  component: MicLabPage,
+});
+
 const importReviewRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/import/$songId",
@@ -178,6 +186,7 @@ const routeTree = rootRoute.addChildren([
       importReviewRoute,
       progressRoute,
       accountRoute,
+      micLabRoute,
     ]),
     playerRoute,
   ]),

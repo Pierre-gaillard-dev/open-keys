@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:dbml": "tsx scripts/generate-dbml.ts",
-    "hands:benchmark": "tsx scripts/hands-benchmark.ts"
+    "hands:benchmark": "tsx scripts/hands-benchmark.ts",
+    "listening:benchmark": "tsx scripts/listening-benchmark.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.8",
