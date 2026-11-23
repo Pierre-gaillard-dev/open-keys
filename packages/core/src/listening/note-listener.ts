@@ -7,6 +7,11 @@ export interface ListenerOptions extends DetectorOptions {
   /** A note already sounding is struck again when it gets this much louder. */
   readonly restrikeRatio?: number;
   readonly verify?: VerifyOptions;
+  /**
+   * An expected note is refused when the free detection finds its octave below instead (not expected):
+   * C3 played for C4. Free detection prefers the lowest note that explains the spectrum.
+   */
+  readonly octaveCrossCheck?: boolean;
 }
 
 export interface ListenFrame {
@@ -36,6 +41,7 @@ export class NoteListener {
   #previous = new Map<number, number>();
   #expected: readonly number[] = [];
   readonly #verifyOptions: VerifyOptions;
+  readonly #octaveCrossCheck: boolean;
 
   constructor(options: ListenerOptions) {
     this.#detector = new PitchDetector(options);
@@ -45,6 +51,7 @@ export class NoteListener {
     this.#restrikeRatio = options.restrikeRatio ?? 1.8;
     this.#sampleRate = options.sampleRate;
     this.#verifyOptions = options.verify ?? {};
+    this.#octaveCrossCheck = options.octaveCrossCheck ?? true;
   }
 
   /** Notes the player should be playing now (wait mode): each frame says which ones it hears. */
@@ -68,6 +75,13 @@ export class NoteListener {
     return frames;
   }
 
+  #withoutOctaveBelow(verified: readonly number[], notes: readonly DetectedNote[]): number[] {
+    return verified.filter((pitch) => {
+      const lower = pitch - 12;
+      return this.#expected.includes(lower) || !notes.some((note) => note.pitch === lower);
+    });
+  }
+
   #frame(): ListenFrame {
     const size = this.#buffer.length;
     const start = this.#received % size;
@@ -75,9 +89,10 @@ export class NoteListener {
     ordered.set(this.#buffer.subarray(start));
     ordered.set(this.#buffer.subarray(0, start), size - start);
     const magnitudes = this.#spectrum.compute(ordered);
-    const heard =
-      this.#expected.length > 0 ? this.#detector.verify(magnitudes, this.#expected, this.#verifyOptions) : [];
     const notes = this.#detector.detect(magnitudes);
+    const verified =
+      this.#expected.length > 0 ? this.#detector.verify(magnitudes, this.#expected, this.#verifyOptions) : [];
+    const heard = this.#octaveCrossCheck ? this.#withoutOctaveBelow(verified, notes) : verified;
     const onsets = notes
       .filter((note) => {
         const before = this.#previous.get(note.pitch);

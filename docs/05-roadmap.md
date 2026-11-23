@@ -149,7 +149,9 @@ Quelques comptes pour le cercle proche, sur la même instance. Les données pers
 
 Jouer sur un vrai piano sans câble : le micro du téléphone ou du PC entend les notes jouées.
 
-- [ ] **Spike** : détection dans le navigateur, précision et latence mesurées sur un vrai piano, sur le Pixel 10 et sur PC. *Méthode retenue (D30) : vérification des notes attendues sur le spectre, pas de modèle. Banc d'essai sur échantillons : 94 % des accords justes acceptés en ~130 ms, 89 % des demi-tons faux refusés. Labo micro en place ; reste la mesure sur le vrai piano.*
+- [ ] **Spike** : détection dans le navigateur, précision et latence mesurées sur un vrai piano, sur le Pixel 10 et sur PC.
+  - *Fait :* banc d'essai réaliste (téléphone dans une pièce) ; détecteur maison amélioré (bruit de fond, coups, octave inférieure) ; Basic Pitch ajouté au labo pour comparaison (D31).
+  - *Reste :* choisir le moteur sur les mesures au vrai piano.
 - [ ] Interface `InputSource` (notes jouées, horodatées sur l'horloge audio), créée ici et reprise par l'entrée MIDI de la V2. Première implémentation : `MicrophoneInput` (`getUserMedia`, sans annulation d'écho ni réduction de bruit).
 - [ ] Vérification des notes jouées : juste / manquée / en trop, avec une tolérance adaptée à la latence du micro.
 - [ ] Mode attente : la lecture s'arrête jusqu'à ce que la bonne note soit entendue.

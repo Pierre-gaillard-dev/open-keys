@@ -10,6 +10,8 @@ catalog:
   vitest: 5.1.0
   zod: 4.6.7
 allowBuilds:
+  # Its postinstall only prints a funding message (dependency of TensorFlow.js, microphone lab).
+  core-js: false
   esbuild: true
   lefthook: false
 

@@ -46,6 +46,10 @@ export default defineConfig({
           "assets/*-latin-ext-*.woff2",
           "samples/**/*.mp3",
         ],
+        // Basic Pitch (microphone lab, about 1 MB): only for those who try it, cached on first use. Its
+        // chunk is the engine's, loaded on demand: no manual chunk, which would drag shared modules
+        // (MIDI parsing) into it and make the player depend on it.
+        globIgnores: ["**/basic-pitch-*.js"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
         // The API is not answered by the Service Worker (offline data: IndexedDB), except the covers.
@@ -61,6 +65,12 @@ export default defineConfig({
               expiration: { maxEntries: 500 },
               cacheableResponse: { statuses: [200] },
             },
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/models/") || /^\/assets\/basic-pitch-.*\.js$/.test(url.pathname),
+            handler: "CacheFirst",
+            options: { cacheName: "listening-models", expiration: { maxEntries: 10 } },
           },
           {
             urlPattern: ({ url }) => url.pathname.startsWith("/assets/") && url.pathname.endsWith(".woff2"),
