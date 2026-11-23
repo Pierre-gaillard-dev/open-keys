@@ -49,9 +49,8 @@ describe("PitchDetector.verify (wait mode)", () => {
     expect(verify([60, 65, 67], [60, 64, 67])).toEqual([60, 67]);
   });
 
-  it("refuses the octave above or below, but hears an octave written in the chord", () => {
+  it("refuses the octave above, but hears an octave written in the chord", () => {
     expect(verify([72], [60])).toEqual([]);
-    expect(verify([48], [60])).toEqual([]);
     expect(verify([48, 60], [48, 60])).toEqual([48, 60]);
   });
 
@@ -69,7 +68,43 @@ describe("PitchDetector.detect", () => {
   });
 });
 
+/** Frames of a listener expecting `expected` while `played` sounds. */
+function listenTo(played: readonly number[], expected: readonly number[]) {
+  const listener = new NoteListener({ sampleRate: SAMPLE_RATE });
+  listener.expect(expected);
+  const samples = Float32Array.from(tone(played, SIZE + 4096));
+  const frames = [];
+  for (let i = 0; i < samples.length; i += 128) {
+    frames.push(...listener.push(samples.subarray(i, i + 128)));
+  }
+  return frames;
+}
+
 describe("NoteListener", () => {
+  it("hears nothing in 3 s of a room's background noise (whitening)", () => {
+    // Pink-ish noise, louder in the bass, like a room (the benchmark's).
+    let seed = 7;
+    let low = 0;
+    const noise = Float32Array.from({ length: SAMPLE_RATE * 3 }, () => {
+      seed = (seed * 16_807) % 2_147_483_647;
+      const white = seed / 2_147_483_647 - 0.5;
+      low = 0.98 * low + 0.02 * white;
+      return (low * 6 + white * 0.4) * 0.01;
+    });
+    const listener = new NoteListener({ sampleRate: SAMPLE_RATE });
+    listener.expect(Array.from({ length: 48 }, (_, i) => 36 + i));
+    const heard = [];
+    for (let i = 0; i < noise.length; i += 128) {
+      heard.push(...listener.push(noise.subarray(i, i + 128)).flatMap((frame) => frame.heard));
+    }
+    expect(heard).toEqual([]);
+  });
+
+  it("refuses the octave below played instead (C3 for C4): free detection finds C3", () => {
+    expect(listenTo([48], [60]).every((frame) => frame.heard.length === 0)).toBe(true);
+    expect(listenTo([48, 60], [48, 60]).every((frame) => frame.heard.length === 2)).toBe(true);
+  });
+
   it("makes a frame every hop, says which expected notes it hears and when a note starts", () => {
     const listener = new NoteListener({ sampleRate: SAMPLE_RATE });
     listener.expect([60, 64]);
