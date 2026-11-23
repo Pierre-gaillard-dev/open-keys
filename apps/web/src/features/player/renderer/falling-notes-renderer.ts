@@ -7,7 +7,7 @@ import {
   pitchClassName,
   type Timeline,
 } from "@open-keys/core";
-import { Application, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
+import { Application, Container, Graphics, NineSliceSprite, Sprite, Text, Texture } from "pixi.js";
 // Shaders and uniforms without eval(): the CSP of the pages forbids 'unsafe-eval' (07-deploiement.md).
 import "pixi.js/unsafe-eval";
 import type { SongClock } from "../engine/song-clock";
@@ -40,6 +40,9 @@ const BLACK_KEY_HEIGHT_RATIO = 0.62;
 const FONT_FAMILY = "Inter Variable, system-ui, sans-serif";
 /** Note names are only written where they fit (narrow keys when the whole keyboard is shown). */
 const MIN_NAMED_KEY_WIDTH = 11;
+/** Rounded corners and a gap between notes: the same note played twice in a row reads as two notes. */
+const NOTE_RADIUS_PX = 4;
+const NOTE_GAP_PX = 3;
 
 /** Below this size a name is not written: it could not be read. */
 const MIN_FONT_SIZE = 6;
@@ -82,7 +85,9 @@ export class FallingNotesRenderer {
   readonly #lanes = new Graphics();
   readonly #notes = new Container();
   readonly #keyboard = new Container();
-  readonly #notePool: Sprite[] = [];
+  readonly #notePool: NineSliceSprite[] = [];
+  /** Rounded rectangle, stretched by nine-slice so the corners keep their radius at any size. */
+  #noteTexture: Texture = Texture.WHITE;
   readonly #noteNames = new Container();
   readonly #namePool: Text[] = [];
   readonly #keyGlows = new Map<number, Sprite>();
@@ -108,6 +113,9 @@ export class FallingNotesRenderer {
       resolution: Math.min(window.devicePixelRatio || 1, 2),
       preference: "webgl",
     });
+    this.#noteTexture = this.app.renderer.generateTexture(
+      new Graphics().roundRect(0, 0, NOTE_RADIUS_PX * 4, NOTE_RADIUS_PX * 4, NOTE_RADIUS_PX).fill(0xffffff),
+    );
     host.appendChild(this.app.canvas);
     this.app.stage.addChild(this.#lanes, this.#notes, this.#noteNames, this.#keyboard);
     this.app.renderer.on("resize", () => this.#relayout());
@@ -130,6 +138,7 @@ export class FallingNotesRenderer {
   destroy(): void {
     if (this.#initialized) {
       this.app.destroy({ removeView: true }, { children: true });
+      this.#noteTexture.destroy(true);
       this.#initialized = false;
     }
   }
@@ -284,7 +293,7 @@ export class FallingNotesRenderer {
   }
 
   /** Name at the bottom of a falling note, when shown and when it fits. Returns true when a label was used. */
-  #nameNote(note: PlayableNote, key: KeyGeometry, sprite: Sprite, index: number): boolean {
+  #nameNote(note: PlayableNote, key: KeyGeometry, sprite: NineSliceSprite, index: number): boolean {
     const name = pitchClassName(note.pitch, this.#options.noteNaming);
     const fontSize = Math.floor(fittedFontSize(name, key.width, 13, 0.5));
     if (
@@ -323,7 +332,7 @@ export class FallingNotesRenderer {
     now: number,
     pixelsPerSongSecond: number,
     index: number,
-  ): Sprite | null {
+  ): NineSliceSprite | null {
     const color = note.hand === "left" ? COLORS.left : COLORS.right;
     const sounding = note.start <= now;
     if (sounding) {
@@ -342,16 +351,22 @@ export class FallingNotesRenderer {
     const sprite = this.#noteSprite(index);
     sprite.position.set(key.x + 1, top);
     sprite.width = Math.max(1, key.width - 2);
-    sprite.height = Math.max(1, bottom - top - 1);
+    sprite.height = Math.max(1, bottom - top - NOTE_GAP_PX);
     sprite.tint = color;
     sprite.alpha = sounding ? 1 : 0.88;
     return sprite;
   }
 
-  #noteSprite(index: number): Sprite {
+  #noteSprite(index: number): NineSliceSprite {
     let sprite = this.#notePool[index];
     if (!sprite) {
-      sprite = new Sprite(Texture.WHITE);
+      sprite = new NineSliceSprite({
+        texture: this.#noteTexture,
+        leftWidth: NOTE_RADIUS_PX,
+        topHeight: NOTE_RADIUS_PX,
+        rightWidth: NOTE_RADIUS_PX,
+        bottomHeight: NOTE_RADIUS_PX,
+      });
       this.#notePool.push(sprite);
       this.#notes.addChild(sprite);
     }
