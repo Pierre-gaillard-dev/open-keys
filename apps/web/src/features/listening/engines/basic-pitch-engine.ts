@@ -1,4 +1,6 @@
 import type { DetectedNote } from "@open-keys/core";
+import { BasicPitch } from "@spotify/basic-pitch";
+import * as tf from "@tensorflow/tfjs";
 import type { EngineFrame, EngineOptions, ListeningEngine, Sensitivity } from "./listening-engine";
 
 /** What the model expects (Basic Pitch): mono at 22 050 Hz, a frame of output every 256 samples. */
@@ -42,17 +44,14 @@ function createResampler(fromRate: number) {
 
 /**
  * Basic Pitch (Spotify, Apache-2.0): a small neural network for polyphonic transcription, run by
- * TensorFlow.js on the GPU (WebGL). Loaded on demand (about 3 MB): only the lab uses it for now.
+ * TensorFlow.js on the GPU (WebGL). This module is only imported dynamically (`create-engine`): its
+ * chunk, about 1 MB with TensorFlow.js, is loaded by the lab only.
  */
 export async function createBasicPitchEngine({
   sampleRate,
   sensitivity,
   onFrame,
 }: EngineOptions): Promise<ListeningEngine> {
-  const [tf, { BasicPitch }] = await Promise.all([
-    import("@tensorflow/tfjs"),
-    import("@spotify/basic-pitch"),
-  ]);
   if (!(await tf.setBackend("webgl"))) {
     await tf.setBackend("cpu");
   }

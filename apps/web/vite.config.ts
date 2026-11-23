@@ -46,7 +46,9 @@ export default defineConfig({
           "assets/*-latin-ext-*.woff2",
           "samples/**/*.mp3",
         ],
-        // Basic Pitch (microphone lab, about 3 MB): only for those who try it, cached on first use.
+        // Basic Pitch (microphone lab, about 1 MB): only for those who try it, cached on first use. Its
+        // chunk is the engine's, loaded on demand: no manual chunk, which would drag shared modules
+        // (MIDI parsing) into it and make the player depend on it.
         globIgnores: ["**/basic-pitch-*.js"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
@@ -79,17 +81,6 @@ export default defineConfig({
       },
     }),
   ],
-  build: {
-    rollupOptions: {
-      output: {
-        // TensorFlow.js and Basic Pitch in one chunk, loaded by the microphone lab only (not precached).
-        manualChunks: (id) =>
-          /[\\/]node_modules[\\/].*(@tensorflow|@spotify[\\/]basic-pitch|seedrandom)[\\/]/.test(id)
-            ? "basic-pitch"
-            : undefined,
-      },
-    },
-  },
   server: {
     // Same origin as production: /api is routed to the API container by Traefik. Also used by
     // `vite preview` (end-to-end tests run their own API, on another port).

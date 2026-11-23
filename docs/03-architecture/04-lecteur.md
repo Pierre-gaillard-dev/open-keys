@@ -71,7 +71,8 @@ Deux moteurs, comparés dans le labo avant d'en garder un (D31). Ils partagent l
 ### Basic Pitch (Spotify, Apache-2.0)
 
 - C'est un petit réseau de transcription polyphonique, exécuté par TensorFlow.js sur le GPU (WebGL).
-- **Chargement** : à la demande, dans un chunk à part (`basic-pitch`, 1,1 Mo, 272 Ko compressé), exclu du précache et mis en cache au premier usage. Le modèle (900 Ko) est servi depuis `public/models/basic-pitch`, avec sa licence.
+- **Chargement** : à la demande. Le moteur (`basic-pitch-engine.ts`) n'est importé que dynamiquement. Son chunk (1 Mo avec TensorFlow.js, 247 Ko compressé) est exclu du précache et mis en cache au premier usage. Le modèle (900 Ko) est servi depuis `public/models/basic-pitch`, avec sa licence.
+- **Pas de chunk manuel** : un `manualChunks` y entraînait des modules partagés, notamment la lecture des MIDI. Le lecteur dépendait alors de ce chunk non précaché et ne se chargeait plus hors ligne.
 - **Analyse** : une fenêtre glissante de 1,45 s, rééchantillonnée à 22 050 Hz, soit la plus longue qui tient dans une seule fenêtre du modèle. Une nouvelle analyse démarre dès que la précédente est finie, avec au moins 100 ms de son neuf.
 - **Trames** : une toutes les 11,6 ms. Les 3 dernières de chaque fenêtre sont laissées à l'analyse suivante, faute d'audio après elles.
 - **Sensibilité** : seuil de probabilité à 0,5, 0,4 ou 0,3.
