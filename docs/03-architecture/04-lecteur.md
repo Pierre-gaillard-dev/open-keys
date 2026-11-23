@@ -53,14 +53,43 @@ flowchart LR
 - Le clavier n'est redessiné qu'au changement de taille ou de zoom. Une surcouche teintée par touche s'allume pendant qu'une note est jouée.
 - Mesuré au spike : **environ 0,1 ms de rendu par image** sur l'Étude op. 10 n°1, avec environ 35 notes à l'écran.
 
-## Écoute au micro (V1.5, D30)
+## Écoute au micro (V1.5, D30, D31)
 
-- **`core/listening`** : `Spectrum` (FFT radix-2, fenêtre de Hann, sans allocation par trame), `PitchDetector` et `NoteListener`. Une trame toutes les 1024 échantillons (21 ms à 48 kHz) sur les 8192 derniers (170 ms).
-- **`verify(expected)`** : pour chaque note attendue, sur le spectre sans les autres notes attendues, trois tests. Elle bat ses voisins d'un demi-ton non attendus. Ses harmoniques impaires portent au moins 36 % de sa saillance. L'octave inférieure non attendue en explique moins de 45 %. Une note compte quand elle est entendue dans 2 trames de suite.
-- **`detect()`** : transcription libre (estimation itérative de Klapuri), pour l'affichage du labo seulement.
-- **Banc d'essai** (`pnpm --filter @open-keys/server listening:benchmark [bruit-dB]`, avec les échantillons Salamander, ffmpeg requis) : accords à deux mains justes acceptés à 94 % (médiane 127 ms après la frappe), demi-ton faux refusé à 89 %, octave fausse refusée à 78 %. Un vrai piano dans une vraie pièce (réverbération, bruits) sera plus difficile : à mesurer avec le labo.
-- **Labo micro** (`/lab/micro`, lien dans « Mon compte ») : niveau du micro, notes entendues, et vérification de quelques accords (do4, do majeur, deux mains, octave, grave), avec le délai mesuré.
-- **Capture** : `getUserMedia` sans annulation d'écho, réduction de bruit ni gain automatique, et un AudioWorklet (`public/worklets/mic-capture.js`, fichier servi par l'app pour respecter la CSP) qui transmet les échantillons.
+Deux moteurs, comparés dans le labo avant d'en garder un (D31). Ils partagent l'interface `ListeningEngine` (`features/listening/engines`) : `expect(notes)`, `push(échantillons)`, et des trames `{ time, notes, heard }` datées sur l'horloge audio.
+
+### Détecteur maison (`core/listening`)
+
+- **Analyse** : `Spectrum` (FFT radix-2, fenêtre de Hann, sans allocation par trame), `PitchDetector` et `NoteListener`. Une trame toutes les 1024 échantillons (21 ms à 48 kHz) sur les 8192 derniers (170 ms).
+- **Blanchiment** : chaque raie ne garde que ce qui dépasse la moyenne du spectre autour d'elle (± un ton). Un partiel de piano est un pic étroit ; le bruit de fond et les coups sont plats et disparaissent.
+- **`verify(expected)`** : pour chaque note attendue, sur le spectre sans les autres notes attendues, trois tests.
+  - Elle est assez forte : `minSalience`, qui vaut 0, 3 ou 6 selon la sensibilité. Ce seuil s'applique avant le retrait des autres notes, sinon une note à l'octave d'une autre ne garderait presque rien.
+  - Elle bat ses voisins d'un demi-ton qui ne sont pas attendus.
+  - Ses harmoniques 3, 5 et 7 valent au moins 10 % de ses harmoniques 2, 4 et 6 ; sinon, c'est l'octave au-dessus qui sonne. Le fondamental n'entre pas dans ce calcul, parce qu'un micro de téléphone le capte mal dans le grave. Les harmoniques partagées avec une autre note attendue sont ignorées.
+- **Octave inférieure** : `NoteListener` refuse une note attendue quand la détection libre (`detect()`, qui préfère la note la plus grave qui explique le spectre) trouve son octave inférieure non attendue. C'est le cas de C3 joué pour C4.
+- Une note compte quand elle est entendue dans 2 trames de suite. Le délai entre le son et la détection est d'environ 90 ms.
+
+### Basic Pitch (Spotify, Apache-2.0)
+
+- C'est un petit réseau de transcription polyphonique, exécuté par TensorFlow.js sur le GPU (WebGL).
+- **Chargement** : à la demande, dans un chunk à part (`basic-pitch`, 1,1 Mo, 272 Ko compressé), exclu du précache et mis en cache au premier usage. Le modèle (900 Ko) est servi depuis `public/models/basic-pitch`, avec sa licence.
+- **Analyse** : une fenêtre glissante de 1,45 s, rééchantillonnée à 22 050 Hz, soit la plus longue qui tient dans une seule fenêtre du modèle. Une nouvelle analyse démarre dès que la précédente est finie, avec au moins 100 ms de son neuf.
+- **Trames** : une toutes les 11,6 ms. Les 3 dernières de chaque fenêtre sont laissées à l'analyse suivante, faute d'audio après elles.
+- **Sensibilité** : seuil de probabilité à 0,5, 0,4 ou 0,3.
+- **Mesures** : dans Firefox sur PC, environ 250 ms par analyse et environ 650 ms de délai. Le délai est le coût principal ; à mesurer sur le Pixel.
+
+### Banc d'essai et labo
+
+- **Banc d'essai** : `pnpm --filter @open-keys/server listening:benchmark [studio|phone]`, avec les échantillons Salamander (ffmpeg requis).
+  - La pièce « phone » simule un téléphone : passe-haut à 200 Hz, réverbération de 0,8 s, bruit rose à −45 dB, coups et voix.
+  - Mesures : accords complets d'une frappe, mauvaise note refusée (demi-ton, octave au-dessus et en dessous), note seule face à son octave, et pièce seule.
+  - Variables d'environnement : `LISTEN_OPTIONS`, `LISTEN_FRAMES`, `LISTEN_EVENTS`, `LISTEN_VOICE`, `LISTEN_DEBUG`.
+- **Labo micro** (`/lab/micro`, lien dans « Mon compte ») :
+  - choix du moteur et de la sensibilité ;
+  - niveau du micro et notes entendues ;
+  - vérification de quelques accords : do du milieu, do majeur, deux mains, octave, grave.
+  - Un accord compte seulement si toutes ses notes sont confirmées à moins de 300 ms les unes des autres, soit une seule frappe. Plusieurs frappes ne s'additionnent pas, comme dans le mode attente.
+  - Le labo affiche aussi le temps d'analyse et le délai entre le son et la détection.
+- **Capture** : `getUserMedia` sans annulation d'écho, réduction de bruit ni gain automatique, et un AudioWorklet (`public/worklets/mic-capture.js`, servi par l'app pour respecter la CSP) qui transmet les échantillons.
 
 ## Couche d'entrée (V2)
 

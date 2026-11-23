@@ -46,6 +46,8 @@ export default defineConfig({
           "assets/*-latin-ext-*.woff2",
           "samples/**/*.mp3",
         ],
+        // Basic Pitch (microphone lab, about 3 MB): only for those who try it, cached on first use.
+        globIgnores: ["**/basic-pitch-*.js"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
         // The API is not answered by the Service Worker (offline data: IndexedDB), except the covers.
@@ -63,6 +65,12 @@ export default defineConfig({
             },
           },
           {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/models/") || /^\/assets\/basic-pitch-.*\.js$/.test(url.pathname),
+            handler: "CacheFirst",
+            options: { cacheName: "listening-models", expiration: { maxEntries: 10 } },
+          },
+          {
             urlPattern: ({ url }) => url.pathname.startsWith("/assets/") && url.pathname.endsWith(".woff2"),
             handler: "CacheFirst",
             options: { cacheName: "fonts", expiration: { maxEntries: 30 } },
@@ -71,6 +79,17 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // TensorFlow.js and Basic Pitch in one chunk, loaded by the microphone lab only (not precached).
+        manualChunks: (id) =>
+          /[\\/]node_modules[\\/].*(@tensorflow|@spotify[\\/]basic-pitch|seedrandom)[\\/]/.test(id)
+            ? "basic-pitch"
+            : undefined,
+      },
+    },
+  },
   server: {
     // Same origin as production: /api is routed to the API container by Traefik. Also used by
     // `vite preview` (end-to-end tests run their own API, on another port).

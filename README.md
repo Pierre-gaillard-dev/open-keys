@@ -158,6 +158,7 @@ ADMIN_USERNAME=pierre ADMIN_PASSWORD='mot-de-passe-local' \
 
 - Code : [MIT](LICENSE).
 - Échantillons de piano : [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3), par Alexander Holm, sous licence CC-BY 3.0.
+- Modèle de détection au micro (labo, en essai) : [Basic Pitch](https://github.com/spotify/basic-pitch-ts), par Spotify, sous licence Apache-2.0. La licence est fournie avec le modèle dans `apps/web/public/models/basic-pitch`.
 - Bibliothèques MIDI : [Mutopia Project](https://www.mutopiaproject.org/) (domaine public, Creative Commons), [MAESTRO](https://magenta.tensorflow.org/datasets/maestro) (Google Magenta, CC BY-NC-SA 4.0), [xivmidi](https://xivmidi.com/) (arrangements de la communauté). La source, la licence et le crédit de chaque morceau importé sont conservés avec lui et affichés dans l'app.
 - Couvertures : [MusicBrainz](https://musicbrainz.org/) / [Cover Art Archive](https://coverartarchive.org/) et [Wikimedia Commons](https://commons.wikimedia.org/). L'attribution est affichée dans l'app.
 - Captures d'écran : morceaux du domaine public importés depuis Mutopia. Portraits issus de Wikimedia Commons, dans le domaine public, sauf celui d'Erik Satie (photo restaurée par Sonia y natalia, [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)).
