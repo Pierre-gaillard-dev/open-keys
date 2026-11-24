@@ -16,8 +16,9 @@ export interface ListenerOptions extends DetectorOptions {
   readonly restrikeRatio?: number;
   readonly verify?: VerifyOptions;
   /**
-   * An expected note is refused when the free detection finds its octave below instead (not expected):
-   * C3 played for C4. Free detection prefers the lowest note that explains the spectrum.
+   * An expected note is refused when the free detection finds its octave below instead (neither
+   * expected nor accompaniment): C3 played for C4. Free detection prefers the lowest note that
+   * explains the spectrum.
    */
   readonly octaveCrossCheck?: boolean;
   /**
@@ -53,6 +54,7 @@ export class NoteListener {
   #sinceFrame = 0;
   #previous = new Map<number, number>();
   #expected: readonly number[] = [];
+  #accompaniment: readonly number[] = [];
   readonly #verifyOptions: VerifyOptions;
   readonly #octaveCrossCheck: boolean;
   readonly #strikes: StrikeTracker;
@@ -70,9 +72,14 @@ export class NoteListener {
     this.#strikes = new StrikeTracker(options.strike);
   }
 
-  /** Notes the player should be playing now (wait mode): each frame says which ones it hears. */
-  expect(pitches: readonly number[]): void {
+  /**
+   * Notes the player should be playing now (wait mode): each frame says which ones it hears.
+   * `accompaniment`: notes sounding meanwhile that are known (the app plays the other hand), so an
+   * octave below among them does not refuse a note.
+   */
+  expect(pitches: readonly number[], accompaniment: readonly number[] = []): void {
     this.#expected = [...pitches];
+    this.#accompaniment = [...accompaniment];
   }
 
   push(samples: Float32Array): ListenFrame[] {
@@ -91,10 +98,18 @@ export class NoteListener {
     return frames;
   }
 
+  /**
+   * Refuses an expected note when free detection finds its octave below, neither expected nor known
+   * accompaniment: C3 played for C4.
+   */
   #withoutOctaveBelow(verified: readonly number[], notes: readonly DetectedNote[]): number[] {
     return verified.filter((pitch) => {
       const lower = pitch - 12;
-      return this.#expected.includes(lower) || !notes.some((note) => note.pitch === lower);
+      return (
+        this.#expected.includes(lower) ||
+        this.#accompaniment.includes(lower) ||
+        !notes.some((note) => note.pitch === lower)
+      );
     });
   }
 

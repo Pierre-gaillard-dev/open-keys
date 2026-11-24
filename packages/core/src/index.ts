@@ -42,6 +42,14 @@ export {
   pitchClassName,
 } from "./music";
 export {
+  CHORD_TOLERANCE_S,
+  EARLY_S,
+  type InputSource,
+  type WaitPoint,
+  WaitTracker,
+  waitPoints,
+} from "./practice";
+export {
   buildTimeline,
   type CountIn,
   countInAt,

@@ -76,9 +76,10 @@ function listenTo(
   played: readonly number[],
   expected: readonly number[],
   options: Partial<ListenerOptions> = {},
+  accompaniment: readonly number[] = [],
 ) {
   const listener = new NoteListener({ sampleRate: SAMPLE_RATE, ...options });
-  listener.expect(expected);
+  listener.expect(expected, accompaniment);
   const samples = new Float32Array(SILENCE + SIZE + 4096);
   samples.set(tone(played, SIZE + 4096), SILENCE);
   const frames = [];
@@ -110,6 +111,8 @@ describe("NoteListener", () => {
 
   it("refuses the octave below played instead (C3 for C4): free detection finds C3", () => {
     expect(listenTo([48], [60]).every((frame) => frame.heard.length === 0)).toBe(true);
+    // The octave below played by the app (accompaniment): the note counts.
+    expect(listenTo([48, 60], [60], {}, [48]).some((frame) => frame.heard.includes(60))).toBe(true);
     expect(listenTo([48, 60], [48, 60]).every((frame) => frame.heard.length === 2)).toBe(true);
   });
 
