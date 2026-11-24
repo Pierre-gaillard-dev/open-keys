@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlayableNote } from "../timeline";
-import { EARLY_S, WaitTracker, waitPoints } from "./index";
+import { EARLY_S, LATE_S, RhythmTracker, WaitTracker, waitPoints } from "./index";
 
 const note = (pitch: number, start: number, hand: "left" | "right"): PlayableNote => ({
   pitch,
@@ -22,24 +22,24 @@ describe("waitPoints", () => {
 
   it("groups the notes of the hands practised into chords", () => {
     expect(waitPoints(notes, ["left", "right"])).toEqual([
-      { time: 0, pitches: [48, 60, 64] },
-      { time: 0.5, pitches: [67] },
-      { time: 1, pitches: [43] },
+      { time: 0, pitches: [48, 60, 64], noteIndexes: [0, 1, 2] },
+      { time: 0.5, pitches: [67], noteIndexes: [3] },
+      { time: 1, pitches: [43], noteIndexes: [4] },
     ]);
   });
 
   it("leaves out the other hand", () => {
     expect(waitPoints(notes, ["right"])).toEqual([
-      { time: 0.02, pitches: [60, 64] },
-      { time: 0.5, pitches: [67] },
+      { time: 0.02, pitches: [60, 64], noteIndexes: [1, 2] },
+      { time: 0.5, pitches: [67], noteIndexes: [3] },
     ]);
   });
 });
 
 describe("WaitTracker", () => {
   const points = [
-    { time: 1, pitches: [60, 64] },
-    { time: 2, pitches: [67] },
+    { time: 1, pitches: [60, 64], noteIndexes: [0, 1] },
+    { time: 2, pitches: [67], noteIndexes: [2] },
   ];
 
   it("counts a chord from notes heard once it is close, and moves on", () => {
@@ -54,7 +54,7 @@ describe("WaitTracker", () => {
     tracker.noteHeard(64, 10.7);
     expect(tracker.satisfied).toBe(true);
     tracker.advance();
-    expect(tracker.current).toEqual({ time: 2, pitches: [67] });
+    expect(tracker.current?.pitches).toEqual([67]);
     expect(tracker.satisfied).toBe(false);
   });
 
@@ -79,5 +79,44 @@ describe("WaitTracker", () => {
     tracker.seek(3);
     expect(tracker.current).toBeNull();
     expect(tracker.satisfied).toBe(false);
+  });
+});
+
+describe("RhythmTracker", () => {
+  const points = [
+    { time: 1, pitches: [60, 64], noteIndexes: [0, 1] },
+    { time: 1.25, pitches: [67], noteIndexes: [2] },
+    { time: 3, pitches: [72], noteIndexes: [3] },
+  ];
+
+  it("opens the chords coming, hits them when all their notes are heard, in order", () => {
+    const tracker = new RhythmTracker(points);
+    expect(tracker.update(0, 1, 100)).toEqual([]);
+    expect(tracker.listening()).toEqual([]);
+    tracker.update(0.9, 1, 100.9);
+    expect(tracker.listening()).toEqual([60, 64, 67]);
+
+    expect(tracker.noteHeard(60)).toBeNull();
+    expect(tracker.noteHeard(64)?.verdict).toBe("hit");
+    expect(tracker.noteHeard(67)?.point.time).toBe(1.25);
+    expect(tracker.noteHeard(72)).toBeNull();
+  });
+
+  it("misses a chord not complete LATE_S after playback reached it", () => {
+    const tracker = new RhythmTracker(points);
+    tracker.update(1, 1, 100);
+    tracker.noteHeard(60);
+    expect(tracker.update(1 + LATE_S / 2, 1, 100 + LATE_S / 2)).toEqual([]);
+    const missed = tracker.update(1.5, 1, 100.5);
+    expect(missed.map((judgement) => [judgement.point.time, judgement.verdict])).toEqual([[1, "miss"]]);
+  });
+
+  it("starts again from a seek, with nothing open", () => {
+    const tracker = new RhythmTracker(points);
+    tracker.update(1, 1, 100);
+    tracker.seek(2);
+    expect(tracker.listening()).toEqual([]);
+    expect(tracker.update(3, 1, 101)).toEqual([]);
+    expect(tracker.listening()).toEqual([72]);
   });
 });

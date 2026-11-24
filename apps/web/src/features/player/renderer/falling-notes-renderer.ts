@@ -31,7 +31,14 @@ const COLORS = {
   label: 0x5b6573,
   left: 0x4da3ff,
   right: 0xffb23f,
+  /** Played on the piano, missed (rhythm mode): the theme's success and danger colors. */
+  played: 0x5bd69a,
+  missed: 0xff7a7a,
 } as const;
+
+/** Values of the note marks (see `setNoteMarks`): same as the piano mode's. */
+const MARK_PLAYED = 1;
+const MARK_MISSED = 2;
 
 /** Seconds a note takes to fall to the keyboard, whatever the playback speed (constant in real time). */
 const VISIBLE_REAL_SECONDS = 2.5;
@@ -96,6 +103,8 @@ export class FallingNotesRenderer {
   #layout: KeyboardLayout | undefined;
   #noteAreaHeight = 0;
   #options: RendererOptions;
+  /** One byte per note: played or missed on the piano (V1.5). Read every frame, written elsewhere. */
+  #marks: Uint8Array | null = null;
   #initialized = false;
 
   constructor(timeline: Timeline, clock: SongClock, options: RendererOptions) {
@@ -122,6 +131,10 @@ export class FallingNotesRenderer {
     this.app.ticker.add(() => this.#renderFrame());
     this.#initialized = true;
     this.#relayout();
+  }
+
+  setNoteMarks(marks: Uint8Array): void {
+    this.#marks = marks;
   }
 
   setOptions(options: RendererOptions): void {
@@ -282,7 +295,7 @@ export class FallingNotesRenderer {
         break;
       }
       const key = this.#visibleKey(note, now, layout);
-      const sprite = key ? this.#drawNote(note, key, now, pixelsPerSongSecond, used) : null;
+      const sprite = key ? this.#drawNote(note, i, key, now, pixelsPerSongSecond, used) : null;
       if (sprite && key) {
         used++;
         named += this.#nameNote(note, key, sprite, named) ? 1 : 0;
@@ -328,12 +341,13 @@ export class FallingNotesRenderer {
   /** Returns the sprite used, or null when the note is not visible. */
   #drawNote(
     note: PlayableNote,
+    noteIndex: number,
     key: KeyGeometry,
     now: number,
     pixelsPerSongSecond: number,
     index: number,
   ): NineSliceSprite | null {
-    const color = note.hand === "left" ? COLORS.left : COLORS.right;
+    const color = this.#noteColor(note, noteIndex);
     const sounding = note.start <= now;
     if (sounding) {
       const glow = this.#keyGlows.get(note.pitch);
@@ -355,6 +369,18 @@ export class FallingNotesRenderer {
     sprite.tint = color;
     sprite.alpha = sounding ? 1 : 0.88;
     return sprite;
+  }
+
+  /** Hand color, or played / missed once judged on the piano. */
+  #noteColor(note: PlayableNote, noteIndex: number): number {
+    const mark = this.#marks?.[noteIndex] ?? 0;
+    if (mark === MARK_PLAYED) {
+      return COLORS.played;
+    }
+    if (mark === MARK_MISSED) {
+      return COLORS.missed;
+    }
+    return note.hand === "left" ? COLORS.left : COLORS.right;
   }
 
   #noteSprite(index: number): NineSliceSprite {

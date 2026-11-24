@@ -151,6 +151,28 @@ describe("practice sessions", () => {
     expect(stats).toEqual({ songId, totalActiveMs: 70_000, sessionCount: 2, lastPracticedAt: 90_000 });
   });
 
+  it("keep how the song was played, with the accuracy and score of the piano modes (V1.5)", async () => {
+    await setup();
+
+    const response = await server.json(
+      "PUT",
+      `/api/practice-sessions/${SESSION_ID}`,
+      sessionBody({ mode: "rhythm", accuracy: 0.75, score: 12 }),
+    );
+
+    expect(practiceSessionSchema.parse(await response.json())).toMatchObject({
+      mode: "rhythm",
+      accuracy: 0.75,
+      score: 12,
+    });
+    const midi = await server.json(
+      "PUT",
+      `/api/practice-sessions/${SESSION_ID}`,
+      sessionBody({ mode: "midi" }),
+    );
+    expect(midi.status).toBe(400);
+  });
+
   it("refuse sessions shorter than 10 s", async () => {
     await setup();
 

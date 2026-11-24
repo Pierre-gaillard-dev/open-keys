@@ -54,4 +54,25 @@ describe("sessionRequestFor", () => {
       accuracy: null,
     });
   });
+
+  it("keeps the piano mode, the share of good chords and the chords played (V1.5)", () => {
+    const state = {
+      ...playerState(),
+      piano: { mode: "rhythm" as const, hands: "right" as const, status: "on" as const, error: null },
+      pianoScore: { chords: 8, good: 6 },
+    };
+    expect(sessionRequestFor("01JD0000000000000000000S01", state, session)).toMatchObject({
+      mode: "rhythm",
+      accuracy: 0.75,
+      score: 8,
+    });
+    // On the piano but no chord yet: no accuracy to show.
+    expect(
+      sessionRequestFor(
+        "01JD0000000000000000000S01",
+        { ...state, pianoScore: { chords: 0, good: 0 } },
+        session,
+      ),
+    ).toMatchObject({ mode: "rhythm", accuracy: null, score: null });
+  });
 });

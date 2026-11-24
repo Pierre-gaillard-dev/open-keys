@@ -46,4 +46,24 @@ describe("SessionTracker", () => {
 
     expect(tracker.activeMs).toBe(10_000);
   });
+
+  it("restarts: a new session from now, playback still counting", () => {
+    let now = 0;
+    const tracker = new SessionTracker(() => now);
+    tracker.playing(80);
+    now = 30_000;
+    tracker.restart(60);
+    now = 45_000;
+    expect(tracker.snapshot()).toEqual({
+      startedAt: 30_000,
+      endedAt: 45_000,
+      activeMs: 15_000,
+      minTempoPct: 60,
+      maxTempoPct: 60,
+    });
+    tracker.paused();
+    tracker.restart(100);
+    now = 90_000;
+    expect(tracker.snapshot()).toBeNull();
+  });
 });

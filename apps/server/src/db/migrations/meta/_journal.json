@@ -43,6 +43,13 @@
       "when": 1795080789743,
       "tag": "0005_note_naming",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795550401986,
+      "tag": "0006_practice_modes",
+      "breakpoints": true
     }
   ]
 }

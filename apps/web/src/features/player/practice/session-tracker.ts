@@ -46,6 +46,20 @@ export class SessionTracker {
     this.#maxTempo = Math.max(this.#maxTempo, tempoPct);
   }
 
+  /**
+   * A new session starts now (another way of practising): the time and speeds so far are dropped,
+   * playback keeps running if it was.
+   */
+  restart(tempoPct: number): void {
+    const playing = this.#playingSince !== null;
+    const now = this.#now();
+    this.#startedAt = playing ? now : null;
+    this.#playingSince = playing ? now : null;
+    this.#activeMs = 0;
+    this.#minTempo = playing ? tempoPct : Number.POSITIVE_INFINITY;
+    this.#maxTempo = playing ? tempoPct : 0;
+  }
+
   /** The session so far, or null when it is too short to be recorded. */
   snapshot(): SessionSnapshot | null {
     const activeMs = Math.round(this.activeMs);

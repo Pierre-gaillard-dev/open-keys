@@ -1,3 +1,4 @@
+import { PRACTICE_MODES } from "@open-keys/contracts";
 import { sql } from "drizzle-orm";
 import { check, index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { users } from "../auth/auth.schema";
@@ -41,9 +42,7 @@ export const practiceSessions = sqliteTable(
       .notNull()
       .references(() => songs.id, { onDelete: "cascade" }),
     loopId: text("loop_id").references(() => loops.id, { onDelete: "set null" }),
-    mode: text("mode", { enum: ["watch", "midi"] })
-      .notNull()
-      .default("watch"),
+    mode: text("mode", { enum: PRACTICE_MODES }).notNull().default("watch"),
     startedAt: integer("started_at").notNull(),
     endedAt: integer("ended_at").notNull(),
     activeMs: integer("active_ms").notNull(),
@@ -56,6 +55,6 @@ export const practiceSessions = sqliteTable(
   (table) => [
     index("practice_sessions_user_song_idx").on(table.userId, table.songId, table.startedAt),
     index("practice_sessions_user_started_idx").on(table.userId, table.startedAt),
-    check("practice_sessions_mode_check", sql`${table.mode} in ('watch', 'midi')`),
+    check("practice_sessions_mode_check", sql`${table.mode} in ('watch', 'wait', 'rhythm')`),
   ],
 );

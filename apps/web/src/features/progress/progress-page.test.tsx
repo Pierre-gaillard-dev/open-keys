@@ -11,7 +11,7 @@ afterEach(() => {
 
 const HOUR = 60 * 60_000;
 
-function session(id: string, songId: string, startedAt: number, minutes: number) {
+function session(id: string, songId: string, startedAt: number, minutes: number, overrides: object = {}) {
   return {
     id,
     songId,
@@ -27,6 +27,7 @@ function session(id: string, songId: string, startedAt: number, minutes: number)
     accuracy: null,
     score: null,
     updatedAt: startedAt,
+    ...overrides,
   };
 }
 
@@ -45,7 +46,11 @@ describe("progress page (UC-27)", () => {
         json: {
           sessions: [
             session("01JD000000000000000000SS01", learning.id, now - HOUR, 20),
-            session("01JD000000000000000000SS02", "01JD0000000000000000000S02", now - 2 * HOUR, 10),
+            session("01JD000000000000000000SS02", "01JD0000000000000000000S02", now - 2 * HOUR, 10, {
+              mode: "rhythm",
+              accuracy: 0.8,
+              score: 25,
+            }),
             session("01JD000000000000000000SS03", learning.id, now - 3 * 24 * HOUR, 25),
           ],
         },
@@ -67,6 +72,7 @@ describe("progress page (UC-27)", () => {
     expect(gymnopedie).toHaveLength(3);
     expect(gymnopedie[0]?.getAttribute("href")).toBe(`/songs/${learning.id}`);
     expect(screen.getAllByRole("link", { name: "Nocturne" })).toHaveLength(1);
+    expect(screen.getByText(/Au piano, en rythme · 80 %/)).toBeDefined();
     expect(
       api.requests.find((request) => request.path === "/api/practice-sessions")?.query.get("from"),
     ).toBeTruthy();
