@@ -24,6 +24,7 @@ flowchart LR
 - **Deux lectures de l'horloge** :
   - `scheduledSongTime()` à partir de `currentTime` : ce qui est envoyé au graphe audio (le scheduler s'en sert) ;
   - `heardSongTime()` à partir de **`currentTime − outputLatency − baseLatency`** : ce qui sort des haut-parleurs (le renderer s'en sert).
+  - La latence lue est bornée entre 0 et 0,5 s ; un casque Bluetooth atteint environ 0,3 s. Une valeur absurde rapportée par le navigateur pousserait toutes les notes hors de l'écran pendant que le son continue. C'est l'hypothèse retenue pour un bug vu à l'usage, que nous n'avons pas pu reproduire.
 - **Pourquoi pas `getOutputTimestamp()`** : sous Firefox, il n'intègre pas la latence de sortie. On a mesuré 0 ms, alors que Firefox annonce 42 ms de latence, et l'image passerait environ 40 ms avant le son. Sous Chrome, il donne la même chose que la formule ci-dessus. La formule est donc la seule cohérente sur les deux navigateurs.
 - **Décalage manuel** (réglage avancé) : un offset en ms appliqué à `heardSongTime()`, pour un matériel qui annoncerait mal sa latence (par exemple un casque Bluetooth).
 
@@ -66,6 +67,12 @@ Deux moteurs, comparés dans le labo avant d'en garder un (D31). Ils partagent l
   - Elle bat ses voisins d'un demi-ton qui ne sont pas attendus.
   - Ses harmoniques 3, 5 et 7 valent au moins 10 % de ses harmoniques 2, 4 et 6 ; sinon, c'est l'octave au-dessus qui sonne. Le fondamental n'entre pas dans ce calcul, parce qu'un micro de téléphone le capte mal dans le grave. Les harmoniques partagées avec une autre note attendue sont ignorées.
 - **Octave inférieure** : `NoteListener` refuse une note attendue quand la détection libre (`detect()`, qui préfère la note la plus grave qui explique le spectre) trouve son octave inférieure non attendue. C'est le cas de C3 joué pour C4.
+- **Frappe et niveau ambiant** (`StrikeTracker`) : pour chaque touche, `NoteListener` suit la saillance au fil des trames.
+  - Le niveau ambiant de la pièce redescend tout de suite vers une trame plus calme et ne remonte que lentement, en environ 5 s.
+  - Il retient aussi la dernière frappe, c'est-à-dire un saut d'au moins ×2 par rapport au minimum des 6 trames précédentes.
+  - Une note attendue ne compte que si elle dépasse 3 fois son niveau ambiant et a été frappée dans la dernière demi-seconde.
+  - Un son continu (frigo, télévision, corde qui résonne) n'allume donc plus rien. Sur le banc, un son continu posé sur une note attendue l'allumait dans 100 % des essais, contre 0 % maintenant, sans perte sur les accords.
+  - Les voix, qui ont une attaque, passent encore : seul le seuil de sensibilité les filtre.
 - Une note compte quand elle est entendue dans 2 trames de suite. Le délai entre le son et la détection est d'environ 90 ms.
 
 ### Basic Pitch (Spotify, Apache-2.0)

@@ -9,3 +9,4 @@ export {
   PitchDetector,
   type VerifyOptions,
 } from "./pitch-detector";
+export { type StrikeOptions, StrikeTracker } from "./strike-tracker";

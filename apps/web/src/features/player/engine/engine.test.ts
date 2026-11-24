@@ -8,7 +8,7 @@ import {
   NoteScheduler,
 } from "./note-scheduler";
 import { PlayerEngine } from "./player-engine";
-import { SongClock, START_DELAY_S } from "./song-clock";
+import { MAX_OUTPUT_LATENCY_S, SongClock, START_DELAY_S } from "./song-clock";
 
 class FakeAudio {
   currentTime = 10;
@@ -103,6 +103,20 @@ describe("SongClock", () => {
     expect(clock.heardSongTime()).toBeCloseTo(1 - 0.05);
     clock.offsetMs = 20;
     expect(clock.heardSongTime()).toBeCloseTo(1 - 0.07);
+  });
+
+  it("ignores a nonsense latency: the falling notes stay on screen while the sound plays", () => {
+    const audio = new FakeAudio();
+    const clock = new SongClock(audio);
+    clock.play();
+    audio.advance(START_DELAY_S + 10);
+
+    audio.outputLatency = 50;
+    expect(clock.heardSongTime()).toBeCloseTo(10 - MAX_OUTPUT_LATENCY_S);
+    audio.outputLatency = Number.POSITIVE_INFINITY;
+    expect(clock.heardSongTime()).toBeCloseTo(10);
+    audio.outputLatency = -3;
+    expect(clock.heardSongTime()).toBeCloseTo(10);
   });
 
   it("freezes on pause and resumes from the same position", () => {

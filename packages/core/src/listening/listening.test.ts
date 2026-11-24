@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Spectrum } from "./fft";
-import { NoteListener } from "./note-listener";
+import { type ListenerOptions, NoteListener } from "./note-listener";
 import { PitchDetector } from "./pitch-detector";
 
 const SAMPLE_RATE = 48_000;
@@ -68,16 +68,24 @@ describe("PitchDetector.detect", () => {
   });
 });
 
-/** Frames of a listener expecting `expected` while `played` sounds. */
-function listenTo(played: readonly number[], expected: readonly number[]) {
-  const listener = new NoteListener({ sampleRate: SAMPLE_RATE });
+/** Silence before a strike: a full window, and the frames a strike is compared with. */
+const SILENCE = SIZE + 8 * 1024;
+
+/** Frames of a listener expecting `expected` when `played` is struck after silence (window full of it). */
+function listenTo(
+  played: readonly number[],
+  expected: readonly number[],
+  options: Partial<ListenerOptions> = {},
+) {
+  const listener = new NoteListener({ sampleRate: SAMPLE_RATE, ...options });
   listener.expect(expected);
-  const samples = Float32Array.from(tone(played, SIZE + 4096));
+  const samples = new Float32Array(SILENCE + SIZE + 4096);
+  samples.set(tone(played, SIZE + 4096), SILENCE);
   const frames = [];
   for (let i = 0; i < samples.length; i += 128) {
     frames.push(...listener.push(samples.subarray(i, i + 128)));
   }
-  return frames;
+  return frames.filter((frame) => frame.time >= (SILENCE + SIZE) / SAMPLE_RATE);
 }
 
 describe("NoteListener", () => {
@@ -106,7 +114,11 @@ describe("NoteListener", () => {
   });
 
   it("makes a frame every hop, says which expected notes it hears and when a note starts", () => {
-    const listener = new NoteListener({ sampleRate: SAMPLE_RATE });
+    // Without the room checks: the tone is there from the first sample, never struck.
+    const listener = new NoteListener({
+      sampleRate: SAMPLE_RATE,
+      strike: { strikeHoldS: 0, ambientRatio: 0 },
+    });
     listener.expect([60, 64]);
     const samples = Float32Array.from(tone([60, 64], SIZE + 4096));
     const frames = [];
@@ -119,5 +131,17 @@ describe("NoteListener", () => {
     expect(frames.every((frame) => frame.heard.length === 2)).toBe(true);
     expect(frames[0]?.onsets).toEqual(expect.arrayContaining([60, 64]));
     expect(frames[1]?.onsets).toEqual([]);
+  });
+
+  it("hears a struck chord, but not the same chord sounding steadily from the start (a resonance)", () => {
+    expect(listenTo([60, 64, 67], [60, 64, 67]).some((frame) => frame.heard.length === 3)).toBe(true);
+    const listener = new NoteListener({ sampleRate: SAMPLE_RATE });
+    listener.expect([60, 64, 67]);
+    const steady = Float32Array.from(tone([60, 64, 67], SAMPLE_RATE * 2));
+    const heard = [];
+    for (let i = 0; i < steady.length; i += 128) {
+      heard.push(...listener.push(steady.subarray(i, i + 128)).flatMap((frame) => frame.heard));
+    }
+    expect(heard).toEqual([]);
   });
 });

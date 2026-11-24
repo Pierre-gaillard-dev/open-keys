@@ -175,6 +175,9 @@ function addNoise(signal: Float32Array, db: number): void {
   }
 }
 
+/** A steady sound in the room (fridge, television, resonance): quieter than a struck note. */
+const HUM_LEVEL = Number(process.env["LISTEN_HUM"] ?? 0.01);
+
 /** A voice a few metres away: about 12 dB under a piano next to the phone. */
 const VOICE_LEVEL = Number(process.env["LISTEN_VOICE"] ?? 0.01);
 
@@ -206,8 +209,28 @@ function addEvent(signal: Float32Array, at: number): void {
   }
 }
 
+/**
+ * A steady harmonic sound on `pitch` over the whole take: a fridge, a television, a string that keeps
+ * resonating. The worst case: it sits exactly on an expected note, and never stops.
+ */
+function addHum(signal: Float32Array, pitch: number): void {
+  const f0 = 440 * 2 ** ((pitch - 69) / 12);
+  for (let i = 0; i < signal.length; i++) {
+    let value = 0;
+    for (let h = 1; h <= 8; h++) {
+      value += Math.sin((2 * Math.PI * f0 * h * i) / SAMPLE_RATE) / h;
+    }
+    signal[i] = (signal[i] as number) + HUM_LEVEL * value;
+  }
+}
+
 /** The microphone's view of notes struck together at STRIKE_S (and of room events), in frames. */
-function listen(pitches: readonly number[], expected: readonly number[], events = 0): ListenFrame[] {
+function listen(
+  pitches: readonly number[],
+  expected: readonly number[],
+  events = 0,
+  humPitch: number | null = null,
+): ListenFrame[] {
   const length = Math.floor(SAMPLE_RATE * LENGTH_S);
   const mix = new Float32Array(length);
   const strike = Math.floor(SAMPLE_RATE * STRIKE_S);
@@ -224,6 +247,9 @@ function listen(pitches: readonly number[], expected: readonly number[], events 
   }
   for (let e = 0; e < events; e++) {
     addEvent(mix, 0.2 + random() * (LENGTH_S - 0.6));
+  }
+  if (humPitch !== null) {
+    addHum(mix, humPitch);
   }
   addNoise(mix, room.noiseDb);
   if (room.highpassHz > 0) {
@@ -376,14 +402,25 @@ out(
     ` above ${percent(octaveRefused.above, octaveRounds)}`,
 );
 
-// 3. Nothing played: the room alone (noise, then knocks and voices) must not light any expected note.
+// 3. Nothing played: the room alone must not light any expected note. Background noise, then knocks
+// and voices, then a steady sound sitting exactly on one of the expected notes.
 const QUIET_ROUNDS = 60;
-for (const events of room.events ? [0, 3] : [0]) {
+const quietCases = [
+  { label: "background noise", events: 0, hum: false },
+  ...(room.events
+    ? [
+        { label: "knocks and voices", events: 3, hum: false },
+        { label: "steady sound on an expected note", events: 0, hum: true },
+      ]
+    : []),
+];
+for (const { label, events, hum } of quietCases) {
   let triggered = 0;
   let heardInAll = 0;
   for (let round = 0; round < QUIET_ROUNDS; round++) {
     const expected = chord();
-    const found = heardNotes(listen([], expected, events), expected, -STRIKE_S, LENGTH_S);
+    const humPitch = hum ? (expected[randomInt(0, expected.length - 1)] as number) : null;
+    const found = heardNotes(listen([], expected, events, humPitch), expected, -STRIKE_S, LENGTH_S);
     heardInAll += found.size;
     triggered += found.size > 0 ? 1 : 0;
   }
@@ -391,7 +428,6 @@ for (const events of room.events ? [0, 3] : [0]) {
     out(`  (room alone) ${quantiles()}`);
   }
   out(
-    `Room alone, ${events ? "knocks and voices" : "background noise"} (${QUIET_ROUNDS}): rounds with a note heard` +
-      ` ${percent(triggered, QUIET_ROUNDS)} (${heardInAll} notes in all)`,
+    `Room alone, ${label} (${QUIET_ROUNDS}): rounds with a note heard ${percent(triggered, QUIET_ROUNDS)} (${heardInAll} notes in all)`,
   );
 }
