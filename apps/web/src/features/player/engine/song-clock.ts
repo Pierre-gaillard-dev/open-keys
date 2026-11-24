@@ -95,6 +95,12 @@ export class SongClock {
     }
   }
 
+  /** Stops exactly at `songTime` (wait mode: the chord to play has reached the keyboard). */
+  hold(songTime: number): void {
+    this.#anchorSongTime = Math.max(0, songTime);
+    this.#playing = false;
+  }
+
   /** Moves to `songTime`; while playing, it is reached after `delayS` more real seconds (count-in). */
   seek(songTime: number, delayS = 0): number {
     this.#anchorSongTime = Math.max(0, songTime);

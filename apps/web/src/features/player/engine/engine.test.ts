@@ -1,5 +1,5 @@
 import { buildTimeline, type Timeline } from "@open-keys/core";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   type ClickOutput,
   LATE_TOLERANCE_S,
@@ -348,5 +348,68 @@ describe("metronome, count-in and hand volume (V1.2)", () => {
     expect(clicks.clicks).toHaveLength(4);
     // The music is back at the start of the loop one beat (0.5 s) after the last click.
     expect(clock.audioTimeAtSongTime(2) - (clicks.clicks[3]?.time ?? 0)).toBeCloseTo(0.5);
+  });
+});
+
+describe("wait mode gate (V1.5)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  /** Advances the audio clock and the scheduler's timer together, 25 ms at a time. */
+  const run = (audio: FakeAudio, seconds: number) => {
+    for (let t = 0; t < seconds; t += 0.025) {
+      audio.advance(0.025);
+      vi.advanceTimersByTime(25);
+    }
+  };
+
+  it("stops exactly at the gate without scheduling what lies there, and goes on once released", async () => {
+    vi.useFakeTimers();
+    const audio = new FakeAudio();
+    const output = new RecordingOutput();
+    const engine = new PlayerEngine(timeline(), audio, output, new RecordingClicks());
+    let waits = 0;
+    engine.onWait = () => waits++;
+    engine.setGate(2);
+
+    await engine.play();
+    run(audio, 3);
+
+    expect(engine.isWaiting).toBe(true);
+    expect(engine.isPlaying).toBe(false);
+    expect(engine.position).toBe(2);
+    expect(waits).toBe(1);
+    expect(output.played.map((note) => note.pitch)).toEqual([60, 40, 61]);
+    // The notes already sounding ring on.
+    expect(output.stops).toBe(1);
+
+    engine.setGate(4);
+    engine.release();
+    run(audio, 1.5);
+    expect(engine.isPlaying).toBe(true);
+    expect(output.played.map((note) => note.pitch)).toEqual([60, 40, 61, 62, 63]);
+  });
+
+  it("pauses from the gate, and a seek while waiting plays on from there", async () => {
+    vi.useFakeTimers();
+    const audio = new FakeAudio();
+    const engine = new PlayerEngine(timeline(), audio, new RecordingOutput(), new RecordingClicks());
+    engine.setGate(1);
+    await engine.play();
+    run(audio, 1.5);
+    expect(engine.isWaiting).toBe(true);
+
+    engine.pause();
+    expect(engine.isWaiting).toBe(false);
+    expect(engine.position).toBe(1);
+
+    engine.setGate(5);
+    await engine.play();
+    engine.setGate(3);
+    run(audio, 3.5);
+    expect(engine.isWaiting).toBe(true);
+    engine.setGate(null);
+    engine.seek(0);
+    expect(engine.isWaiting).toBe(false);
+    expect(engine.isPlaying).toBe(true);
   });
 });
