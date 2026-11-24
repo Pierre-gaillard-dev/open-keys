@@ -315,6 +315,18 @@ export class PitchDetector {
     return heard;
   }
 
+  /**
+   * Salience of every key (A0 to C8, index 0 = A0) in this spectrum, whitened, before any removal:
+   * what each note weighs in the frame, to follow it over time (ambient level, strikes).
+   */
+  saliences(spectrum: Float64Array, out = new Float64Array(HIGHEST_PITCH - LOWEST_PITCH + 1)): Float64Array {
+    this.#work.set(this.#whiten(spectrum));
+    for (let pitch = LOWEST_PITCH; pitch <= HIGHEST_PITCH; pitch++) {
+      out[pitch - LOWEST_PITCH] = this.#salience(pitch);
+    }
+    return out;
+  }
+
   /** Notes of a frame, strongest first. */
   detect(spectrum: Float64Array): DetectedNote[] {
     const floor = this.#noiseFloor(spectrum);

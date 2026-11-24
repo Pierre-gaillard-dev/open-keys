@@ -1,5 +1,13 @@
 import { Spectrum } from "./fft";
-import { type DetectedNote, type DetectorOptions, PitchDetector, type VerifyOptions } from "./pitch-detector";
+import {
+  type DetectedNote,
+  type DetectorOptions,
+  HIGHEST_PITCH,
+  LOWEST_PITCH,
+  PitchDetector,
+  type VerifyOptions,
+} from "./pitch-detector";
+import { type StrikeOptions, StrikeTracker } from "./strike-tracker";
 
 export interface ListenerOptions extends DetectorOptions {
   /** A frame every this many samples: 1024 at 48 kHz = 21 ms. */
@@ -12,6 +20,11 @@ export interface ListenerOptions extends DetectorOptions {
    * C3 played for C4. Free detection prefers the lowest note that explains the spectrum.
    */
   readonly octaveCrossCheck?: boolean;
+  /**
+   * An expected note counts only when it stands above its ambient level in the room and was struck
+   * recently: a steady sound (fridge, television, resonance) lights nothing.
+   */
+  readonly strike?: StrikeOptions;
 }
 
 export interface ListenFrame {
@@ -42,6 +55,8 @@ export class NoteListener {
   #expected: readonly number[] = [];
   readonly #verifyOptions: VerifyOptions;
   readonly #octaveCrossCheck: boolean;
+  readonly #strikes: StrikeTracker;
+  readonly #saliences = new Float64Array(HIGHEST_PITCH - LOWEST_PITCH + 1);
 
   constructor(options: ListenerOptions) {
     this.#detector = new PitchDetector(options);
@@ -52,6 +67,7 @@ export class NoteListener {
     this.#sampleRate = options.sampleRate;
     this.#verifyOptions = options.verify ?? {};
     this.#octaveCrossCheck = options.octaveCrossCheck ?? true;
+    this.#strikes = new StrikeTracker(options.strike);
   }
 
   /** Notes the player should be playing now (wait mode): each frame says which ones it hears. */
@@ -89,10 +105,16 @@ export class NoteListener {
     ordered.set(this.#buffer.subarray(start));
     ordered.set(this.#buffer.subarray(0, start), size - start);
     const magnitudes = this.#spectrum.compute(ordered);
+    const time = this.#received / this.#sampleRate;
+    const saliences = this.#detector.saliences(magnitudes, this.#saliences);
+    this.#strikes.update(time, saliences);
     const notes = this.#detector.detect(magnitudes);
     const verified =
       this.#expected.length > 0 ? this.#detector.verify(magnitudes, this.#expected, this.#verifyOptions) : [];
-    const heard = this.#octaveCrossCheck ? this.#withoutOctaveBelow(verified, notes) : verified;
+    const struck = verified.filter((pitch) =>
+      this.#strikes.counts(pitch, time, saliences[pitch - LOWEST_PITCH] ?? 0),
+    );
+    const heard = this.#octaveCrossCheck ? this.#withoutOctaveBelow(struck, notes) : struck;
     const onsets = notes
       .filter((note) => {
         const before = this.#previous.get(note.pitch);
@@ -100,6 +122,6 @@ export class NoteListener {
       })
       .map((note) => note.pitch);
     this.#previous = new Map(notes.map((note) => [note.pitch, note.strength]));
-    return { time: this.#received / this.#sampleRate, notes, onsets, heard };
+    return { time, notes, onsets, heard };
   }
 }
