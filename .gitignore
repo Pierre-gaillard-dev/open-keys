@@ -9,3 +9,15 @@ data/
 .DS_Store
 e2e/test-results/
 e2e/playwright-report/
+
+# Python tools (tools/): local environments and caches
+venv/
+__pycache__/
+*.pth
+# Recordings and transcriptions processed with the tools: never in the repository (copyright)
+tools/**/*.mid
+tools/**/*.midi
+tools/**/*.mp3
+tools/**/*.opus
+tools/**/*.m4a
+tools/**/*.wav

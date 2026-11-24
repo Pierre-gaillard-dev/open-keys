@@ -169,6 +169,7 @@ open-keys/
 │   ├── nginx/                                # repli SPA, cache, compression ; CSP et en-têtes de sécurité
 │   ├── compose.local.yml                     # production en local : + Caddy sur le port 8080
 │   └── Caddyfile                             # reverse proxy local (rôle de Traefik)
+├── tools/audio-to-midi/                      # spike Python : enregistrement de piano → MIDI (D34), hors de l'app
 ├── docker-compose.yml                        # production (Dokploy) : web + api + volume data
 ├── .dockerignore
 ├── .github/workflows/ci.yml                  # lint, types, architecture, tests, build
