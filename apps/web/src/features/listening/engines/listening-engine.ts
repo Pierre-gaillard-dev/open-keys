@@ -25,7 +25,7 @@ export interface EngineOptions {
  */
 export interface ListeningEngine {
   /** Notes to play now (wait mode): frames say which of them are heard. */
-  expect(pitches: readonly number[]): void;
+  expect(pitches: readonly number[], accompaniment?: readonly number[]): void;
   /** Microphone samples, in chunks of any size. */
   push(samples: Float32Array): void;
   /** Mean time of one analysis (ms): too slow on a phone, the engine cannot follow. */

@@ -42,7 +42,7 @@ flowchart LR
       UC10(["UC-10 Boucle A-B"])
       UC11(["UC-11 Isoler une main"])
       UC12(["UC-12 Reprendre la lecture"])
-      UC31(["UC-31 Mode attente (V2)"])
+      UC31(["UC-31 Mode attente (V1.5 micro, V2 MIDI)"])
     end
 
     subgraph PRA["Pratique"]
@@ -110,7 +110,7 @@ flowchart LR
 | UC-36 | Changer son mot de passe | V1.4 |
 | UC-37 | Gérer les comptes (désactiver, mot de passe oublié) | V1.4 |
 | UC-30 | Connecter un clavier MIDI | V2 |
-| UC-31 | Mode attente (la lecture attend la bonne note) | V2 |
+| UC-31 | Mode attente (la lecture attend la bonne note) | V1.5 (micro), V2 (MIDI) |
 | UC-32 | Score et précision de session | V2 |
 | UC-33 | Mettre en pause avec une touche du piano | V2 |
 
@@ -253,7 +253,13 @@ flowchart LR
 - **Catalogue commun** : tout le monde voit, joue et importe tous les morceaux. Seuls celui qui a importé un morceau et l'administrateur peuvent le modifier ou le supprimer.
 - **Données personnelles** (bibliothèque, favoris, boucles, progression) propres à chaque compte, y compris sur un appareil partagé : à la connexion d'un autre compte, le cache de l'appareil est vidé, et les écritures en attente du précédent ne partent qu'avec sa propre session.
 
-### UC-30 à UC-33 — V2 (aperçu)
-- La couche `InputSource` reçoit des événements `noteOn`/`noteOff` (Web MIDI, plugin natif Capacitor, ou clavier à l'écran pour les tests).
-- Mode attente : la lecture se fige avant chaque groupe de notes attendu jusqu'à ce qu'il soit joué (avec une tolérance d'accord).
+### UC-31 — Mode attente (V1.5, au micro)
+- **Activation** : dans Réglages, « Attendre que je joue ». Le micro s'ouvre ; le navigateur demande l'autorisation la première fois.
+- **Je joue** : main gauche, main droite ou les deux. Ces mains sont coupées dans la lecture : c'est toi qui les joues, et le micro ne doit pas entendre l'app les jouer. L'autre main continue d'être jouée par l'app.
+- **Arrêt** : à chaque accord de ces mains, les notes s'arrêtent sur la ligne du clavier et un badge affiche les notes qui manquent (« À toi : Do4 · Mi4 »). La lecture repart dès que tout l'accord est entendu. Les notes frappées un peu avant que l'accord arrive (0,4 s) comptent.
+- Pause, boucle, retour en arrière et fin du morceau fonctionnent comme d'habitude : l'accord attendu devient le premier à partir de la nouvelle position.
+- Si le micro est refusé ou absent, un message le dit et la lecture reste normale.
+
+### UC-30, UC-32, UC-33 — V2 (aperçu)
+- La couche `InputSource` (créée en V1.5) reçoit les notes d'un clavier MIDI (Web MIDI, plugin natif Capacitor, ou clavier à l'écran pour les tests). Le mode attente s'en sert sans changement.
 - Score : précision des notes et du rythme, enregistrée dans `practice_sessions`.

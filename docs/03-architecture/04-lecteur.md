@@ -99,9 +99,31 @@ Deux moteurs, comparés dans le labo avant d'en garder un (D31). Ils partagent l
   - Le labo affiche aussi le temps d'analyse et le délai entre le son et la détection.
 - **Capture** : `getUserMedia` sans annulation d'écho, réduction de bruit ni gain automatique, et un AudioWorklet (`public/worklets/mic-capture.js`, servi par l'app pour respecter la CSP) qui transmet les échantillons.
 
+## Mode attente (V1.5, D32)
+
+- **`InputSource`** (`core/practice`) : `expect(notes, accompagnement)`, `onNote(hauteur, instant)`, `dispose()`. Le lecteur ne sait pas d'où viennent les notes.
+  - **V1.5** : `createMicrophoneInput` (feature `listening`). Le détecteur maison ne vérifie que les notes attendues (D30, D31). Une note est jouée quand elle est entendue 2 trames de suite, après une frappe.
+  - **V2** : l'entrée MIDI ignorera `expect`.
+- **Points d'attente** (`waitPoints`, `core`) : les accords des mains travaillées. Ce sont les notes qui commencent à moins de 40 ms de la première du groupe.
+- **`WaitTracker`** (`core`, pur) :
+  - il dit quel accord est attendu, ce qui en manque, et quand il est joué ;
+  - un accord compte les notes entendues à partir du moment où il est à 0,4 s réelle de la ligne du clavier ;
+  - après un déplacement (seek, boucle, fin), l'accord attendu est le premier à partir de la nouvelle position.
+- **Barrière du moteur** : `setGate(temps)`.
+  - Le scheduler ne programme rien à partir de ce temps.
+  - Quand la lecture l'atteint, l'horloge se retient pile dessus (`SongClock.hold`). Les notes déjà lancées continuent de sonner, et les notes qui tombent s'arrêtent sur la ligne.
+  - `release()` repart après le petit délai de démarrage habituel.
+  - Pause et seek fonctionnent pendant l'attente.
+- **`createWaitMode`** (`controller/wait-mode.ts`) relie le tout.
+  - Une vérification toutes les 25 ms, sans mise à jour React à chaque vérification. Le store ne change qu'à chaque attente (`waitingFor`).
+  - Il indique au micro les notes attendues et l'**accompagnement**, c'est-à-dire les notes des autres mains que l'app joue à ± 0,5 s.
+- **Mains travaillées coupées** : elles le sont dans la lecture pendant le mode attente. C'est l'utilisateur qui les joue, et le micro ne doit pas entendre l'app les jouer.
+- **Accompagnement et octave inférieure** : l'octave inférieure n'invalide pas une note si elle fait partie de l'accompagnement. Sinon, une main gauche jouée par l'app une octave en dessous bloquerait l'accord de la main droite.
+- **Le contrôleur possède l'entrée micro** : il l'ouvre (`startWait`) et la ferme (`stopWait`, en quittant le lecteur). Fermer le panneau Réglages ne coupe donc pas le micro.
+
 ## Couche d'entrée (V2)
 
-L'interface `InputSource { onNoteOn, onNoteOff, dispose }`. Le moteur ne connaît pas l'origine des événements.
+L'entrée MIDI implémentera `InputSource` : le mode attente s'en servira sans changement.
 
 ## Interface (`controller/`, `stores/`, `components/`)
 
