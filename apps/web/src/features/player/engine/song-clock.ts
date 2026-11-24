@@ -8,6 +8,17 @@ export interface AudioClockSource {
 
 /** Small delay so the first notes are never scheduled in the past. */
 export const START_DELAY_S = 0.1;
+/**
+ * Most output latency believed (Bluetooth headphones reach about 0.3 s). A browser reporting more, or
+ * nonsense, would push the falling notes out of the screen while the sound plays on.
+ */
+export const MAX_OUTPUT_LATENCY_S = 0.5;
+
+/** Latency reported by the audio context, kept within what an output can really have. */
+function plausibleLatency(source: AudioClockSource): number {
+  const latency = (Number(source.outputLatency) || 0) + (Number(source.baseLatency) || 0);
+  return Number.isFinite(latency) ? Math.min(MAX_OUTPUT_LATENCY_S, Math.max(0, latency)) : 0;
+}
 
 /**
  * Single source of truth for time: the audio clock (D17).
@@ -58,8 +69,10 @@ export class SongClock {
    */
   heardSongTime(): number {
     const source = this.#source;
-    const latency = (Number(source.outputLatency) || 0) + (Number(source.baseLatency) || 0);
-    return this.songTimeAtAudioTime(source.currentTime - latency) - (this.offsetMs / 1000) * this.#rate;
+    return (
+      this.songTimeAtAudioTime(source.currentTime - plausibleLatency(source)) -
+      (this.offsetMs / 1000) * this.#rate
+    );
   }
 
   /**
