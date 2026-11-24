@@ -29,7 +29,13 @@ export const putLoopRequestSchema = loopFieldsSchema.refine(endAfterStart, {
 
 export type PutLoopRequest = z.infer<typeof putLoopRequestSchema>;
 
-export const practiceModeSchema = z.enum(["watch", "midi"]);
+/**
+ * How the song was practised: watched and listened to, played on the piano with the wait mode, or
+ * played on the piano in rhythm (V1.5, the microphone hears it).
+ */
+export const PRACTICE_MODES = ["watch", "wait", "rhythm"] as const;
+export const practiceModeSchema = z.enum(PRACTICE_MODES);
+export type PracticeMode = z.infer<typeof practiceModeSchema>;
 
 const practiceSessionFieldsSchema = z.object({
   songId: ulidSchema,
@@ -40,7 +46,9 @@ const practiceSessionFieldsSchema = z.object({
   activeMs: z.number().int().min(10_000),
   minTempoPct: tempoPctSchema,
   maxTempoPct: tempoPctSchema,
+  /** Played on the piano: share of chords right (rhythm) or played without making playback wait. */
   accuracy: z.number().min(0).max(1).nullable(),
+  /** Played on the piano: chords played. */
   score: z.number().int().nonnegative().nullable(),
   updatedAt: timestampSchema,
 });
