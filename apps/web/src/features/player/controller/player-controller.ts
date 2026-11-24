@@ -1,9 +1,16 @@
 import type { HandsSettings } from "@open-keys/contracts";
-import type { Hand } from "@open-keys/core";
+import type { Hand, InputSource } from "@open-keys/core";
 import type { PlayerEngine } from "../engine/player-engine";
 import type { RendererOptions } from "../renderer/falling-notes-renderer";
-import type { LoopSelection, PlayerState, PlayerStore } from "../stores/player.store";
+import type {
+  LoopSelection,
+  PlayerState,
+  PlayerStore,
+  WaitHands,
+  WaitModeState,
+} from "../stores/player.store";
 import { NOTE_NAMES_MODES, type NoteNamesMode, type PlayerPreferences } from "../stores/player-preferences";
+import { createWaitMode } from "./wait-mode";
 
 export const MIN_TEMPO_PCT = 25;
 export const MAX_TEMPO_PCT = 100;
@@ -55,6 +62,12 @@ export function createPlayerController(
   let positionTimer: ReturnType<typeof setInterval> | undefined;
   let countInTimers: ReturnType<typeof setTimeout>[] = [];
 
+  const waitMode = createWaitMode(engine, store);
+  /** The input of the wait mode (microphone), opened and closed here. */
+  let waitInput: InputSource | null = null;
+  const setWait = (patch: Partial<WaitModeState>) =>
+    store.setState({ wait: { ...store.getState().wait, ...patch } });
+
   const syncPosition = () => store.setState({ positionMs: toMs(engine.position) });
   const stopPositionTimer = () => {
     clearInterval(positionTimer);
@@ -62,8 +75,11 @@ export function createPlayerController(
   };
   const updateRenderer = () => renderer?.setOptions(rendererOptions(store.getState()));
   const applyHands = (hands: HandsSettings) => {
+    // In wait mode, the hands practised are played on the real piano: muted here (and the microphone
+    // must not hear the app play them).
+    const practised = waitMode.practisedHands();
     for (const hand of ["left", "right"] as const) {
-      engine.setHandAudible(hand, hands[hand].audible);
+      engine.setHandAudible(hand, hands[hand].audible && !practised.includes(hand));
       engine.setHandVolume(hand, hands[hand].volume);
     }
   };
@@ -112,11 +128,13 @@ export function createPlayerController(
     engine.setLoop({ start: toSeconds(loop.startMs), end: toSeconds(loop.endMs) });
     store.setState({ loop, loopEnabled: true, pendingLoopStartMs: null });
     resetRuns();
+    waitMode.moved();
     syncPosition();
   };
 
   /** One more full turn: best speed, then a proposal to speed up (UC-26). */
   const loopRestarted = () => {
+    waitMode.moved();
     const { loop, tempoPct, loopRuns, speedUpOffer } = store.getState();
     if (!loop) {
       return;
@@ -134,7 +152,7 @@ export function createPlayerController(
   engine.onLoopRestart = loopRestarted;
 
   const pause = () => {
-    if (!engine.isPlaying) {
+    if (!(engine.isPlaying || engine.isWaiting)) {
       return;
     }
     engine.pause();
@@ -155,8 +173,18 @@ export function createPlayerController(
 
   engine.onEnd = () => {
     stopPositionTimer();
+    waitMode.moved();
     store.setState({ status: "ready", positionMs: 0 });
     listener?.paused();
+  };
+
+  const stopWait = async () => {
+    waitMode.disable();
+    const input = waitInput;
+    waitInput = null;
+    setWait({ status: "off", error: null });
+    applyHands(store.getState().hands);
+    await input?.dispose();
   };
 
   // Initial state (restored settings) → engine.
@@ -174,7 +202,7 @@ export function createPlayerController(
     },
 
     async play() {
-      if (engine.isPlaying || store.getState().status === "loading") {
+      if (engine.isPlaying || engine.isWaiting || store.getState().status === "loading") {
         return;
       }
       await engine.play();
@@ -186,7 +214,7 @@ export function createPlayerController(
     pause,
 
     async toggle() {
-      if (engine.isPlaying) {
+      if (engine.isPlaying || engine.isWaiting) {
         pause();
       } else {
         await this.play();
@@ -195,6 +223,7 @@ export function createPlayerController(
 
     seekTo(positionMs: number) {
       engine.seek(toSeconds(positionMs));
+      waitMode.moved();
       syncPosition();
     },
 
@@ -308,7 +337,42 @@ export function createPlayerController(
       setPreferences({ noteNames: NOTE_NAMES_MODES[(current + 1) % NOTE_NAMES_MODES.length] ?? "off" });
     },
 
+    /**
+     * Wait mode on (V1.5): `open` opens the input (the microphone: call from a user gesture). Playback
+     * then stops at each chord of the hands practised until it is heard.
+     */
+    async startWait(open: () => Promise<InputSource>) {
+      const { status } = store.getState().wait;
+      if (status === "on" || status === "starting") {
+        return;
+      }
+      setWait({ status: "starting", error: null });
+      try {
+        const input = await open();
+        if (store.getState().wait.status !== "starting") {
+          // Turned off while the microphone was opening.
+          await input.dispose();
+          return;
+        }
+        waitInput = input;
+        waitMode.enable(input);
+        setWait({ status: "on" });
+        applyHands(store.getState().hands);
+      } catch (cause) {
+        setWait({ status: "error", error: cause instanceof Error ? cause.message : String(cause) });
+      }
+    },
+
+    stopWait,
+
+    setWaitHands(hands: WaitHands) {
+      setWait({ hands });
+      waitMode.handsChanged();
+      applyHands(store.getState().hands);
+    },
+
     dispose() {
+      void stopWait();
       pause();
       stopPositionTimer();
       clearCountIn();

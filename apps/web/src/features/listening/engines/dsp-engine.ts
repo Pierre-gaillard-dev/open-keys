@@ -21,7 +21,7 @@ export function createDspEngine({ sampleRate, sensitivity, onFrame }: EngineOpti
   });
   let meanMs = 0;
   return {
-    expect: (pitches) => listener.expect(pitches),
+    expect: (pitches, accompaniment) => listener.expect(pitches, accompaniment),
     push(samples) {
       const start = performance.now();
       const frames = listener.push(samples);

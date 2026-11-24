@@ -63,6 +63,12 @@ export class NoteScheduler {
   readonly audibleHands: Record<Hand, boolean> = { left: true, right: true };
   /** 0–1, applied to the velocity of the notes of each hand (UC-25). */
   readonly handVolumes: Record<Hand, number> = { left: 1, right: 1 };
+  /**
+   * Wait mode: song time playback must not pass until the chord there is played. Nothing at or after
+   * it is scheduled; reaching it calls `onGate`.
+   */
+  gate: number | null = null;
+  onGate: (time: number) => void = () => undefined;
   /** Back to the start of the loop; with a count-in, the audio times of its clicks. */
   onLoop: (start: number, countInClicks: readonly number[]) => void = () => undefined;
   onEnd: () => void = () => undefined;
@@ -89,13 +95,16 @@ export class NoteScheduler {
     }
   }
 
-  stop(): void {
+  /** Stops scheduling; `silence` also cuts what is already sounding or scheduled. */
+  stop(silence = true): void {
     if (this.#timer !== undefined) {
       clearInterval(this.#timer);
       this.#timer = undefined;
     }
-    this.#output.stopAll();
-    this.#clicks.stopAll();
+    if (silence) {
+      this.#output.stopAll();
+      this.#clicks.stopAll();
+    }
   }
 
   /** After a seek or a rate change: cancel pending notes and clicks, and reposition. */
@@ -129,8 +138,12 @@ export class NoteScheduler {
       this.onEnd();
       return;
     }
+    if (this.gate !== null && playing >= this.gate) {
+      this.onGate(this.gate);
+      return;
+    }
     const horizon = this.#clock.songTimeAtAudioTime(now + LOOKAHEAD_S);
-    const limit = this.loop ? Math.min(horizon, this.loop.end) : horizon;
+    const limit = Math.min(horizon, this.loop?.end ?? horizon, this.gate ?? horizon);
     this.#scheduleUntil(limit, now);
     if (this.metronome) {
       this.#clickUntil(limit, now);

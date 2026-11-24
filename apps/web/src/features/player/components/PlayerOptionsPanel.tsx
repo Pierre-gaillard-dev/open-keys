@@ -2,13 +2,14 @@ import { Minus, Plus, X } from "lucide-react";
 import { useStore } from "zustand";
 import { cx } from "../../../shared/lib/cx";
 import { IconButton, SegmentedControl } from "../../../shared/ui";
+import { createMicrophoneInput } from "../../listening";
 import {
   MAX_TEMPO_PCT,
   MIN_TEMPO_PCT,
   type PlayerController,
   TEMPO_STEP_PCT,
 } from "../controller/player-controller";
-import type { PlayerStore } from "../stores/player.store";
+import type { PlayerStore, WaitHands } from "../stores/player.store";
 import type { NoteNamesMode } from "../stores/player-preferences";
 import { HandControl } from "./HandControl";
 
@@ -22,6 +23,12 @@ const NOTE_NAMES_OPTIONS: readonly { value: NoteNamesMode; label: string }[] = [
   { value: "off", label: "Aucun" },
   { value: "notes", label: "Notes" },
   { value: "keys", label: "Touches" },
+  { value: "both", label: "Les deux" },
+];
+
+const WAIT_HANDS_OPTIONS: readonly { value: WaitHands; label: string }[] = [
+  { value: "left", label: "Main gauche" },
+  { value: "right", label: "Main droite" },
   { value: "both", label: "Les deux" },
 ];
 
@@ -116,6 +123,8 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
 
       <SpeedControl store={store} controller={controller} />
 
+      <WaitModeSection store={store} controller={controller} />
+
       <div className={SECTION}>
         <h3 className={SECTION_TITLE}>Mains</h3>
         <HandControl hand="left" store={store} controller={controller} />
@@ -155,5 +164,56 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
         />
       </div>
     </section>
+  );
+}
+
+/** Wait mode (V1.5): the microphone listens to the real piano; playback stops at each chord. */
+function WaitModeSection({
+  store,
+  controller,
+}: {
+  readonly store: PlayerStore;
+  readonly controller: PlayerController | null;
+}) {
+  const wait = useStore(store, (state) => state.wait);
+  const on = wait.status === "on" || wait.status === "starting";
+  const toggle = () => {
+    if (on) {
+      void controller?.stopWait();
+    } else {
+      void controller?.startWait(() => createMicrophoneInput());
+    }
+  };
+  return (
+    <div className={SECTION}>
+      <h3 className={SECTION_TITLE}>Mode attente</h3>
+      <Toggle
+        label="Attendre que je joue"
+        hint={
+          wait.status === "starting"
+            ? "Ouverture du micro…"
+            : "Le micro écoute ton piano : la lecture s'arrête à chaque accord jusqu'à l'entendre"
+        }
+        pressed={on}
+        onToggle={toggle}
+      />
+      <span className="text-sm font-semibold">Je joue</span>
+      <SegmentedControl
+        label="Mains jouées au piano"
+        options={WAIT_HANDS_OPTIONS}
+        value={wait.hands}
+        onChange={(hands) => controller?.setWaitHands(hands)}
+      />
+      <p className="text-xs text-fg-muted">
+        Ces mains sont coupées dans la lecture : c'est toi qui les joues, et le micro ne doit pas entendre
+        l'app les jouer.
+      </p>
+      {wait.status === "error" && (
+        <p role="alert" className="text-sm text-danger">
+          Micro indisponible : autorise-le dans le navigateur, puis réessaie.
+          {wait.error && <span className="block text-xs text-fg-muted">{wait.error}</span>}
+        </p>
+      )}
+    </div>
   );
 }

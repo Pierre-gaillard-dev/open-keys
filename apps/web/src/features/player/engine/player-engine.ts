@@ -26,6 +26,9 @@ export class PlayerEngine {
   onCountIn: (clicks: readonly number[]) => void = () => undefined;
   /** The loop was played to its end and starts again (UC-26). */
   onLoopRestart: () => void = () => undefined;
+  /** Wait mode: playback stopped at the gate, until `release`. */
+  onWait: () => void = () => undefined;
+  #waiting = false;
 
   constructor(timeline: Timeline, audio: PlayerAudio, output: NoteOutput, clicks: ClickOutput) {
     this.timeline = timeline;
@@ -37,6 +40,13 @@ export class PlayerEngine {
       this.seek(0);
       this.onEnd();
     };
+    this.#scheduler.onGate = (time) => {
+      // The notes already sounding ring on: only the clock and the scheduling stop.
+      this.clock.hold(time);
+      this.#scheduler.stop(false);
+      this.#waiting = true;
+      this.onWait();
+    };
     this.#scheduler.onLoop = (_start, countInClicks) => {
       this.onLoopRestart();
       if (countInClicks.length > 0) {
@@ -47,6 +57,25 @@ export class PlayerEngine {
 
   get isPlaying(): boolean {
     return this.clock.isPlaying;
+  }
+
+  /** Stopped at the gate of the wait mode (not paused: playback goes on once the chord is played). */
+  get isWaiting(): boolean {
+    return this.#waiting;
+  }
+
+  /** Wait mode: song time playback stops at until the chord there is played, or null. */
+  setGate(time: number | null): void {
+    this.#scheduler.gate = time;
+  }
+
+  /** The chord awaited was played: playback goes on. */
+  release(): void {
+    if (this.#waiting) {
+      this.#waiting = false;
+      this.clock.play();
+      this.#scheduler.start();
+    }
   }
 
   /** Current position (song seconds), clamped to the piece. */
@@ -81,12 +110,19 @@ export class PlayerEngine {
   pause(): void {
     this.clock.pause();
     this.#scheduler.stop();
+    this.#waiting = false;
   }
 
   seek(songTime: number): void {
     const target = Math.min(this.timeline.durationS, Math.max(0, songTime));
     this.clock.seek(target);
     this.#scheduler.reset(target);
+    if (this.#waiting) {
+      // Moved away while waiting: playback goes on from there (the wait mode sets the next gate).
+      this.#waiting = false;
+      this.clock.play();
+      this.#scheduler.start();
+    }
   }
 
   /** Speed factor (0.25–1): the pitch is unchanged, notes are simply scheduled later. */

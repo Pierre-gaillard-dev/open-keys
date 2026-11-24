@@ -51,9 +51,23 @@ export interface PlayerState {
   readonly loopRuns: number;
   /** Speed proposed after enough turns in a row (+5 %, up to the target), null otherwise. */
   readonly speedUpOffer: number | null;
+  /** Wait mode (V1.5): playback stops at each chord of the hands practised until the microphone hears it. */
+  readonly wait: WaitModeState;
+  /** Notes of the chord awaited not heard yet, while stopped at it; null otherwise. Changes per chord. */
+  readonly waitingFor: readonly number[] | null;
 }
 
 export type PlayerStore = StoreApi<PlayerState>;
+
+/** Hands the player plays on the real piano in wait mode (muted in playback, awaited at each chord). */
+export type WaitHands = "left" | "right" | "both";
+
+export interface WaitModeState {
+  readonly hands: WaitHands;
+  /** "starting": the microphone is opening (permission asked). */
+  readonly status: "off" | "starting" | "on" | "error";
+  readonly error: string | null;
+}
 
 export interface InitialPlayerState {
   readonly durationMs: number;
@@ -82,5 +96,7 @@ export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
     countInBeatsLeft: null,
     loopRuns: 0,
     speedUpOffer: null,
+    wait: { hands: "both", status: "off", error: null },
+    waitingFor: null,
   }));
 }

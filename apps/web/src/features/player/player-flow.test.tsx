@@ -147,6 +147,24 @@ describe("player", () => {
     await waitFor(() => expect(controls.dataset["visible"]).toBe("false"));
   });
 
+  it("turns the wait mode on from the settings, and says when the microphone cannot open", async () => {
+    const { song } = playerApi(null);
+    renderApp(`/songs/${song.id}/play`);
+    const play = await screen.findByRole("button", { name: "Lecture" });
+    await waitFor(() => expect(play.hasAttribute("disabled")).toBe(false));
+
+    await userEvent.click(screen.getByRole("button", { name: "Réglages du lecteur" }));
+    const panel = screen.getByRole("region", { name: "Réglages du lecteur" });
+    await userEvent.click(within(panel).getByRole("radio", { name: "Main droite" }));
+    expect(within(panel).getByRole("radio", { name: "Main droite" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    // No microphone in the test environment.
+    await userEvent.click(within(panel).getByRole("button", { name: /^Attendre que je joue/ }));
+    expect(await within(panel).findByRole("alert")).toBeDefined();
+    expect(within(panel).getByText(/Micro indisponible/)).toBeDefined();
+  });
+
   it("keeps count-in, metronome and note names on the device, the hand volume with the song", async () => {
     localStorage.clear();
     const { song, api } = playerApi(null);

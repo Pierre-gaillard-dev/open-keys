@@ -149,12 +149,13 @@ Quelques comptes pour le cercle proche, sur la même instance. Les données pers
 
 Jouer sur un vrai piano sans câble : le micro du téléphone ou du PC entend les notes jouées.
 
-- [ ] **Spike** : détection dans le navigateur, précision et latence mesurées sur un vrai piano, sur le Pixel 10 et sur PC.
-  - *Fait :* banc d'essai réaliste (téléphone dans une pièce) ; détecteur maison amélioré (bruit de fond, coups, octave inférieure) ; Basic Pitch ajouté au labo pour comparaison (D31).
-  - *Reste :* choisir le moteur sur les mesures au vrai piano.
-- [ ] Interface `InputSource` (notes jouées, horodatées sur l'horloge audio), créée ici et reprise par l'entrée MIDI de la V2. Première implémentation : `MicrophoneInput` (`getUserMedia`, sans annulation d'écho ni réduction de bruit).
+- [x] **Spike** : détection dans le navigateur, mesurée sur un vrai piano.
+  - Banc d'essai réaliste (téléphone dans une pièce).
+  - Détecteur maison amélioré : bruit de fond, coups, octave inférieure, frappe exigée et niveau ambiant contre les sons continus.
+  - Basic Pitch comparé dans le labo (D31). *Choix au vrai piano : le détecteur maison, qui entend mieux les notes des accords.*
+- [x] Interface `InputSource`, créée ici et reprise par l'entrée MIDI de la V2. Première implémentation : `createMicrophoneInput` (D32).
+- [x] Mode attente (UC-31) : la lecture s'arrête à chaque accord des mains travaillées jusqu'à ce qu'il soit entendu, l'app jouant l'autre main (D32).
 - [ ] Vérification des notes jouées : juste / manquée / en trop, avec une tolérance adaptée à la latence du micro.
-- [ ] Mode attente : la lecture s'arrête jusqu'à ce que la bonne note soit entendue.
 - [ ] Score et précision dans `practice_sessions`.
 
 ## V2 — Entrée MIDI
