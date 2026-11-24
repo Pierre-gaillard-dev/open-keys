@@ -9,7 +9,7 @@ import {
   type PlayerController,
   TEMPO_STEP_PCT,
 } from "../controller/player-controller";
-import type { PlayerStore, WaitHands } from "../stores/player.store";
+import type { PianoHands, PianoMode, PlayerStore } from "../stores/player.store";
 import type { NoteNamesMode } from "../stores/player-preferences";
 import { HandControl } from "./HandControl";
 
@@ -26,7 +26,12 @@ const NOTE_NAMES_OPTIONS: readonly { value: NoteNamesMode; label: string }[] = [
   { value: "both", label: "Les deux" },
 ];
 
-const WAIT_HANDS_OPTIONS: readonly { value: WaitHands; label: string }[] = [
+const PIANO_MODE_OPTIONS: readonly { value: PianoMode; label: string }[] = [
+  { value: "wait", label: "Attendre chaque accord" },
+  { value: "rhythm", label: "En rythme" },
+];
+
+const PIANO_HANDS_OPTIONS: readonly { value: PianoHands; label: string }[] = [
   { value: "left", label: "Main gauche" },
   { value: "right", label: "Main droite" },
   { value: "both", label: "Les deux" },
@@ -123,7 +128,7 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
 
       <SpeedControl store={store} controller={controller} />
 
-      <WaitModeSection store={store} controller={controller} />
+      <PianoSection store={store} controller={controller} />
 
       <div className={SECTION}>
         <h3 className={SECTION_TITLE}>Mains</h3>
@@ -167,51 +172,58 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
   );
 }
 
-/** Wait mode (V1.5): the microphone listens to the real piano; playback stops at each chord. */
-function WaitModeSection({
+/** Playing on the piano (V1.5): the microphone listens; playback waits for each chord, or judges it. */
+function PianoSection({
   store,
   controller,
 }: {
   readonly store: PlayerStore;
   readonly controller: PlayerController | null;
 }) {
-  const wait = useStore(store, (state) => state.wait);
-  const on = wait.status === "on" || wait.status === "starting";
+  const piano = useStore(store, (state) => state.piano);
+  const on = piano.status === "on" || piano.status === "starting";
   const toggle = () => {
     if (on) {
-      void controller?.stopWait();
+      void controller?.stopPiano();
     } else {
-      void controller?.startWait(() => createMicrophoneInput());
+      void controller?.startPiano(() => createMicrophoneInput());
     }
   };
   return (
     <div className={SECTION}>
-      <h3 className={SECTION_TITLE}>Mode attente</h3>
+      <h3 className={SECTION_TITLE}>Jouer au piano</h3>
       <Toggle
-        label="Attendre que je joue"
-        hint={
-          wait.status === "starting"
-            ? "Ouverture du micro…"
-            : "Le micro écoute ton piano : la lecture s'arrête à chaque accord jusqu'à l'entendre"
-        }
+        label="Écouter mon piano"
+        hint={piano.status === "starting" ? "Ouverture du micro…" : "Le micro entend ce que tu joues"}
         pressed={on}
         onToggle={toggle}
       />
+      <SegmentedControl
+        label="Façon de jouer"
+        options={PIANO_MODE_OPTIONS}
+        value={piano.mode}
+        onChange={(mode) => controller?.setPianoMode(mode)}
+      />
+      <p className="text-xs text-fg-muted">
+        {piano.mode === "wait"
+          ? "La lecture s'arrête à chaque accord jusqu'à l'entendre."
+          : "La lecture continue : chaque accord devient vert s'il est joué à temps, rouge sinon."}
+      </p>
       <span className="text-sm font-semibold">Je joue</span>
       <SegmentedControl
         label="Mains jouées au piano"
-        options={WAIT_HANDS_OPTIONS}
-        value={wait.hands}
-        onChange={(hands) => controller?.setWaitHands(hands)}
+        options={PIANO_HANDS_OPTIONS}
+        value={piano.hands}
+        onChange={(hands) => controller?.setPianoHands(hands)}
       />
       <p className="text-xs text-fg-muted">
         Ces mains sont coupées dans la lecture : c'est toi qui les joues, et le micro ne doit pas entendre
         l'app les jouer.
       </p>
-      {wait.status === "error" && (
+      {piano.status === "error" && (
         <p role="alert" className="text-sm text-danger">
           Micro indisponible : autorise-le dans le navigateur, puis réessaie.
-          {wait.error && <span className="block text-xs text-fg-muted">{wait.error}</span>}
+          {piano.error && <span className="block text-xs text-fg-muted">{piano.error}</span>}
         </p>
       )}
     </div>

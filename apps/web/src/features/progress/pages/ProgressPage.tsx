@@ -32,7 +32,17 @@ const weekLabel = (start: Date) => `Semaine du ${dayName.format(start)}`;
 const sum = (values: readonly { activeMs: number }[]) =>
   values.reduce((total, value) => total + value.activeMs, 0);
 
+/** Played on the piano (V1.5): the mode, and the share of good chords when some were played. */
+function pianoLabel(session: PracticeHistoryEntry): string | null {
+  if (session.mode === "watch") {
+    return null;
+  }
+  const mode = session.mode === "wait" ? "Au piano, en attente" : "Au piano, en rythme";
+  return session.accuracy === null ? mode : `${mode} · ${Math.round(session.accuracy * 100)} %`;
+}
+
 function SessionRow({ session }: { readonly session: PracticeHistoryEntry }) {
+  const piano = pianoLabel(session);
   const tempo =
     session.minTempoPct === session.maxTempoPct
       ? `${session.maxTempoPct} %`
@@ -47,7 +57,10 @@ function SessionRow({ session }: { readonly session: PracticeHistoryEntry }) {
         >
           {session.songTitle}
         </Link>
-        <span className="text-xs text-fg-muted">{sessionDate.format(session.startedAt)}</span>
+        <span className="text-xs text-fg-muted">
+          {sessionDate.format(session.startedAt)}
+          {piano && ` · ${piano}`}
+        </span>
       </div>
       <span className="text-sm text-fg-muted tabular-nums">{tempo}</span>
       <span className="w-16 text-right font-semibold tabular-nums">

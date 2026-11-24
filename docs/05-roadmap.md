@@ -155,8 +155,8 @@ Jouer sur un vrai piano sans câble : le micro du téléphone ou du PC entend le
   - Basic Pitch comparé dans le labo (D31). *Choix au vrai piano : le détecteur maison, qui entend mieux les notes des accords.*
 - [x] Interface `InputSource`, créée ici et reprise par l'entrée MIDI de la V2. Première implémentation : `createMicrophoneInput` (D32).
 - [x] Mode attente (UC-31) : la lecture s'arrête à chaque accord des mains travaillées jusqu'à ce qu'il soit entendu, l'app jouant l'autre main (D32).
-- [ ] Vérification des notes jouées : juste / manquée / en trop, avec une tolérance adaptée à la latence du micro.
-- [ ] Score et précision dans `practice_sessions`.
+- [x] Vérification des notes jouées (UC-32, D33). Mode « En rythme » : chaque accord est juste ou manqué, avec une marge de 0,35 s après son passage pour le délai du micro. Les notes en trop ne sont pas mesurables au micro : V2 (MIDI).
+- [x] Score et précision dans `practice_sessions` : mode `wait` ou `rhythm`, précision et nombre d'accords, affichés dans Progression (D33).
 
 ## V2 — Entrée MIDI
 

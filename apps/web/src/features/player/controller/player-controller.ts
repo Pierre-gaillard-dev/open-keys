@@ -4,13 +4,14 @@ import type { PlayerEngine } from "../engine/player-engine";
 import type { RendererOptions } from "../renderer/falling-notes-renderer";
 import type {
   LoopSelection,
+  PianoHands,
+  PianoMode,
+  PianoState,
   PlayerState,
   PlayerStore,
-  WaitHands,
-  WaitModeState,
 } from "../stores/player.store";
 import { NOTE_NAMES_MODES, type NoteNamesMode, type PlayerPreferences } from "../stores/player-preferences";
-import { createWaitMode } from "./wait-mode";
+import { createPianoMode } from "./piano-mode";
 
 export const MIN_TEMPO_PCT = 25;
 export const MAX_TEMPO_PCT = 100;
@@ -26,6 +27,8 @@ export const SPEED_UP_STEP_PCT = 5;
 
 export interface RendererPort {
   setOptions(options: RendererOptions): void;
+  /** Marks of the notes (played, missed), read every frame: the array changes, not the reference. */
+  setNoteMarks?(marks: Uint8Array): void;
 }
 
 export interface PlaybackListener {
@@ -62,11 +65,11 @@ export function createPlayerController(
   let positionTimer: ReturnType<typeof setInterval> | undefined;
   let countInTimers: ReturnType<typeof setTimeout>[] = [];
 
-  const waitMode = createWaitMode(engine, store);
-  /** The input of the wait mode (microphone), opened and closed here. */
-  let waitInput: InputSource | null = null;
-  const setWait = (patch: Partial<WaitModeState>) =>
-    store.setState({ wait: { ...store.getState().wait, ...patch } });
+  const pianoMode = createPianoMode(engine, store);
+  /** The input of the piano modes (microphone), opened and closed here. */
+  let pianoInput: InputSource | null = null;
+  const setPiano = (patch: Partial<PianoState>) =>
+    store.setState({ piano: { ...store.getState().piano, ...patch } });
 
   const syncPosition = () => store.setState({ positionMs: toMs(engine.position) });
   const stopPositionTimer = () => {
@@ -75,9 +78,9 @@ export function createPlayerController(
   };
   const updateRenderer = () => renderer?.setOptions(rendererOptions(store.getState()));
   const applyHands = (hands: HandsSettings) => {
-    // In wait mode, the hands practised are played on the real piano: muted here (and the microphone
+    // On the piano, the hands practised are played by the player: muted here (and the microphone
     // must not hear the app play them).
-    const practised = waitMode.practisedHands();
+    const practised = pianoMode.practisedHands();
     for (const hand of ["left", "right"] as const) {
       engine.setHandAudible(hand, hands[hand].audible && !practised.includes(hand));
       engine.setHandVolume(hand, hands[hand].volume);
@@ -128,13 +131,13 @@ export function createPlayerController(
     engine.setLoop({ start: toSeconds(loop.startMs), end: toSeconds(loop.endMs) });
     store.setState({ loop, loopEnabled: true, pendingLoopStartMs: null });
     resetRuns();
-    waitMode.moved();
+    pianoMode.moved();
     syncPosition();
   };
 
   /** One more full turn: best speed, then a proposal to speed up (UC-26). */
   const loopRestarted = () => {
-    waitMode.moved();
+    pianoMode.moved();
     const { loop, tempoPct, loopRuns, speedUpOffer } = store.getState();
     if (!loop) {
       return;
@@ -173,16 +176,17 @@ export function createPlayerController(
 
   engine.onEnd = () => {
     stopPositionTimer();
-    waitMode.moved();
+    pianoMode.moved();
     store.setState({ status: "ready", positionMs: 0 });
     listener?.paused();
   };
 
-  const stopWait = async () => {
-    waitMode.disable();
-    const input = waitInput;
-    waitInput = null;
-    setWait({ status: "off", error: null });
+  const stopPiano = async () => {
+    // Status first: the session ending is saved with its score, which `disable` then clears.
+    setPiano({ status: "off", error: null });
+    pianoMode.disable();
+    const input = pianoInput;
+    pianoInput = null;
     applyHands(store.getState().hands);
     await input?.dispose();
   };
@@ -199,6 +203,7 @@ export function createPlayerController(
     attachRenderer(port: RendererPort) {
       renderer = port;
       port.setOptions(rendererOptions(store.getState()));
+      port.setNoteMarks?.(pianoMode.marks);
     },
 
     async play() {
@@ -223,7 +228,7 @@ export function createPlayerController(
 
     seekTo(positionMs: number) {
       engine.seek(toSeconds(positionMs));
-      waitMode.moved();
+      pianoMode.moved();
       syncPosition();
     },
 
@@ -338,41 +343,47 @@ export function createPlayerController(
     },
 
     /**
-     * Wait mode on (V1.5): `open` opens the input (the microphone: call from a user gesture). Playback
-     * then stops at each chord of the hands practised until it is heard.
+     * Playing on the piano (V1.5): `open` opens the input (the microphone: call from a user gesture).
+     * Wait mode: playback stops at each chord of the hands practised until it is heard. Rhythm mode:
+     * playback goes on and each chord is judged.
      */
-    async startWait(open: () => Promise<InputSource>) {
-      const { status } = store.getState().wait;
+    async startPiano(open: () => Promise<InputSource>) {
+      const { status } = store.getState().piano;
       if (status === "on" || status === "starting") {
         return;
       }
-      setWait({ status: "starting", error: null });
+      setPiano({ status: "starting", error: null });
       try {
         const input = await open();
-        if (store.getState().wait.status !== "starting") {
+        if (store.getState().piano.status !== "starting") {
           // Turned off while the microphone was opening.
           await input.dispose();
           return;
         }
-        waitInput = input;
-        waitMode.enable(input);
-        setWait({ status: "on" });
+        pianoInput = input;
+        pianoMode.enable(input);
+        setPiano({ status: "on" });
         applyHands(store.getState().hands);
       } catch (cause) {
-        setWait({ status: "error", error: cause instanceof Error ? cause.message : String(cause) });
+        setPiano({ status: "error", error: cause instanceof Error ? cause.message : String(cause) });
       }
     },
 
-    stopWait,
+    stopPiano,
 
-    setWaitHands(hands: WaitHands) {
-      setWait({ hands });
-      waitMode.handsChanged();
+    setPianoMode(mode: PianoMode) {
+      setPiano({ mode });
+      pianoMode.settingsChanged();
+    },
+
+    setPianoHands(hands: PianoHands) {
+      setPiano({ hands });
+      pianoMode.settingsChanged();
       applyHands(store.getState().hands);
     },
 
     dispose() {
-      void stopWait();
+      void stopPiano();
       pause();
       stopPositionTimer();
       clearCountIn();

@@ -51,22 +51,34 @@ export interface PlayerState {
   readonly loopRuns: number;
   /** Speed proposed after enough turns in a row (+5 %, up to the target), null otherwise. */
   readonly speedUpOffer: number | null;
-  /** Wait mode (V1.5): playback stops at each chord of the hands practised until the microphone hears it. */
-  readonly wait: WaitModeState;
-  /** Notes of the chord awaited not heard yet, while stopped at it; null otherwise. Changes per chord. */
+  /** Playing on the piano with the microphone (V1.5): wait mode or rhythm mode. */
+  readonly piano: PianoState;
+  /** Wait mode: notes of the chord awaited not heard yet, while stopped at it; null otherwise. */
   readonly waitingFor: readonly number[] | null;
+  /** Score while playing on the piano, null otherwise. Changes once per chord. */
+  readonly pianoScore: PianoScore | null;
 }
 
 export type PlayerStore = StoreApi<PlayerState>;
 
-/** Hands the player plays on the real piano in wait mode (muted in playback, awaited at each chord). */
-export type WaitHands = "left" | "right" | "both";
+/** Hands the player plays on the real piano (muted in playback, listened to by the microphone). */
+export type PianoHands = "left" | "right" | "both";
 
-export interface WaitModeState {
-  readonly hands: WaitHands;
+/** Playing on the piano (V1.5): playback waits for each chord, or goes on and judges each chord. */
+export type PianoMode = "wait" | "rhythm";
+
+export interface PianoState {
+  readonly mode: PianoMode;
+  readonly hands: PianoHands;
   /** "starting": the microphone is opening (permission asked). */
   readonly status: "off" | "starting" | "on" | "error";
   readonly error: string | null;
+}
+
+/** Chords played on the piano since the mode started: `good` right (rhythm) or without waiting. */
+export interface PianoScore {
+  readonly chords: number;
+  readonly good: number;
 }
 
 export interface InitialPlayerState {
@@ -96,7 +108,8 @@ export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
     countInBeatsLeft: null,
     loopRuns: 0,
     speedUpOffer: null,
-    wait: { hands: "both", status: "off", error: null },
+    piano: { mode: "wait", hands: "both", status: "off", error: null },
     waitingFor: null,
+    pianoScore: null,
   }));
 }

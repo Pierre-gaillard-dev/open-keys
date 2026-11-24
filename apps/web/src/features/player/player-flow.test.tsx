@@ -147,7 +147,7 @@ describe("player", () => {
     await waitFor(() => expect(controls.dataset["visible"]).toBe("false"));
   });
 
-  it("turns the wait mode on from the settings, and says when the microphone cannot open", async () => {
+  it("plays on the piano from the settings (mode, hands), and says when the microphone cannot open", async () => {
     const { song } = playerApi(null);
     renderApp(`/songs/${song.id}/play`);
     const play = await screen.findByRole("button", { name: "Lecture" });
@@ -159,8 +159,10 @@ describe("player", () => {
     expect(within(panel).getByRole("radio", { name: "Main droite" }).getAttribute("aria-checked")).toBe(
       "true",
     );
+    await userEvent.click(within(panel).getByRole("radio", { name: "En rythme" }));
+    expect(within(panel).getByText(/chaque accord devient vert/)).toBeDefined();
     // No microphone in the test environment.
-    await userEvent.click(within(panel).getByRole("button", { name: /^Attendre que je joue/ }));
+    await userEvent.click(within(panel).getByRole("button", { name: /^Écouter mon piano/ }));
     expect(await within(panel).findByRole("alert")).toBeDefined();
     expect(within(panel).getByText(/Micro indisponible/)).toBeDefined();
   });

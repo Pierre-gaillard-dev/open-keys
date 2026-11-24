@@ -19,8 +19,8 @@ import { type InitialPlayerState, loopSelectionOf } from "../stores/player.store
 import { loadPlayerPreferences } from "../stores/player-preferences";
 import { ControlsOverlay, type PlayerPanel } from "./ControlsOverlay";
 import { CountInBadge } from "./CountInBadge";
+import { PianoBadge } from "./PianoBadge";
 import { SpeedUpOffer } from "./SpeedUpOffer";
-import { WaitBadge } from "./WaitBadge";
 
 /** Resuming within the last second would immediately end: start over instead. */
 const RESUME_MARGIN_MS = 1000;
@@ -165,7 +165,7 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
         onToggleFullscreen={() => void fullscreen.toggle()}
       />
       <CountInBadge store={store} />
-      <WaitBadge store={store} />
+      <PianoBadge store={store} />
       <SpeedUpOffer store={store} controller={controller} />
       {status === "loading" && (
         <p role="status" className="absolute inset-x-0 bottom-1/3 text-center text-sm text-fg-soft">

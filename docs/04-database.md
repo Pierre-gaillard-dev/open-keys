@@ -106,8 +106,8 @@ Une ligne par session de lecture d'au moins 10 s effectives.
 |---|---|
 | `active_ms` | Temps de lecture effective (pauses exclues) |
 | `min_tempo_pct` / `max_tempo_pct` | Plage de vitesses utilisée pendant la session |
-| `mode` | `watch` (MVP) ; `midi` (V2) |
-| `accuracy`, `score` | Remplis en V2 seulement (D10 : enrichissement, pas remplacement) |
+| `mode` | `watch` (regarder, écouter), `wait` (au piano, mode attente) ou `rhythm` (au piano, en rythme), depuis la V1.5. Changer de mode ou de mains commence une nouvelle session. La contrainte CHECK a changé en V1.5 : la table a été reconstruite, ce qui est sans risque puisqu'aucune table ne la référence. `midi`, accepté avant mais jamais envoyé, est devenu `watch` |
+| `accuracy`, `score` | Au piano seulement (V1.5). `score` est le nombre d'accords joués. `accuracy` est la part d'accords justes en rythme, ou joués sans faire attendre la lecture en mode attente. Les deux valent `null` sinon |
 
 Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tableau de bord.
 
@@ -170,4 +170,5 @@ Un fichier qu'aucune ligne de `songs` ne référence plus est purgé par une tâ
 
 | Version | Changement |
 |---|---|
-| V2 | Remplissage de `practice_sessions.accuracy` / `score`. Éventuellement une table `session_events` pour l'analyse détaillée des erreurs |
+| V1.5 | `practice_sessions.mode` gagne `wait` et `rhythm` ; `accuracy` et `score` sont remplis au piano |
+| V2 | Éventuellement une table `session_events` pour l'analyse détaillée des erreurs |

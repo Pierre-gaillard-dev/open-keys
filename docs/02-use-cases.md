@@ -111,7 +111,7 @@ flowchart LR
 | UC-37 | Gérer les comptes (désactiver, mot de passe oublié) | V1.4 |
 | UC-30 | Connecter un clavier MIDI | V2 |
 | UC-31 | Mode attente (la lecture attend la bonne note) | V1.5 (micro), V2 (MIDI) |
-| UC-32 | Score et précision de session | V2 |
+| UC-32 | Score et précision de session | V1.5 (micro) |
 | UC-33 | Mettre en pause avec une touche du piano | V2 |
 
 ## 4. Cas détaillés
@@ -254,12 +254,20 @@ flowchart LR
 - **Données personnelles** (bibliothèque, favoris, boucles, progression) propres à chaque compte, y compris sur un appareil partagé : à la connexion d'un autre compte, le cache de l'appareil est vidé, et les écritures en attente du précédent ne partent qu'avec sa propre session.
 
 ### UC-31 — Mode attente (V1.5, au micro)
-- **Activation** : dans Réglages, « Attendre que je joue ». Le micro s'ouvre ; le navigateur demande l'autorisation la première fois.
+- **Activation** : dans Réglages, section « Jouer au piano », « Écouter mon piano » avec la façon de jouer « Attendre chaque accord ». Le micro s'ouvre ; le navigateur demande l'autorisation la première fois.
 - **Je joue** : main gauche, main droite ou les deux. Ces mains sont coupées dans la lecture : c'est toi qui les joues, et le micro ne doit pas entendre l'app les jouer. L'autre main continue d'être jouée par l'app.
 - **Arrêt** : à chaque accord de ces mains, les notes s'arrêtent sur la ligne du clavier et un badge affiche les notes qui manquent (« À toi : Do4 · Mi4 »). La lecture repart dès que tout l'accord est entendu. Les notes frappées un peu avant que l'accord arrive (0,4 s) comptent.
 - Pause, boucle, retour en arrière et fin du morceau fonctionnent comme d'habitude : l'accord attendu devient le premier à partir de la nouvelle position.
 - Si le micro est refusé ou absent, un message le dit et la lecture reste normale.
 
-### UC-30, UC-32, UC-33 — V2 (aperçu)
+### UC-32 — Jouer en rythme et score (V1.5, au micro)
+- **En rythme** : même section, façon de jouer « En rythme ». La lecture ne s'arrête pas : chaque accord des mains travaillées devient **vert** s'il est entendu entre 0,4 s avant et 0,35 s après son passage, **rouge** sinon. La marge après tient compte du délai du micro.
+- **Score en direct** : un badge affiche le nombre d'accords joués et la part de bons accords.
+  - En rythme : « 12 accords · 92 % à temps ».
+  - En mode attente : « 12 accords · 80 % sans attendre », c'est-à-dire joués avant que la lecture n'ait à s'arrêter.
+- **Enregistrement** : la session garde son mode, sa précision et son nombre d'accords. Changer de mode ou de mains commence une nouvelle session. La page Progression les affiche (« Au piano, en rythme · 92 % »).
+- **Notes en trop** : non mesurées au micro. La détection libre se trompe trop pour dire qu'une note jouée n'était pas attendue. Elles le seront en MIDI (V2).
+
+### UC-30, UC-33 — V2 (aperçu)
 - La couche `InputSource` (créée en V1.5) reçoit les notes d'un clavier MIDI (Web MIDI, plugin natif Capacitor, ou clavier à l'écran pour les tests). Le mode attente s'en sert sans changement.
 - Score : précision des notes et du rythme, enregistrée dans `practice_sessions`.

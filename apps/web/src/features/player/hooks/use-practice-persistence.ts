@@ -1,4 +1,4 @@
-import type { LibraryEntry, PutPracticeSessionRequest, SongStatus } from "@open-keys/contracts";
+import type { LibraryEntry, PracticeMode, PutPracticeSessionRequest, SongStatus } from "@open-keys/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { newId } from "../../../shared/lib/ids";
@@ -27,18 +27,29 @@ export function libraryPatchFor(
   };
 }
 
+/** How the song is being practised: watched, or played on the piano (wait or rhythm). */
+export function practiceModeOf(state: PlayerState): PracticeMode {
+  return state.piano.status === "on" ? state.piano.mode : "watch";
+}
+
+/** What separates two sessions: the mode, and on the piano the hands played. */
+const sessionKind = (state: PlayerState) =>
+  state.piano.status === "on" ? `${state.piano.mode}:${state.piano.hands}` : "watch";
+
 export function sessionRequestFor(
   songId: string,
   state: PlayerState,
   session: SessionSnapshot,
 ): PutPracticeSessionRequest {
+  const score = state.piano.status === "on" ? state.pianoScore : null;
+  const played = score !== null && score.chords > 0;
   return {
     songId,
     loopId: activeLoopId(state),
-    mode: "watch",
+    mode: practiceModeOf(state),
     ...session,
-    accuracy: null,
-    score: null,
+    accuracy: played ? score.good / score.chords : null,
+    score: played ? score.chords : null,
     updatedAt: Date.now(),
   };
 }
@@ -46,7 +57,8 @@ export function sessionRequestFor(
 /**
  * Saves the practice of this visit (UC-12, UC-15): settings and position in the library, and the
  * session (one id per visit, sent again as it grows: idempotent). Runs on each pause, when the page is
- * hidden and when leaving the player.
+ * hidden and when leaving the player. Starting or leaving the piano, or changing its mode or hands,
+ * ends the session and starts another one (V1.5): each keeps its mode, accuracy and score.
  */
 export function usePracticePersistence(
   songId: string,
@@ -59,8 +71,7 @@ export function usePracticePersistence(
   const status = useRef<SongStatus>(libraryEntry?.status ?? "to_learn");
 
   useEffect(() => {
-    const save = () => {
-      const state = store.getState();
+    const save = (state = store.getState()) => {
       const session = tracker.snapshot();
       const patch = libraryPatchFor(state, session, status.current);
       if (patch.status) {
@@ -75,6 +86,13 @@ export function usePracticePersistence(
     };
 
     const unsubscribe = store.subscribe((state, previous) => {
+      if (sessionKind(state) !== sessionKind(previous)) {
+        // Saved as it was (previous mode and score), then a new session begins.
+        save(previous);
+        sessionId.current = newId();
+        tracker.restart(state.tempoPct);
+        return;
+      }
       if (previous.status === "playing" && state.status === "ready") {
         save();
       }

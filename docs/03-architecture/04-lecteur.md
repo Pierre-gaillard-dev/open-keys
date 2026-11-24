@@ -99,7 +99,19 @@ Deux moteurs, comparés dans le labo avant d'en garder un (D31). Ils partagent l
   - Le labo affiche aussi le temps d'analyse et le délai entre le son et la détection.
 - **Capture** : `getUserMedia` sans annulation d'écho, réduction de bruit ni gain automatique, et un AudioWorklet (`public/worklets/mic-capture.js`, servi par l'app pour respecter la CSP) qui transmet les échantillons.
 
-## Mode attente (V1.5, D32)
+## Jouer au piano : mode attente et en rythme (V1.5, D32, D33)
+
+Le mode attente et le mode en rythme partagent l'entrée, l'accompagnement, les marques des notes et le score (`controller/piano-mode.ts`). Le mode attente est décrit ci-dessous. En rythme :
+- **`RhythmTracker`** (`core`, pur) :
+  - il ouvre chaque accord 0,4 s réelle avant son passage, puis le juge joué dès que toutes ses notes sont entendues, ou manqué 0,35 s après son passage (le délai du micro compris) ;
+  - plusieurs accords peuvent être ouverts à la fois, et une note entendue va au plus ancien qui l'attend ;
+  - l'heure de passage suit la vitesse tant que l'accord n'est pas atteint.
+- **Marques** : un octet par note de la timeline (joué, manqué), écrit par le mode piano et lu par le renderer à chaque image. Les notes deviennent vertes ou rouges sans état React.
+- **Score** (`pianoScore`) : accords joués et bons accords. Il est mis à jour une fois par accord et remis à zéro à chaque changement de mode ou de mains.
+- **Mode attente** : un accord est « bon » s'il est joué avant que la lecture ait attendu plus de 0,15 s.
+- **Sessions** : le suivi coupe la session à chaque changement de mode ou de mains ; chaque morceau garde son mode, sa précision et son score. La session qui se termine est enregistrée avec son score avant la remise à zéro.
+
+### Mode attente
 
 - **`InputSource`** (`core/practice`) : `expect(notes, accompagnement)`, `onNote(hauteur, instant)`, `dispose()`. Le lecteur ne sait pas d'où viennent les notes.
   - **V1.5** : `createMicrophoneInput` (feature `listening`). Le détecteur maison ne vérifie que les notes attendues (D30, D31). Une note est jouée quand elle est entendue 2 trames de suite, après une frappe.
