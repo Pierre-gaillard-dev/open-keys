@@ -11,6 +11,8 @@ export const ERROR_CODES = [
   "PAYLOAD_TOO_LARGE",
   "RATE_LIMITED",
   "INTERNAL_ERROR",
+  /** A feature the server is not set up for (the transcriber, D34). */
+  "SERVICE_UNAVAILABLE",
 ] as const;
 
 export const errorCodeSchema = z.enum(ERROR_CODES);

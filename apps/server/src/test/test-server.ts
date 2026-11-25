@@ -27,6 +27,8 @@ export interface TestServerOptions {
   readonly mutopiaPages?: readonly string[];
   /** Other online libraries (replaces the fake Mutopia). */
   readonly sourceProviders?: Infrastructure["sourceProviders"];
+  /** The transcriber (D34): none by default, as on a server without TRANSCRIBER_URL. */
+  readonly transcriber?: Infrastructure["transcriber"];
 }
 
 /** Mutopia listing pages served from memory, by their `startat` parameter. */
@@ -80,6 +82,7 @@ export async function createTestServer(options: TestServerOptions = {}) {
         createMutopiaProvider({ get: fakeMutopia(options.mutopiaPages ?? []), download, pageDelayMs: 0 }),
       ]),
     ...(options.loginPolicy ? { loginPolicy: options.loginPolicy } : {}),
+    transcriber: options.transcriber ?? null,
   });
   const app = createApp({ env, logger, services });
 

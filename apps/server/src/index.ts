@@ -6,6 +6,7 @@ import { openDatabase } from "./db";
 import { createPasswordHasher } from "./features/auth";
 import { createMusicBrainzProvider, createWikidataProvider, type HttpGet } from "./features/covers";
 import { createMaestroProvider, createMutopiaProvider, createXivmidiProvider } from "./features/sources";
+import { createTranscriberClient } from "./features/transcriptions";
 import { createServices } from "./services";
 import { createSafeFetch } from "./shared/http";
 import { startPeriodicJob } from "./shared/jobs/periodic-job";
@@ -17,6 +18,8 @@ const SHUTDOWN_TIMEOUT_MS = 10_000;
 const MAINTENANCE_INTERVAL_MS = 60 * 60_000;
 /** The online libraries are checked every 6 hours, each synchronised when its index is too old. */
 const SOURCES_CHECK_INTERVAL_MS = 6 * 60 * 60_000;
+/** The transcription queue is looked at every 5 s (a job runs for minutes: never two at once). */
+const TRANSCRIPTIONS_INTERVAL_MS = 5000;
 
 const env = loadEnv();
 const logger = createLogger({ level: env.LOG_LEVEL, context: { service: "api" } });
@@ -41,6 +44,7 @@ const services = createServices({
     createMaestroProvider({ get: apiGet, dataDir: env.DATA_DIR }),
     createXivmidiProvider({ get: apiGet, download }),
   ],
+  transcriber: env.TRANSCRIBER_URL ? createTranscriberClient(env.TRANSCRIBER_URL) : null,
 });
 
 if (env.ADMIN_USERNAME && env.ADMIN_PASSWORD) {
@@ -57,6 +61,19 @@ const maintenance = startPeriodicJob(
   logger,
 );
 
+const requeued = services.transcriptions.recover();
+if (requeued > 0) {
+  logger.info("Interrupted transcriptions queued again", { count: requeued });
+}
+const transcriptionsWorker = services.transcriptions.available
+  ? startPeriodicJob(
+      "transcriptions",
+      TRANSCRIPTIONS_INTERVAL_MS,
+      () => services.transcriptions.processNext(),
+      logger,
+    )
+  : null;
+
 const sourcesSync = env.SOURCES_SYNC
   ? startPeriodicJob("sources-sync", SOURCES_CHECK_INTERVAL_MS, () => services.sources.syncStale(), logger)
   : null;
@@ -69,6 +86,7 @@ function shutdown(signal: string): void {
   logger.info("Shutting down", { signal });
   maintenance.stop();
   sourcesSync?.stop();
+  transcriptionsWorker?.stop();
   setTimeout(() => {
     logger.error("Forced shutdown after timeout");
     process.exit(1);

@@ -12,6 +12,7 @@ const STATUS_BY_CODE: Readonly<Record<ErrorCode, ContentfulStatusCode>> = {
   PAYLOAD_TOO_LARGE: 413,
   RATE_LIMITED: 429,
   INTERNAL_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
 };
 
 export function httpStatusOf(code: ErrorCode): ContentfulStatusCode {

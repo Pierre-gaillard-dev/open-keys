@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNotNull, lt } from "drizzle-orm";
 import type { Executor } from "../../db";
 import { songs } from "../songs/songs.schema";
+import { transcriptionJobs } from "../transcriptions/transcriptions.schema";
 
 export function findAbandonedDraftIds(db: Executor, createdBefore: number): string[] {
   return db
@@ -31,10 +32,17 @@ export function deleteSongs(db: Executor, ids: readonly string[]): number {
     .run().changes;
 }
 
-export function referencedFiles(db: Executor): { midi: Set<string>; covers: Set<string> } {
+export function referencedFiles(db: Executor): {
+  midi: Set<string>;
+  covers: Set<string>;
+  audio: Set<string>;
+} {
   const rows = db.select({ midi: songs.midiSha256, cover: songs.coverSha256 }).from(songs).all();
+  // Recordings still waiting for their transcription (D34).
+  const recordings = db.select({ audio: transcriptionJobs.audioSha256 }).from(transcriptionJobs).all();
   return {
     midi: new Set(rows.map((row) => row.midi)),
     covers: new Set(rows.flatMap((row) => (row.cover ? [row.cover] : []))),
+    audio: new Set(recordings.flatMap((row) => (row.audio ? [row.audio] : []))),
   };
 }

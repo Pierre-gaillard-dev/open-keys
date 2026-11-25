@@ -27,7 +27,8 @@ describe("errorCodeOfStatus", () => {
     [404, "NOT_FOUND"],
     [413, "PAYLOAD_TOO_LARGE"],
     [418, "BAD_REQUEST"],
-    [503, "INTERNAL_ERROR"],
+    [502, "INTERNAL_ERROR"],
+    [503, "SERVICE_UNAVAILABLE"],
   ] as const)("maps %i to %s", (status, code) => {
     expect(errorCodeOfStatus(status)).toBe(code);
   });

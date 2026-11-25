@@ -15,6 +15,7 @@ import { createPracticeService } from "./features/practice";
 import { createSongsService } from "./features/songs";
 import { createSourcesService, type SourceProvider } from "./features/sources";
 import { createTagsService } from "./features/tags";
+import { createTranscriptionsService, type TranscriberClient } from "./features/transcriptions";
 import type { SafeFetch } from "./shared/http";
 import type { Logger } from "./shared/logger";
 import type { Clock, IdGenerator } from "./shared/runtime";
@@ -36,6 +37,8 @@ export interface Infrastructure {
     readonly download: (url: string) => Promise<Uint8Array>;
   }) => readonly SourceProvider[];
   readonly loginPolicy?: RateLimitPolicy;
+  /** The transcriber service (D34), or null when the server has none. */
+  readonly transcriber: TranscriberClient | null;
 }
 
 export type Services = ReturnType<typeof createServices>;
@@ -86,5 +89,29 @@ export function createServices(infra: Infrastructure) {
     logger,
   });
 
-  return { auth, accounts, tags, songs, covers, imports, practice, library, maintenance, sources };
+  const transcriptions = createTranscriptionsService({
+    db,
+    storage,
+    imports,
+    auth,
+    transcriber: infra.transcriber,
+    clock,
+    newId,
+    logger,
+    maxAudioSize: env.MAX_AUDIO_SIZE,
+  });
+
+  return {
+    auth,
+    accounts,
+    tags,
+    songs,
+    covers,
+    imports,
+    practice,
+    library,
+    maintenance,
+    sources,
+    transcriptions,
+  };
 }

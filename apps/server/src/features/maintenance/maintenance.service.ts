@@ -46,10 +46,14 @@ export function createMaintenanceService(deps: MaintenanceServiceDeps) {
   const { db, storage, clock, logger, auth, accounts, tags } = deps;
   const purgeOrphanFiles = async (): Promise<number> => {
     const referenced = referencedFiles(db);
-    const keep: Record<FileKind, Set<string>> = { midi: referenced.midi, cover: referenced.covers };
+    const keep: Record<FileKind, Set<string>> = {
+      midi: referenced.midi,
+      cover: referenced.covers,
+      audio: referenced.audio,
+    };
     const cutoff = clock() - ORPHAN_FILE_GRACE_MS;
     let removed = 0;
-    for (const kind of ["midi", "cover"] as const) {
+    for (const kind of ["midi", "cover", "audio"] as const) {
       for (const file of await storage.list(kind)) {
         if (!keep[kind].has(file.sha256) && file.modifiedAt < cutoff) {
           await storage.remove(kind, file.sha256);

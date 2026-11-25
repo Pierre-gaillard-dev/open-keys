@@ -35,6 +35,13 @@ const envSchema = z
       .default(10 * 1024 * 1024),
     /** Contact advertised in the User-Agent sent to MusicBrainz and Wikimedia (their API policies require one). */
     MUSICBRAINZ_CONTACT: z.string().min(1).default(PROJECT_URL),
+    /** Transcriber service (D34) on the Docker network (http://transcriber:8000); unset: no audio import. */
+    TRANSCRIBER_URL: z.url({ protocol: /^https?$/ }).optional(),
+    MAX_AUDIO_SIZE: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(40 * 1024 * 1024),
     /** Synchronisation of the online libraries (disabled by the end-to-end tests: no crawling in CI). */
     SOURCES_SYNC: booleanString.default(true),
   })

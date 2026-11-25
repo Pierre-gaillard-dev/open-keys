@@ -10,3 +10,4 @@ export * from "./practice.contract";
 export * from "./songs.contract";
 export * from "./sources.contract";
 export * from "./tags.contract";
+export * from "./transcriptions.contract";

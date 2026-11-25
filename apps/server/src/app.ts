@@ -17,6 +17,7 @@ import {
 import { createSongsRoutes } from "./features/songs";
 import { createSourcesRoutes } from "./features/sources";
 import { createTagsRoutes } from "./features/tags";
+import { createTranscriptionsRoutes } from "./features/transcriptions";
 import type { Services } from "./services";
 import { type AppEnv, createErrorHandler, notFoundHandler, requestLogger } from "./shared/http";
 import type { Logger } from "./shared/logger";
@@ -32,6 +33,7 @@ export const PROTECTED_PREFIXES = [
   "/sources",
   "/users",
   "/invitations",
+  "/transcriptions",
 ] as const;
 
 export interface AppDependencies {
@@ -74,7 +76,8 @@ export function createApp({ env, logger, services }: AppDependencies) {
     .route("/library", createLibraryRoutes(services.library))
     .route("/loops", createLoopsRoutes(services.practice))
     .route("/practice-sessions", createPracticeSessionsRoutes(services.practice))
-    .route("/sources", createSourcesRoutes(services.sources));
+    .route("/sources", createSourcesRoutes(services.sources))
+    .route("/transcriptions", createTranscriptionsRoutes(services.transcriptions, env.MAX_AUDIO_SIZE));
 }
 
 export type AppType = ReturnType<typeof createApp>;
