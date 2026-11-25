@@ -57,9 +57,17 @@ export interface PlayerState {
   readonly waitingFor: readonly number[] | null;
   /** Score while playing on the piano, null otherwise. Changes once per chord. */
   readonly pianoScore: PianoScore | null;
+  /** The song has its original recording (D35). */
+  readonly recordingAvailable: boolean;
+  readonly sound: SoundSource;
+  /** The recording could not be loaded: back to the piano. */
+  readonly recordingError: boolean;
 }
 
 export type PlayerStore = StoreApi<PlayerState>;
+
+/** What is heard: the app's piano playing the notes, or the original recording of the song (D35). */
+export type SoundSource = "piano" | "recording";
 
 /** Hands the player plays on the real piano (muted in playback, listened to by the microphone). */
 export type PianoHands = "left" | "right" | "both";
@@ -89,6 +97,7 @@ export interface InitialPlayerState {
   readonly zoom?: boolean;
   readonly preferences?: PlayerPreferences;
   readonly noteNaming?: NoteNaming;
+  readonly recordingAvailable?: boolean;
 }
 
 export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
@@ -111,5 +120,8 @@ export function createPlayerStore(initial: InitialPlayerState): PlayerStore {
     piano: { mode: "wait", hands: "both", status: "off", error: null },
     waitingFor: null,
     pianoScore: null,
+    recordingAvailable: initial.recordingAvailable ?? false,
+    sound: "piano",
+    recordingError: false,
   }));
 }

@@ -20,6 +20,7 @@ const ERRORS: Readonly<Record<TranscriptionError, string>> = {
   unreadable: "Fichier illisible : ce n'est pas un enregistrement audio, ou son format n'est pas reconnu.",
   no_notes: "Aucune note de piano trouvée dans l'enregistrement.",
   too_long: "Enregistrement trop long.",
+  unreachable: "Enregistrement introuvable à son adresse : vérifie le lien, ou réessaie plus tard.",
   failed: "La transcription a échoué. Réessaie, ou essaie un autre fichier.",
 };
 

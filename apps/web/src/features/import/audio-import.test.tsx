@@ -45,7 +45,7 @@ describe("import from a recording (D34)", () => {
     let jobs: object[] = [];
     const api = installFakeApi({
       "GET /api/auth/me": () => ({ json: USER }),
-      "GET /api/transcriptions": () => ({ json: { available: true, jobs } }),
+      "GET /api/transcriptions": () => ({ json: { available: true, acceptsUrls: false, jobs } }),
       "POST /api/transcriptions": () => {
         jobs = [job({})];
         return { status: 201, json: jobs[0] };
@@ -75,11 +75,32 @@ describe("import from a recording (D34)", () => {
   it("says when the server cannot transcribe", async () => {
     installFakeApi({
       "GET /api/auth/me": () => ({ json: USER }),
-      "GET /api/transcriptions": () => ({ json: { available: false, jobs: [] } }),
+      "GET /api/transcriptions": () => ({ json: { available: false, acceptsUrls: false, jobs: [] } }),
     });
     renderApp("/import/audio");
 
     expect(await screen.findByText(/n'a pas de service de transcription/)).toBeDefined();
     expect(screen.queryByLabelText("Enregistrement à transcrire")).toBeNull();
+  });
+
+  it("sends the address of a recording of the music app, when the server allows its source (D35)", async () => {
+    const api = installFakeApi({
+      "GET /api/auth/me": () => ({ json: USER }),
+      "GET /api/transcriptions": () => ({ json: { available: true, acceptsUrls: true, jobs: [] } }),
+      "POST /api/transcriptions/url": () => ({ status: 201, json: job({ fileName: "One More Light.opus" }) }),
+    });
+    renderApp("/import/audio");
+
+    await userEvent.type(
+      await screen.findByLabelText("Depuis une adresse"),
+      "https://music.example.org/a.opus",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Transcrire" }));
+
+    await waitFor(() =>
+      expect(api.calls("POST", "/api/transcriptions/url")[0]?.body).toEqual({
+        url: "https://music.example.org/a.opus",
+      }),
+    );
   });
 });

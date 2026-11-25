@@ -111,13 +111,17 @@ Une ligne par session de lecture d'au moins 10 s effectives.
 
 Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tableau de bord.
 
+### Enregistrement d'origine des morceaux (D35)
+`songs.audio_url` (URL d'une source autorisée) ou `songs.audio_sha256` (fichier gardé dans `audio/`), nuls sinon. Ces deux colonnes ont été ajoutées en V1.6 sans reconstruction de la table. La maintenance garde les fichiers qu'un morceau référence.
+
 ### `transcription_jobs` — feature `transcriptions` (D34)
 Enregistrements envoyés pour être transcrits en MIDI, une ligne par envoi.
 
 | Colonne | Note |
 |---|---|
 | `status` | `queued`, `running`, `done` ou `failed` (contrainte CHECK). Au démarrage de l'API, une tâche `running` interrompue redevient `queued` |
-| `audio_sha256` | L'enregistrement dans `audio/` tant qu'il n'est pas transcrit. Vidé, et le fichier supprimé, dès que la tâche est finie ou a échoué : seul le brouillon reste. La maintenance supprime aussi un enregistrement qu'aucune tâche ne référence plus, par exemple après la suppression d'un compte |
+| `audio_sha256` | Le fichier envoyé, dans `audio/`. Une fois transcrit, il passe au morceau (`songs.audio_sha256`, D35) ; en cas d'échec, il est supprimé. La maintenance supprime aussi un enregistrement qu'aucune tâche ne référence plus, par exemple après la suppression d'un compte |
+| `source_url` | Ou l'URL de l'enregistrement chez une source autorisée, téléchargé au moment de la transcription |
 | `file_name` | Nom du fichier envoyé, montré à l'utilisateur, jamais utilisé comme chemin |
 | `duration_s` | Durée mesurée par le navigateur, pour estimer le temps restant |
 | `song_id` | Le brouillon créé (`set null` s'il est supprimé) |

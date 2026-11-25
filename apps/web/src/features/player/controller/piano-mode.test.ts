@@ -189,4 +189,24 @@ describe("piano modes (V1.5)", () => {
     await controller.startPiano(() => Promise.reject(new Error("Permission denied")));
     expect(store.getState().piano).toMatchObject({ status: "error", error: "Permission denied" });
   });
+
+  it("plays the original recording instead of the piano, never while playing on the piano (D35)", async () => {
+    vi.useFakeTimers();
+    const { store, controller, input, played, run } = setup();
+    store.setState({ recordingAvailable: true });
+
+    controller.setSound("recording");
+    expect(store.getState().sound).toBe("recording");
+    await controller.play();
+    run(1.2);
+    // The recording plays every note: the app's piano is silent.
+    expect(played).toEqual([]);
+    controller.pause();
+
+    // Playing on the piano: the microphone would hear the recording, back to the piano.
+    await controller.startPiano(() => Promise.resolve(input));
+    expect(store.getState().sound).toBe("piano");
+    controller.setSound("recording");
+    expect(store.getState().sound).toBe("piano");
+  });
 });

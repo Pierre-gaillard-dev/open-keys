@@ -1,6 +1,7 @@
 import {
   type TranscriptionJob,
   type Transcriptions,
+  type TranscriptionUrlRequest,
   transcriptionJobSchema,
   transcriptionsSchema,
 } from "@open-keys/contracts";
@@ -18,4 +19,9 @@ export function submitTranscription(file: File, durationS: number | null): Promi
     form.append("durationS", String(Math.round(durationS)));
   }
   return apiRequest("POST", "/transcriptions", { body: form, schema: transcriptionJobSchema });
+}
+
+/** A recording of the app that fetches the recordings (D35): the song keeps its URL. */
+export function submitTranscriptionUrl(request: TranscriptionUrlRequest): Promise<TranscriptionJob> {
+  return apiRequest("POST", "/transcriptions/url", { body: request, schema: transcriptionJobSchema });
 }

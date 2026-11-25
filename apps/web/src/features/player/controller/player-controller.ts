@@ -9,6 +9,7 @@ import type {
   PianoState,
   PlayerState,
   PlayerStore,
+  SoundSource,
 } from "../stores/player.store";
 import { NOTE_NAMES_MODES, type NoteNamesMode, type PlayerPreferences } from "../stores/player-preferences";
 import { createPianoMode } from "./piano-mode";
@@ -81,8 +82,10 @@ export function createPlayerController(
     // On the piano, the hands practised are played by the player: muted here (and the microphone
     // must not hear the app play them).
     const practised = pianoMode.practisedHands();
+    // With the original recording (D35), the app's piano is silent: the recording plays every note.
+    const recording = store.getState().sound === "recording";
     for (const hand of ["left", "right"] as const) {
-      engine.setHandAudible(hand, hands[hand].audible && !practised.includes(hand));
+      engine.setHandAudible(hand, hands[hand].audible && !practised.includes(hand) && !recording);
       engine.setHandVolume(hand, hands[hand].volume);
     }
   };
@@ -352,6 +355,8 @@ export function createPlayerController(
       if (status === "on" || status === "starting") {
         return;
       }
+      // The microphone would hear the recording: back to the app's piano, which mutes the hands played.
+      store.setState({ sound: "piano" });
       setPiano({ status: "starting", error: null });
       try {
         const input = await open();
@@ -370,6 +375,31 @@ export function createPlayerController(
     },
 
     stopPiano,
+
+    /** The audio clock, for what follows it (the original recording, D35). */
+    clock: engine.clock,
+
+    /**
+     * Piano or original recording (D35). Not while playing on the piano: the microphone would hear the
+     * recording.
+     */
+    setSound(sound: SoundSource) {
+      const { piano, recordingAvailable } = store.getState();
+      if (
+        sound === "recording" &&
+        (!recordingAvailable || piano.status === "on" || piano.status === "starting")
+      ) {
+        return;
+      }
+      store.setState({ sound, recordingError: false });
+      applyHands(store.getState().hands);
+    },
+
+    /** The recording failed to load: the piano plays again. */
+    recordingFailed() {
+      store.setState({ sound: "piano", recordingError: true });
+      applyHands(store.getState().hands);
+    },
 
     setPianoMode(mode: PianoMode) {
       setPiano({ mode });

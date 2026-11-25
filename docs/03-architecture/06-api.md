@@ -4,7 +4,7 @@
 
 Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les schémas de `packages/contracts`.
 
-- **Authentification** : la session est exigée pour tous les préfixes listés dans `PROTECTED_PREFIXES` (`app.ts`) : `/songs`, `/imports`, `/tags`, `/library`, `/loops`, `/practice-sessions`, `/sources`, `/users`, `/invitations`, `/transcriptions`. Elle est appliquée par préfixe, donc aucune route ne peut être oubliée, et un test vérifie le 401 sur chacune. Seules `/health`, `/auth/login`, `/auth/logout` et `/invite/:token` sont publiques. `/users` et `/invitations` sont de plus réservées à l'administrateur (`requireAdmin`, 403 sinon).
+- **Authentification** : la session est exigée pour tous les préfixes listés dans `PROTECTED_PREFIXES` (`app.ts`) : `/songs`, `/imports`, `/tags`, `/library`, `/loops`, `/practice-sessions`, `/sources`, `/users`, `/invitations`, `/transcriptions`. `/integrations` a sa propre clé (`Authorization: Bearer <INTEGRATION_TOKEN>`, comparée en temps constant) et n'existe que si elle est configurée. Elle est appliquée par préfixe, donc aucune route ne peut être oubliée, et un test vérifie le 401 sur chacune. Seules `/health`, `/auth/login`, `/auth/logout` et `/invite/:token` sont publiques. `/users` et `/invitations` sont de plus réservées à l'administrateur (`requireAdmin`, 403 sinon).
 - **Droits sur le catalogue** (D29) : `PATCH`/`DELETE /songs/:id`, `PUT`/`DELETE /songs/:id/cover` et `POST /imports/:id/confirm` répondent 403 sauf à celui qui a importé le morceau et à l'administrateur. `GET /songs/:id` renvoie `canEdit` pour l'interface.
 - **Origine** : les envois de formulaire (multipart) venant d'une autre origine que `PUBLIC_URL` sont refusés (403). Les requêtes JSON d'un autre site sont de toute façon bloquées par CORS, que l'API n'accorde jamais.
 
@@ -17,6 +17,10 @@ Toutes les routes sont sous `/api`. Entrées et sorties sont validées par les s
 | PUT | `/auth/preferences` | `{ noteNaming: "english" \| "latin" }` : réglages du compte, renvoie l'utilisateur courant |
 | GET | `/transcriptions` | `{ available, jobs }` : le service est-il là, et les 20 dernières transcriptions de l'utilisateur (D34) |
 | POST | `/transcriptions` | Multipart `file` (enregistrement de 40 Mo au plus) et `durationS` (mesurée par le navigateur, pour l'estimation) : 201, tâche en file. 503 `SERVICE_UNAVAILABLE` sans transcriber, 429 au-delà de 3 en attente |
+| POST | `/transcriptions/url` | `{ url, title?, durationS? }` : l'adresse d'un enregistrement d'une source autorisée (`AUDIO_SOURCES`, sinon 400). Le morceau garde l'URL (D35) |
+| POST | `/integrations/transcriptions` | Pour l'app qui récupère la musique, avec sa clé : même corps, pour le compte `INTEGRATION_USERNAME`. 201 `{ job, reviewUrl }` |
+| GET | `/integrations/transcriptions/:id` | `{ job, reviewUrl }` : le lien de vérification une fois transcrit |
+| GET | `/songs/:id/audio` | L'enregistrement d'origine (D35), avec les plages d'octets (`Range`, 206) : le fichier gardé, ou l'URL de la source relayée |
 | GET | `/transcriptions/:id` | Une transcription : `queued` (avec sa place), `running`, `done` (avec le brouillon `songId`) ou `failed` (avec `error`) |
 | GET | `/users` | Comptes (administrateur) |
 | PATCH | `/users/:id` | `{ disabled }` : désactiver ou réactiver un compte (pas le sien) |

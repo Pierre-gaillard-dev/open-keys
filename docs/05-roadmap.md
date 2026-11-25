@@ -176,6 +176,7 @@ Importer un enregistrement de piano (mp3, opus…) au lieu d'un MIDI : l'app en 
 - [x] **Spike** sur une reprise piano de 4 min 25 (`tools/audio-to-midi/`). ByteDance (spécialisé piano) est nettement plus propre que Basic Pitch : il n'a pas les 40 % de notes fantômes. En revanche, il calcule pendant 2 fois la durée du morceau sur le CPU d'un PC à 4 cœurs, contre 13 s. La grille de temps détectée place 93 % des attaques sur un temps ou un demi-temps.
 - [x] **Choix** après écoute dans l'app : ByteDance avec la grille de temps, dans un conteneur sur le VPS (D34).
 - [x] **Import d'enregistrements** (UC-38) : service `transcriber` (Python, interne), file de tâches dans l'API (une à la fois), brouillon à vérifier comme un MIDI importé, enregistrement supprimé après transcription.
+- [x] **Jouer avec l'enregistrement d'origine** (D35) : le morceau garde son audio (URL de l'app qui récupère la musique, ou fichier envoyé), « Son : Piano / Enregistrement » dans le lecteur, calé sur l'horloge audio. Transcription depuis une adresse, et API d'intégration pour l'autre app.
 - [ ] Mesurer le temps de transcription sur le VPS, puis régler `TRANSCRIBER_THREADS` et l'estimation affichée.
 - [ ] Ensuite : reprise piano générée depuis un vrai morceau, avec chant et instruments (Etude, AMT-APC, Pop2Piano…). L'audio d'origine pourra être rejoué en accompagnement.
 

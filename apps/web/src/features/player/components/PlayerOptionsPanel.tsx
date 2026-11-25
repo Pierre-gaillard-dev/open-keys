@@ -9,7 +9,7 @@ import {
   type PlayerController,
   TEMPO_STEP_PCT,
 } from "../controller/player-controller";
-import type { PianoHands, PianoMode, PlayerStore } from "../stores/player.store";
+import type { PianoHands, PianoMode, PlayerStore, SoundSource } from "../stores/player.store";
 import type { NoteNamesMode } from "../stores/player-preferences";
 import { HandControl } from "./HandControl";
 
@@ -24,6 +24,11 @@ const NOTE_NAMES_OPTIONS: readonly { value: NoteNamesMode; label: string }[] = [
   { value: "notes", label: "Notes" },
   { value: "keys", label: "Touches" },
   { value: "both", label: "Les deux" },
+];
+
+const SOUND_OPTIONS: readonly { value: SoundSource; label: string }[] = [
+  { value: "piano", label: "Piano" },
+  { value: "recording", label: "Enregistrement" },
 ];
 
 const PIANO_MODE_OPTIONS: readonly { value: PianoMode; label: string }[] = [
@@ -128,6 +133,8 @@ export function PlayerOptionsPanel({ store, controller, onClose }: PlayerOptions
 
       <SpeedControl store={store} controller={controller} />
 
+      <SoundSection store={store} controller={controller} />
+
       <PianoSection store={store} controller={controller} />
 
       <div className={SECTION}>
@@ -224,6 +231,48 @@ function PianoSection({
         <p role="alert" className="text-sm text-danger">
           Micro indisponible : autorise-le dans le navigateur, puis réessaie.
           {piano.error && <span className="block text-xs text-fg-muted">{piano.error}</span>}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** The original recording of the song (D35), when it has one, instead of the app's piano. */
+function SoundSection({
+  store,
+  controller,
+}: {
+  readonly store: PlayerStore;
+  readonly controller: PlayerController | null;
+}) {
+  const available = useStore(store, (state) => state.recordingAvailable);
+  const sound = useStore(store, (state) => state.sound);
+  const failed = useStore(store, (state) => state.recordingError);
+  const pianoOn = useStore(
+    store,
+    (state) => state.piano.status === "on" || state.piano.status === "starting",
+  );
+  if (!available) {
+    return null;
+  }
+  return (
+    <div className={SECTION}>
+      <h3 className={SECTION_TITLE}>Son</h3>
+      <SegmentedControl
+        label="Son"
+        options={SOUND_OPTIONS}
+        value={sound}
+        onChange={(value) => controller?.setSound(value)}
+        disabled={pianoOn}
+      />
+      <p className="text-xs text-fg-muted">
+        {pianoOn
+          ? "Pas d'enregistrement en jouant au piano : le micro l'entendrait."
+          : "Enregistrement : le morceau d'origine, calé sur les notes, au ralenti sans changer le ton."}
+      </p>
+      {failed && (
+        <p role="alert" className="text-sm text-danger">
+          Enregistrement indisponible : retour au piano.
         </p>
       )}
     </div>

@@ -1,10 +1,14 @@
 import { AUDIO_EXTENSIONS, MAX_TRANSCRIPTION_SECONDS, type TranscriptionJob } from "@open-keys/contracts";
 import { Link } from "@tanstack/react-router";
 import { AudioLines, ChevronLeft, ChevronRight, CircleAlert, LoaderCircle } from "lucide-react";
-import { type DragEvent, useState } from "react";
+import { type DragEvent, type FormEvent, useState } from "react";
 import { cx } from "../../../shared/lib/cx";
-import { ErrorBanner, SectionTitle } from "../../../shared/ui";
-import { useSubmitTranscription, useTranscriptions } from "../api/transcriptions.queries";
+import { Button, ErrorBanner, SectionTitle, TextField } from "../../../shared/ui";
+import {
+  useSubmitTranscription,
+  useSubmitTranscriptionUrl,
+  useTranscriptions,
+} from "../api/transcriptions.queries";
 import { ImportTabs } from "../components/ImportTabs";
 import { audioDuration, statusText } from "../transcription-status";
 
@@ -15,8 +19,16 @@ import { audioDuration, statusText } from "../transcription-status";
 export function AudioImportPage() {
   const transcriptions = useTranscriptions();
   const submit = useSubmitTranscription();
+  const submitUrl = useSubmitTranscriptionUrl();
   const [dragging, setDragging] = useState(false);
+  const [url, setUrl] = useState("");
   const available = transcriptions.data?.available ?? true;
+  const acceptsUrls = transcriptions.data?.acceptsUrls ?? false;
+
+  const sendUrl = (event: FormEvent) => {
+    event.preventDefault();
+    submitUrl.mutate(url, { onSuccess: () => setUrl("") });
+  };
 
   const send = async (file: File | undefined) => {
     if (file) {
@@ -42,8 +54,8 @@ export function AudioImportPage() {
       <ImportTabs />
       <p className="text-sm text-fg-soft">
         Un enregistrement de <strong>piano seul</strong> (reprise, tutoriel) devient un morceau : notes,
-        pédale et tempo. La transcription prend quelques minutes sur le serveur ; tu peux quitter la page. Le
-        fichier audio est supprimé dès qu'il est transcrit.
+        pédale et tempo. La transcription prend quelques minutes sur le serveur ; tu peux quitter la page.
+        L'enregistrement est gardé avec le morceau, pour jouer avec le vrai son.
       </p>
 
       {!available ? (
@@ -85,7 +97,24 @@ export function AudioImportPage() {
           />
         </label>
       )}
+      {available && acceptsUrls && (
+        <form onSubmit={sendUrl} className="flex flex-col gap-3">
+          <TextField
+            label="Depuis une adresse"
+            type="url"
+            required
+            placeholder="https://…/morceau.opus"
+            hint="Un enregistrement de ton app de musique : le morceau garde son adresse, pour jouer avec le vrai son."
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+          />
+          <Button type="submit" variant="primary" disabled={submitUrl.isPending || !url}>
+            {submitUrl.isPending ? "Envoi…" : "Transcrire"}
+          </Button>
+        </form>
+      )}
       {submit.error && <ErrorBanner error={submit.error} title="Envoi impossible" />}
+      {submitUrl.error && <ErrorBanner error={submitUrl.error} title="Envoi impossible" />}
 
       <section className="flex flex-col gap-3">
         <SectionTitle>Transcriptions</SectionTitle>

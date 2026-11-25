@@ -103,7 +103,9 @@ flowchart LR
 | `MUSICBRAINZ_CONTACT` | URL du dépôt | Contact dans le `User-Agent` envoyé à MusicBrainz, Wikimedia et aux bibliothèques en ligne (exigé par leurs règles) |
 | `SOURCES_SYNC` | `true` | Synchronisation des bibliothèques en ligne (vérifiée toutes les 6 h ; Mutopia et xivmidi chaque semaine, MAESTRO chaque mois). `false` dans les tests e2e |
 | `TRANSCRIBER_URL` | `http://transcriber:8000` dans le compose | Service de transcription (D34). Vide : import d'enregistrements indisponible |
-| `MAX_AUDIO_SIZE` | 40 Mo | Taille maximale d'un enregistrement envoyé |
+| `MAX_AUDIO_SIZE` | 40 Mo | Taille maximale d'un enregistrement envoyé ou téléchargé |
+| `AUDIO_SOURCES` | — | Origines dont les enregistrements peuvent être transcrits par URL et relayés au lecteur (D35), séparées par des virgules : l'app qui récupère la musique (`https://music.example.org`) |
+| `INTEGRATION_TOKEN` / `INTEGRATION_USERNAME` | — | Clé de l'app qui récupère la musique (32 caractères au moins) et compte pour lequel ses envois sont importés. Les deux ensemble, ou aucun |
 | `TRANSCRIBER_THREADS` (service `transcriber`) | tous les cœurs | Cœurs utilisés par une transcription |
 
 - Elles sont toutes validées par zod au démarrage (`config/env.ts`) : une valeur invalide empêche l'API de démarrer.

@@ -109,7 +109,7 @@ flowchart LR
 | UC-35 | Rejoindre l'app ou choisir un nouveau mot de passe depuis un lien | V1.4 |
 | UC-36 | Changer son mot de passe | V1.4 |
 | UC-37 | Gérer les comptes (désactiver, mot de passe oublié) | V1.4 |
-| UC-38 | Importer depuis un enregistrement de piano (mp3, opus…) | V1.6 |
+| UC-38 | Importer depuis un enregistrement de piano (mp3, opus…) et jouer avec le vrai son | V1.6 |
 | UC-30 | Connecter un clavier MIDI | V2 |
 | UC-31 | Mode attente (la lecture attend la bonne note) | V1.5 (micro), V2 (MIDI) |
 | UC-32 | Score et précision de session | V1.5 (micro) |
@@ -280,7 +280,9 @@ flowchart LR
   
   On peut quitter la page : la transcription continue sur le serveur.
 - **Résultat** : un brouillon, avec les notes, la pédale et une grille de temps sur le tempo détecté, ce qui fait suivre la musique au métronome et au décompte. On le vérifie comme un MIDI importé (mains, métadonnées, pochette), via le lien « Vérifier ». Son crédit indique la transcription automatique.
-- **Vie privée** : l'enregistrement est supprimé dès qu'il est transcrit. Au plus 3 enregistrements en attente par personne.
+- **Depuis une adresse** (D35) : si le serveur a des sources audio autorisées, on colle l'URL d'un enregistrement de l'app qui récupère la musique. Cette app peut aussi lancer elle-même la transcription par l'API d'intégration.
+- **Enregistrement gardé** (D35) : le morceau garde son URL, ou le fichier envoyé. Une transcription qui échoue supprime le fichier envoyé. Au plus 3 enregistrements en attente par personne.
+- **Jouer avec le vrai son** (D35) : dans le lecteur, « Son : Piano / Enregistrement ». L'enregistrement d'origine est calé sur les notes : il suit la pause, les sauts, les boucles et le mode attente, et au ralenti il garde le ton. Il n'est téléchargé qu'au premier choix. Il n'est pas proposé pendant « Jouer au piano », car le micro l'entendrait.
 
 ### UC-30, UC-33 — V2 (aperçu)
 - La couche `InputSource` (créée en V1.5) reçoit les notes d'un clavier MIDI (Web MIDI, plugin natif Capacitor, ou clavier à l'écran pour les tests). Le mode attente s'en sert sans changement.
