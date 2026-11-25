@@ -1,6 +1,6 @@
 # Audio → MIDI (spike)
 
-Ces outils transforment un enregistrement de **piano seul** (mp3, opus, m4a, wav…) en MIDI que l'app sait importer : notes, pédale de sustain et grille de temps. C'est un spike (décision D34) : ces outils ne font pas partie de l'app.
+Outils du spike qui a mené à l'import d'enregistrements (D34) : comparer des transcriptions d'un enregistrement de **piano seul**. La transcription elle-même est faite par le service `apps/transcriber`, utilisable aussi en ligne de commande (voir plus bas).
 
 > Ne jamais commiter un enregistrement ni la transcription d'une œuvre sous droits. On les traite en local, dans un dossier hors du dépôt.
 
@@ -39,7 +39,8 @@ python3 -m venv venv
 # Modèle de ByteDance (172 Mo), chargé par PyTorch en mode sûr (poids seulement)
 curl -L -o bytedance.pth "https://zenodo.org/record/4034264/files/CRNN_note_F1%3D0.9677_pedal_F1%3D0.9186.pth?download=1"
 
-./venv/bin/python transcribe.py enregistrement.opus sortie.mid --checkpoint bytedance.pth
+# La transcription : le code du service (notes, pédale, grille de temps)
+PYTHONPATH=../../apps/transcriber ./venv/bin/python -m transcriber.cli enregistrement.opus sortie.mid --checkpoint bytedance.pth
 ./venv/bin/python transcribe_basic_pitch.py enregistrement.opus basic_pitch.mid
 ./venv/bin/python compare.py enregistrement.opus sortie.mid basic_pitch.mid
 ```
@@ -48,6 +49,6 @@ Le MIDI produit s'importe dans l'app comme n'importe quel fichier. La séparatio
 
 ## Licences
 
-- `piano_transcription_inference` (Qiuqiang Kong, ByteDance) : Apache-2.0. **Licence du modèle publié sur Zenodo à vérifier avant tout usage en production.**
+- `piano_transcription_inference` (Qiuqiang Kong) : MIT. Modèle (Zenodo, enregistrement 4034264) : CC-BY 4.0.
 - Basic Pitch (Spotify) : Apache-2.0.
 - librosa : ISC. mido : MIT.
