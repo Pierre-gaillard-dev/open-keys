@@ -1,4 +1,9 @@
-import { type TranscriptionJob, type Transcriptions, ulidSchema } from "@open-keys/contracts";
+import {
+  type TranscriptionJob,
+  type Transcriptions,
+  transcriptionUrlRequestSchema,
+  ulidSchema,
+} from "@open-keys/contracts";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
@@ -15,6 +20,7 @@ const durationSchema = z.coerce
 
 /**
  * POST /transcriptions (multipart: file, durationS?) → 201 the queued job;
+ * POST /transcriptions/url ({ url, title?, durationS? }, an allowed audio source) → 201;
  * GET /transcriptions → availability and the user's recent jobs; GET /transcriptions/:id.
  */
 export function createTranscriptionsRoutes(service: TranscriptionsService, maxAudioSize: number) {
@@ -27,6 +33,11 @@ export function createTranscriptionsRoutes(service: TranscriptionsService, maxAu
 
   return new Hono<AuthedEnv>()
     .get("/", (c) => c.json<Transcriptions>(service.list(c.var.user)))
+    .post("/url", validate("json", transcriptionUrlRequestSchema), async (c) => {
+      const { url, title, durationS } = c.req.valid("json");
+      const job = await service.submitUrl(c.var.user, url, title ?? null, durationS ?? null);
+      return c.json<TranscriptionJob>(job, 201);
+    })
     .get("/:id", validate("param", z.object({ id: ulidSchema })), (c) =>
       c.json<TranscriptionJob>(service.get(c.var.user, c.req.valid("param").id)),
     )

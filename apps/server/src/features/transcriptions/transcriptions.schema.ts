@@ -17,8 +17,10 @@ export const transcriptionJobs = sqliteTable(
       .references(() => users.id, { onDelete: "cascade" }),
     /** Name of the file sent, for the user (never used as a path). */
     fileName: text("file_name").notNull(),
-    /** The recording in the file storage, until it is transcribed. */
+    /** The recording sent, in the file storage until the job ends (then kept by the song, D35). */
     audioSha256: text("audio_sha256"),
+    /** Or the URL of the recording at an allowed audio source (AUDIO_SOURCES), downloaded when transcribed. */
+    sourceUrl: text("source_url"),
     status: text("status", { enum: TRANSCRIPTION_STATUSES }).notNull(),
     durationS: real("duration_s"),
     songId: text("song_id").references(() => songs.id, { onDelete: "set null" }),

@@ -71,6 +71,7 @@ export function toSongDetail(
     },
     canEdit,
     midiUrl: `/api/songs/${song.id}/midi`,
+    audioUrl: song.audioUrl || song.audioSha256 ? `/api/songs/${song.id}/audio` : null,
     updatedAt: song.updatedAt,
   };
 }

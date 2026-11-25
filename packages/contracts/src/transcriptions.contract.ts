@@ -10,7 +10,7 @@ export const transcriptionStatusSchema = z.enum(TRANSCRIPTION_STATUSES);
 export type TranscriptionStatus = z.infer<typeof transcriptionStatusSchema>;
 
 /** Why a transcription failed: the app explains each one. */
-export const TRANSCRIPTION_ERRORS = ["unreadable", "no_notes", "too_long", "failed"] as const;
+export const TRANSCRIPTION_ERRORS = ["unreadable", "no_notes", "too_long", "unreachable", "failed"] as const;
 export const transcriptionErrorSchema = z.enum(TRANSCRIPTION_ERRORS);
 export type TranscriptionError = z.infer<typeof transcriptionErrorSchema>;
 
@@ -51,8 +51,28 @@ export type TranscriptionJob = z.infer<typeof transcriptionJobSchema>;
 export const transcriptionsSchema = z.object({
   /** False when the server has no transcriber (TRANSCRIBER_URL unset). */
   available: z.boolean(),
+  /** True when recordings may also come from an allowed audio source by URL (AUDIO_SOURCES, D35). */
+  acceptsUrls: z.boolean(),
   /** The user's recent transcriptions, most recent first. */
   jobs: z.array(transcriptionJobSchema),
 });
 
 export type Transcriptions = z.infer<typeof transcriptionsSchema>;
+
+/**
+ * A recording at an allowed audio source (D35): the app that fetches the recordings. The song keeps
+ * the URL, to play along with the original.
+ */
+export const transcriptionUrlRequestSchema = z.object({
+  url: z.url({ protocol: /^https?$/ }).max(2000),
+  /** Title of the piece; by default, the name of the file in the URL. */
+  title: z.string().trim().min(1).max(200).optional(),
+  /** Duration of the recording when known, for the time estimate. */
+  durationS: z
+    .number()
+    .nonnegative()
+    .max(24 * 60 * 60)
+    .optional(),
+});
+
+export type TranscriptionUrlRequest = z.infer<typeof transcriptionUrlRequestSchema>;

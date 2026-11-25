@@ -58,7 +58,7 @@ async function errorCode(response: Response) {
 }
 
 describe("transcriptions (D34)", () => {
-  it("queue a recording, transcribe it and import it as a draft to review, then drop the recording", async () => {
+  it("queue a recording, transcribe it and import it as a draft to review, which keeps the recording", async () => {
     const transcriber = await setup();
 
     const queued = await job(await send("One More Light - piano cover.opus", 265));
@@ -73,7 +73,16 @@ describe("transcriptions (D34)", () => {
     const song = songDetailSchema.parse(await (await server.request(`/api/songs/${done.songId}`)).json());
     expect(song).toMatchObject({ state: "draft", sourceType: "upload" });
     expect(song.credit).toContain("One More Light - piano cover.opus");
-    expect(await server.storage.list("audio")).toHaveLength(0);
+    // D35: the song keeps its recording, served with byte ranges for the player.
+    expect(song.audioUrl).toBe(`/api/songs/${song.id}/audio`);
+    expect(await server.storage.list("audio")).toHaveLength(1);
+    const whole = await server.request(song.audioUrl ?? "");
+    expect(whole.headers.get("Content-Type")).toBe("audio/mpeg");
+    expect(new Uint8Array(await whole.arrayBuffer())).toEqual(RECORDING);
+    const part = await server.request(song.audioUrl ?? "", { headers: { Range: "bytes=4-7" } });
+    expect(part.status).toBe(206);
+    expect(part.headers.get("Content-Range")).toBe(`bytes 4-7/${RECORDING.byteLength}`);
+    expect(new TextDecoder().decode(await part.arrayBuffer())).toBe("pret");
   });
 
   it("say why a recording failed, and drop it", async () => {
@@ -151,9 +160,117 @@ describe("transcriptions (D34)", () => {
     await server.login();
 
     const list = transcriptionsSchema.parse(await (await server.request("/api/transcriptions")).json());
-    expect(list).toEqual({ available: false, jobs: [] });
+    expect(list).toEqual({ available: false, acceptsUrls: false, jobs: [] });
     const response = await send();
     expect(response.status).toBe(503);
     expect(await errorCode(response)).toBe("SERVICE_UNAVAILABLE");
+  });
+
+  describe("from the app that fetches recordings (D35)", () => {
+    const SOURCE = "https://music.example.org";
+    const URL_OF_RECORDING = `${SOURCE}/files/One%20More%20Light.opus`;
+    const OPUS = new TextEncoder().encode("OggS opus recording bytes");
+    const TOKEN = "a-long-integration-key-of-32-characters!";
+
+    async function urlServer(env: NodeJS.ProcessEnv = {}) {
+      const transcriber = fakeTranscriber(() => twoHandMidi("Transcription"));
+      server = await createTestServer({
+        transcriber: transcriber.client,
+        env: { AUDIO_SOURCES: SOURCE, ...env },
+        remoteFiles: { [URL_OF_RECORDING]: OPUS },
+      });
+      await server.login();
+      return transcriber;
+    }
+
+    it("transcribe a recording by its URL, and the song plays it back through Open Keys", async () => {
+      const transcriber = await urlServer();
+      const queued = await job(
+        await server.json("POST", "/api/transcriptions/url", { url: URL_OF_RECORDING }),
+      );
+      expect(queued.fileName).toBe("One More Light.opus");
+
+      await server.services.transcriptions.processNext();
+
+      expect(transcriber.calls[0]?.audio).toEqual(OPUS);
+      const done = await job(await server.request(`/api/transcriptions/${queued.id}`));
+      const song = songDetailSchema.parse(await (await server.request(`/api/songs/${done.songId}`)).json());
+      expect(song.audioUrl).toBe(`/api/songs/${song.id}/audio`);
+      // Nothing kept here: the recording stays at its source, relayed with its byte ranges.
+      expect(await server.storage.list("audio")).toHaveLength(0);
+      const part = await server.request(song.audioUrl ?? "", { headers: { Range: "bytes=0-3" } });
+      expect(part.status).toBe(206);
+      expect(new TextDecoder().decode(await part.arrayBuffer())).toBe("OggS");
+      const list = transcriptionsSchema.parse(await (await server.request("/api/transcriptions")).json());
+      expect(list.acceptsUrls).toBe(true);
+    });
+
+    it("refuse an address outside the audio sources, and say when the recording cannot be fetched", async () => {
+      await urlServer();
+      const outside = await server.json("POST", "/api/transcriptions/url", {
+        url: "https://evil.example.com/a.mp3",
+      });
+      expect(outside.status).toBe(400);
+
+      const missing = await job(
+        await server.json("POST", "/api/transcriptions/url", { url: `${SOURCE}/files/missing.opus` }),
+      );
+      await server.services.transcriptions.processNext();
+      expect((await job(await server.request(`/api/transcriptions/${missing.id}`))).error).toBe(
+        "unreachable",
+      );
+    });
+
+    it("take recordings from the other app with its key, for the integration account", async () => {
+      await urlServer({
+        INTEGRATION_TOKEN: TOKEN,
+        INTEGRATION_USERNAME: "pierre",
+        PUBLIC_URL: "https://keys.example.org",
+      });
+      const call = (method: string, path: string, key: string | null, body?: unknown) =>
+        server.request(path, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            ...(key ? { Authorization: `Bearer ${key}` } : {}),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        });
+
+      expect(
+        (await call("POST", "/api/integrations/transcriptions", null, { url: URL_OF_RECORDING })).status,
+      ).toBe(401);
+      expect(
+        (await call("POST", "/api/integrations/transcriptions", "wrong", { url: URL_OF_RECORDING })).status,
+      ).toBe(401);
+
+      const created = await call("POST", "/api/integrations/transcriptions", TOKEN, {
+        url: URL_OF_RECORDING,
+        title: "One More Light",
+      });
+      expect(created.status).toBe(201);
+      const { job: queued } = (await created.json()) as { job: TranscriptionJob };
+      expect(queued.fileName).toBe("One More Light");
+
+      await server.services.transcriptions.processNext();
+
+      const status = (await (
+        await call("GET", `/api/integrations/transcriptions/${queued.id}`, TOKEN)
+      ).json()) as {
+        job: TranscriptionJob;
+        reviewUrl: string | null;
+      };
+      expect(status.job.status).toBe("done");
+      expect(status.reviewUrl).toBe(`https://keys.example.org/import/${status.job.songId}`);
+      // The account of the integration sees it in its own list.
+      const list = transcriptionsSchema.parse(await (await server.request("/api/transcriptions")).json());
+      expect(list.jobs.map((item) => item.id)).toEqual([queued.id]);
+    });
+
+    it("are not reachable without an integration key configured", async () => {
+      await urlServer();
+      const response = await server.request("/api/integrations/transcriptions", { method: "POST" });
+      expect(response.status).toBe(404);
+    });
   });
 });

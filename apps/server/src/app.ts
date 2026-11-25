@@ -14,10 +14,10 @@ import {
   createPracticeSessionsRoutes,
   createSongPracticeRoutes,
 } from "./features/practice";
-import { createSongsRoutes } from "./features/songs";
+import { createSongAudioRoutes, createSongsRoutes } from "./features/songs";
 import { createSourcesRoutes } from "./features/sources";
 import { createTagsRoutes } from "./features/tags";
-import { createTranscriptionsRoutes } from "./features/transcriptions";
+import { createIntegrationRoutes, createTranscriptionsRoutes } from "./features/transcriptions";
 import type { Services } from "./services";
 import { type AppEnv, createErrorHandler, notFoundHandler, requestLogger } from "./shared/http";
 import type { Logger } from "./shared/logger";
@@ -40,10 +40,23 @@ export interface AppDependencies {
   readonly env: Env;
   readonly logger: Logger;
   readonly services: Services;
+  /** How recordings of the audio source are relayed to the player (D35): fetch, or a fake in tests. */
+  readonly audioFetch?: typeof fetch;
 }
 
-export function createApp({ env, logger, services }: AppDependencies) {
+export function createApp({ env, logger, services, audioFetch }: AppDependencies) {
   const authenticated = requireAuth(services.auth, env.COOKIE_SECURE);
+  // The other app (D35): its own key instead of a session, only when configured.
+  const integration =
+    env.INTEGRATION_TOKEN && env.INTEGRATION_USERNAME
+      ? createIntegrationRoutes({
+          transcriptions: services.transcriptions,
+          auth: services.auth,
+          token: env.INTEGRATION_TOKEN,
+          username: env.INTEGRATION_USERNAME,
+          publicUrl: env.PUBLIC_URL,
+        })
+      : new Hono<AppEnv>();
 
   const app = new Hono<AppEnv>()
     .basePath("/api")
@@ -69,6 +82,14 @@ export function createApp({ env, logger, services }: AppDependencies) {
     .route("/users", createUsersRoutes(services.accounts))
     .route("/invitations", createInvitationsRoutes(services.accounts))
     .route("/songs", createSongsRoutes(services.songs))
+    .route(
+      "/songs",
+      createSongAudioRoutes({
+        songs: services.songs,
+        audioSources: env.AUDIO_SOURCES,
+        ...(audioFetch ? { fetch: audioFetch } : {}),
+      }),
+    )
     .route("/songs", createCoversRoutes(services.covers, env.MAX_COVER_SIZE))
     .route("/songs", createSongPracticeRoutes(services.practice))
     .route("/imports", createImportsRoutes(services.imports, env.MAX_MIDI_SIZE))
@@ -77,7 +98,8 @@ export function createApp({ env, logger, services }: AppDependencies) {
     .route("/loops", createLoopsRoutes(services.practice))
     .route("/practice-sessions", createPracticeSessionsRoutes(services.practice))
     .route("/sources", createSourcesRoutes(services.sources))
-    .route("/transcriptions", createTranscriptionsRoutes(services.transcriptions, env.MAX_AUDIO_SIZE));
+    .route("/transcriptions", createTranscriptionsRoutes(services.transcriptions, env.MAX_AUDIO_SIZE))
+    .route("/integrations", integration);
 }
 
 export type AppType = ReturnType<typeof createApp>;

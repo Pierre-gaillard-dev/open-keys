@@ -198,6 +198,12 @@ export function createAuthService({ db, clock, newId, hasher, rateLimiter, logge
       return toAuthUser({ ...user, ...preferences });
     },
 
+    /** The active account `username` as a session would see it (the integration's account, D35). */
+    findAuthUserByUsername(username: string): AuthUser | undefined {
+      const user = findUserByUsername(db, username);
+      return user && user.disabledAt === null ? toAuthUser(user) : undefined;
+    },
+
     /** The user `id` as a session would see it, for work done on their behalf later (transcriptions). */
     findAuthUser(id: string): AuthUser | undefined {
       const user = findUserById(db, id);
