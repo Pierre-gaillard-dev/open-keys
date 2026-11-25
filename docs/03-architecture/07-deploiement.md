@@ -4,18 +4,20 @@
 
 ## Topologie
 
-Deux conteneurs orchestrés par un `docker-compose.yml`, déployé comme application compose dans Dokploy. **Il n'y a pas de conteneur de base de données** : SQLite est un fichier dans le volume de l'API (D5).
+Trois conteneurs orchestrés par un `docker-compose.yml`, déployé comme application compose dans Dokploy. **Il n'y a pas de conteneur de base de données** : SQLite est un fichier dans le volume de l'API (D5).
 
 ```mermaid
 flowchart LR
   U([Navigateur]) -->|HTTPS| T[Traefik<br/>Dokploy]
   T -->|"/ (tout le reste)"| W[web<br/>nginx + PWA buildée]
   T -->|/api/*| A[api<br/>Node + Hono]
-  A --- V[(volume data<br/>open-keys.db, midi/, covers/)]
+  A --- V[(volume data<br/>open-keys.db, midi/, covers/, audio/)]
+  A -->|"réseau compose<br/>POST /transcribe"| X[transcriber<br/>Python + PyTorch]
 ```
 
 - **Un seul domaine** : Traefik envoie `/api/*` vers `api` et tout le reste vers `web`. Le front et l'API ont donc la même origine : pas de CORS, et les cookies `SameSite=Lax` fonctionnent sans configuration particulière.
-- Les deux services se déploient **indépendamment** : une modif du front ne redémarre pas l'API.
+- Les services se déploient **indépendamment** : une modif du front ne redémarre pas l'API.
+- Le `transcriber` n'a **pas de domaine** : seule l'API le joint, sur le réseau du compose.
 
 ## Fichiers
 
@@ -24,6 +26,7 @@ flowchart LR
 | `docker-compose.yml` | Production : services `web` et `api`, volume `data`. Les domaines sont configurés dans Dokploy |
 | `docker/web.Dockerfile` | Build Vite, puis `nginxinc/nginx-unprivileged` (port 8080, utilisateur non root) |
 | `docker/api.Dockerfile` | Build tsdown, `pnpm deploy --prod`, puis `node:26-slim` (utilisateur `node`) |
+| `docker/transcriber.Dockerfile` | `python:3.12-slim`, ffmpeg, PyTorch pour le CPU, le modèle de ByteDance vérifié par son empreinte (utilisateur non root) |
 | `docker/nginx/default.conf` | Repli SPA, cache, compression |
 | `docker/nginx/security-headers.conf` | CSP et en-têtes de sécurité, inclus dans chaque `location` |
 | `docker/compose.local.yml` + `docker/Caddyfile` | Production en local, avec Caddy dans le rôle de Traefik |
@@ -35,6 +38,7 @@ flowchart LR
 |---|---|---|---|
 | `web` | `docker/web.Dockerfile` | Sert `apps/web/dist` (PWA) | `/` via Traefik, port 8080 |
 | `api` | `docker/api.Dockerfile` | API Hono, migrations, tâches différées | `/api` via Traefik, port 3000 |
+| `transcriber` | `docker/transcriber.Dockerfile` | Enregistrement de piano → MIDI (D34) | Non : réseau du compose, port 8000 |
 
 ### `web` (nginx)
 - **Build multi-stage** : `pnpm fetch` (couche réutilisée tant que le lockfile ne change pas), installation hors ligne, `pnpm --filter @open-keys/web build`, puis copie de `dist/` dans nginx.
@@ -59,6 +63,16 @@ flowchart LR
 - **Healthcheck** : `GET /api/health`.
 - **Arrêt propre** : sur `SIGTERM` (redéploiement Dokploy), le serveur arrête d'accepter des connexions et termine les requêtes en cours. Il est forcé au bout de 10 s (`stop_grace_period: 15s` dans le compose).
 - **Une seule instance** : SQLite n'accepte qu'un seul processus qui écrit. On ne passe pas l'API à l'échelle horizontalement, et ce n'est pas un besoin.
+
+### `transcriber` (Python)
+- **Rôle** : `POST /transcribe` reçoit un enregistrement (tout ce que lit ffmpeg) et renvoie le MIDI, avec les notes, la pédale et la grille de temps. `GET /health` sert au healthcheck. Le code est dans `apps/transcriber`.
+- **Image** : environ 3 Go, à cause de PyTorch pour le CPU, de librosa et du modèle de 172 Mo. Le modèle est téléchargé au build depuis Zenodo et vérifié par son SHA-256, puis chargé en mode sûr (`weights_only`, des poids sans code).
+- **Ressources** :
+  - une transcription à la fois, sur tous les cœurs, avec environ 1 Go de RAM pendant le calcul ;
+  - environ 2 fois la durée de l'enregistrement sur 4 cœurs ;
+  - `TRANSCRIBER_THREADS` limite les cœurs utilisés, pour garder de la marge au reste du VPS.
+- **Occupé** : répond 503 avec `Retry-After`. L'API envoie de toute façon les tâches une par une, et remet la tâche en file si le service ne répond pas.
+- **Sans transcriber** : si `TRANSCRIBER_URL` est vide, l'API annonce l'import d'enregistrements indisponible, et l'onglet le dit.
 
 ## PWA (Service Worker)
 
@@ -88,6 +102,9 @@ flowchart LR
 | `MAX_MIDI_SIZE` / `MAX_COVER_SIZE` | 2 Mo / 10 Mo | Limites d'upload et de téléchargement |
 | `MUSICBRAINZ_CONTACT` | URL du dépôt | Contact dans le `User-Agent` envoyé à MusicBrainz, Wikimedia et aux bibliothèques en ligne (exigé par leurs règles) |
 | `SOURCES_SYNC` | `true` | Synchronisation des bibliothèques en ligne (vérifiée toutes les 6 h ; Mutopia et xivmidi chaque semaine, MAESTRO chaque mois). `false` dans les tests e2e |
+| `TRANSCRIBER_URL` | `http://transcriber:8000` dans le compose | Service de transcription (D34). Vide : import d'enregistrements indisponible |
+| `MAX_AUDIO_SIZE` | 40 Mo | Taille maximale d'un enregistrement envoyé |
+| `TRANSCRIBER_THREADS` (service `transcriber`) | tous les cœurs | Cœurs utilisés par une transcription |
 
 - Elles sont toutes validées par zod au démarrage (`config/env.ts`) : une valeur invalide empêche l'API de démarrer.
 - **Une valeur vide compte comme absente** : le compose passe `${VAR:-}` sous forme de chaîne vide quand la variable n'est pas définie.

@@ -109,6 +109,7 @@ flowchart LR
 | UC-35 | Rejoindre l'app ou choisir un nouveau mot de passe depuis un lien | V1.4 |
 | UC-36 | Changer son mot de passe | V1.4 |
 | UC-37 | Gérer les comptes (désactiver, mot de passe oublié) | V1.4 |
+| UC-38 | Importer depuis un enregistrement de piano (mp3, opus…) | V1.6 |
 | UC-30 | Connecter un clavier MIDI | V2 |
 | UC-31 | Mode attente (la lecture attend la bonne note) | V1.5 (micro), V2 (MIDI) |
 | UC-32 | Score et précision de session | V1.5 (micro) |
@@ -267,6 +268,19 @@ flowchart LR
   - En mode attente : « 12 accords · 80 % sans attendre », c'est-à-dire joués avant que la lecture n'ait à s'arrêter.
 - **Enregistrement** : la session garde son mode, sa précision et son nombre d'accords. Changer de mode ou de mains commence une nouvelle session. La page Progression les affiche (« Au piano, en rythme · 92 % »).
 - **Notes en trop** : non mesurées au micro. La détection libre se trompe trop pour dire qu'une note jouée n'était pas attendue. Elles le seront en MIDI (V2).
+
+### UC-38 — Importer depuis un enregistrement (V1.6, D34)
+- **Où** : Importer → onglet « Enregistrement » ; sur téléphone, l'entrée « Depuis un enregistrement ».
+- **Envoi** : un enregistrement de **piano seul** (reprise, tutoriel) en mp3, opus, m4a, wav… de 15 minutes et 40 Mo au plus. Le navigateur mesure sa durée pour l'estimation.
+- **Suivi** : la liste des transcriptions dit où en est chacune :
+  - « en attente », avec le nombre d'enregistrements avant ;
+  - « en cours », avec les minutes restantes estimées ;
+  - « transcrit » ;
+  - « échec », avec la raison : fichier illisible, aucune note de piano, trop long, ou autre.
+  
+  On peut quitter la page : la transcription continue sur le serveur.
+- **Résultat** : un brouillon, avec les notes, la pédale et une grille de temps sur le tempo détecté, ce qui fait suivre la musique au métronome et au décompte. On le vérifie comme un MIDI importé (mains, métadonnées, pochette), via le lien « Vérifier ». Son crédit indique la transcription automatique.
+- **Vie privée** : l'enregistrement est supprimé dès qu'il est transcrit. Au plus 3 enregistrements en attente par personne.
 
 ### UC-30, UC-33 — V2 (aperçu)
 - La couche `InputSource` (créée en V1.5) reçoit les notes d'un clavier MIDI (Web MIDI, plugin natif Capacitor, ou clavier à l'écran pour les tests). Le mode attente s'en sert sans changement.
