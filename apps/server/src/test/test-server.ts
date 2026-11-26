@@ -84,7 +84,30 @@ export async function createTestServer(options: TestServerOptions = {}) {
     ...(options.loginPolicy ? { loginPolicy: options.loginPolicy } : {}),
     transcriber: options.transcriber ?? null,
   });
-  const app = createApp({ env, logger, services });
+  // The relay of recordings (D35) reads the same fake internet, with byte ranges.
+  const audioFetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const body = remote.get(String(input));
+    if (!body) {
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }
+    const range = /bytes=(\d+)-(\d*)/.exec(new Headers(init?.headers).get("Range") ?? "");
+    if (!range) {
+      return Promise.resolve(
+        new Response(body.slice().buffer, {
+          headers: { "Content-Type": "audio/ogg", "Accept-Ranges": "bytes" },
+        }),
+      );
+    }
+    const start = Number(range[1]);
+    const end = range[2] ? Number(range[2]) : body.byteLength - 1;
+    return Promise.resolve(
+      new Response(body.slice(start, end + 1).buffer, {
+        status: 206,
+        headers: { "Content-Type": "audio/ogg", "Content-Range": `bytes ${start}-${end}/${body.byteLength}` },
+      }),
+    );
+  }) as typeof fetch;
+  const app = createApp({ env, logger, services, audioFetch });
 
   let cookie = "";
   const request = (path: string, init: RequestInit = {}) => {

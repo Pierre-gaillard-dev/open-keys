@@ -1,6 +1,6 @@
 import type { Transcriptions } from "@open-keys/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchTranscriptions, submitTranscription } from "./transcriptions.api";
+import { fetchTranscriptions, submitTranscription, submitTranscriptionUrl } from "./transcriptions.api";
 
 const transcriptionsKey = ["transcriptions"] as const;
 /** While a recording is waiting or being transcribed, the list is refreshed this often. */
@@ -22,6 +22,14 @@ export function useSubmitTranscription() {
   return useMutation({
     mutationFn: ({ file, durationS }: { file: File; durationS: number | null }) =>
       submitTranscription(file, durationS),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: transcriptionsKey }),
+  });
+}
+
+export function useSubmitTranscriptionUrl() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (url: string) => submitTranscriptionUrl({ url }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: transcriptionsKey }),
   });
 }

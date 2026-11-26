@@ -130,6 +130,8 @@ table songs {
   max_pitch integer [not null]
   hand_mode text [not null, default: 'tracks']
   split_pitch integer [not null, default: 60]
+  audio_url text
+  audio_sha256 text
   cover_sha256 text
   cover_source text
   cover_credit text
@@ -184,6 +186,7 @@ table transcription_jobs {
   user_id text [not null]
   file_name text [not null]
   audio_sha256 text
+  source_url text
   status text [not null]
   duration_s real
   song_id text

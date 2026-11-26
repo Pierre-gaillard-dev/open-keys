@@ -97,6 +97,8 @@ export const songDetailSchema = songSummarySchema.extend({
   canEdit: z.boolean(),
   /** API path of the MIDI file. */
   midiUrl: z.string(),
+  /** The original recording (D35), served by the API; null when the song has none. */
+  audioUrl: z.string().nullable(),
   updatedAt: timestampSchema,
 });
 

@@ -63,14 +63,20 @@ describe("maintenance", () => {
     const id = await importSong(0, true);
     await server.uploadWith("PUT", `/api/songs/${id}/cover`, await pngImage(), "c.png");
     const orphan = await server.storage.put("midi", twoHandMidi("", 9));
+    // D35: the recording kept by a song stays; a recording nobody refers to goes.
+    const recording = await server.storage.put("audio", new TextEncoder().encode("OggS kept"));
+    server.services.songs.attachAudio(id, { kind: "file", sha256: recording.sha256 });
+    const strayRecording = await server.storage.put("audio", new TextEncoder().encode("OggS stray"));
 
     expect((await server.services.maintenance.run()).files).toBe(0);
     // File timestamps are real: move the clock past the grace period instead of waiting.
     server.advance(ORPHAN_FILE_GRACE_MS + 60_000);
     const report = await server.services.maintenance.run();
 
-    expect(report.files).toBe(1);
+    expect(report.files).toBe(2);
     expect(await server.storage.read("midi", orphan.sha256)).toBeUndefined();
+    expect(await server.storage.read("audio", strayRecording.sha256)).toBeUndefined();
+    expect(await server.storage.read("audio", recording.sha256)).toBeDefined();
     expect((await server.request(`/api/songs/${id}/midi`)).status).toBe(200);
     expect((await server.request(`/api/songs/${id}/cover`)).status).toBe(200);
   });

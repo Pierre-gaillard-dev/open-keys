@@ -32,6 +32,10 @@ services:
       # Import from a recording (D34). Empty TRANSCRIBER_URL in Dokploy keeps this default.
       TRANSCRIBER_URL: ${TRANSCRIBER_URL:-http://transcriber:8000}
       MAX_AUDIO_SIZE: ${MAX_AUDIO_SIZE:-}
+      # The app that fetches the recordings (D35): its origin, and the key it calls the API with.
+      AUDIO_SOURCES: ${AUDIO_SOURCES:-}
+      INTEGRATION_TOKEN: ${INTEGRATION_TOKEN:-}
+      INTEGRATION_USERNAME: ${INTEGRATION_USERNAME:-}
     volumes:
       - data:/data
     stop_grace_period: 15s

@@ -48,6 +48,11 @@ export interface SongCover {
 
 export type SongsService = ReturnType<typeof createSongsService>;
 
+/** Where the original recording of a song is: a kept file, or a URL of an allowed audio source. */
+export type SongAudio =
+  | { readonly kind: "file"; readonly sha256: string }
+  | { readonly kind: "url"; readonly url: string };
+
 export function createSongsService({ db, clock, storage, tags }: SongsServiceDeps) {
   const requireSong = (tx: Executor, id: string): SongRow => {
     const song = findSongById(tx, id);
@@ -207,6 +212,30 @@ export function createSongsService({ db, clock, storage, tags }: SongsServiceDep
 
     requireEditable(actor: AuthUser, id: string): SongRow {
       return requireEditable(db, actor, id);
+    },
+
+    /** The original recording of the song (D35), if any. */
+    audioSource(id: string): SongAudio | null {
+      const song = requireSong(db, id);
+      if (song.audioSha256) {
+        return { kind: "file", sha256: song.audioSha256 };
+      }
+      return song.audioUrl ? { kind: "url", url: song.audioUrl } : null;
+    },
+
+    /** The bytes of a kept recording, undefined when the file is missing. */
+    readAudioFile(sha256: string): Promise<Uint8Array | undefined> {
+      return storage.read("audio", sha256);
+    },
+
+    /** Keeps the recording a song was transcribed from, to play along with it (D35). */
+    attachAudio(id: string, audio: SongAudio): void {
+      requireSong(db, id);
+      updateSong(db, id, {
+        audioSha256: audio.kind === "file" ? audio.sha256 : null,
+        audioUrl: audio.kind === "url" ? audio.url : null,
+        updatedAt: clock(),
+      });
     },
 
     setCover(id: string, cover: SongCover | null): void {

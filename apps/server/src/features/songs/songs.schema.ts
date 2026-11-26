@@ -36,6 +36,12 @@ export const songs = sqliteTable(
       .notNull()
       .default("tracks"),
     splitPitch: integer("split_pitch").notNull().default(60),
+    /**
+     * The original recording, to play along with it (D35): a URL of an allowed audio source
+     * (AUDIO_SOURCES, the app that fetches the recordings), or a file sent and kept in /data/audio.
+     */
+    audioUrl: text("audio_url"),
+    audioSha256: text("audio_sha256"),
     /** /data/covers/<sha256>.webp, null = generated cover on the client. */
     coverSha256: text("cover_sha256"),
     coverSource: text("cover_source", { enum: COVER_SOURCES }),

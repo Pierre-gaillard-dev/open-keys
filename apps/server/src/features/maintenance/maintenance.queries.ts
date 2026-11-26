@@ -37,12 +37,15 @@ export function referencedFiles(db: Executor): {
   covers: Set<string>;
   audio: Set<string>;
 } {
-  const rows = db.select({ midi: songs.midiSha256, cover: songs.coverSha256 }).from(songs).all();
-  // Recordings still waiting for their transcription (D34).
+  const rows = db
+    .select({ midi: songs.midiSha256, cover: songs.coverSha256, audio: songs.audioSha256 })
+    .from(songs)
+    .all();
+  // Recordings waiting for their transcription (D34), and those kept by their song (D35).
   const recordings = db.select({ audio: transcriptionJobs.audioSha256 }).from(transcriptionJobs).all();
   return {
     midi: new Set(rows.map((row) => row.midi)),
     covers: new Set(rows.flatMap((row) => (row.cover ? [row.cover] : []))),
-    audio: new Set(recordings.flatMap((row) => (row.audio ? [row.audio] : []))),
+    audio: new Set([...rows, ...recordings].flatMap((row) => (row.audio ? [row.audio] : []))),
   };
 }

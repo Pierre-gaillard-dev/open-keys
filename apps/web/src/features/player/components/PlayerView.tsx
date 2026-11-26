@@ -12,6 +12,7 @@ import type { SamplesStatus } from "../hooks/use-player-runtime";
 import { usePlayerSession } from "../hooks/use-player-session";
 import { usePlayerShortcuts } from "../hooks/use-player-shortcuts";
 import { usePracticePersistence } from "../hooks/use-practice-persistence";
+import { useRecording } from "../hooks/use-recording";
 import { useSavePreferences } from "../hooks/use-save-preferences";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import type { PlayerRuntime } from "../runtime/browser-runtime";
@@ -40,6 +41,7 @@ function initialState(
   timeline: Timeline,
   entry: LibraryEntry | null,
   noteNaming: NoteNaming,
+  recordingAvailable: boolean,
 ): InitialPlayerState {
   const durationMs = Math.round(timeline.durationS * 1000);
   const position = entry?.lastPositionMs ?? 0;
@@ -52,6 +54,7 @@ function initialState(
     zoom: Math.min(window.innerWidth, window.innerHeight) < PHONE_SHORT_SIDE_PX,
     preferences: loadPlayerPreferences(),
     noteNaming,
+    recordingAvailable,
   };
 }
 
@@ -76,10 +79,11 @@ export function PlayerView({ song, timeline, libraryEntry, savedLoops, runtime, 
   // Read once: the store is created from it on mount (later library updates come from this player).
   const noteNaming = useNoteNaming();
   const initial = useMemo(
-    () => initialState(timeline, libraryEntry, noteNaming),
-    [timeline, libraryEntry, noteNaming],
+    () => initialState(timeline, libraryEntry, noteNaming, song.audioUrl !== null),
+    [timeline, libraryEntry, noteNaming, song.audioUrl],
   );
   const { store, tracker, controller } = usePlayerSession(timeline, initial, host, runtime, samples);
+  useRecording(store, controller, song.audioUrl);
   usePracticePersistence(song.id, store, tracker, libraryEntry);
   useSavePreferences(store);
   useLoopProgress(store, savedLoops);

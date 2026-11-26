@@ -15,6 +15,10 @@
   - **Lecture de l'audio** : ffmpeg lit les octets sur son entrée standard, sans chemin de fichier fourni par l'utilisateur. La durée est plafonnée à 15 min.
   - **Modèle** : il est vérifié par son SHA-256 au build et chargé en mode `weights_only` : des poids, pas de code exécuté.
   - **Accès aux transcriptions** : elles sont personnelles. Celle d'un autre compte répond 404.
+- **Enregistrements d'une autre app** (D35) :
+  - **Sources autorisées** : seules les origines de `AUDIO_SOURCES` sont téléchargées (avec `safeFetch` : pas d'adresse privée, taille limitée) ou relayées au lecteur. Une origine retirée de la liste n'est plus servie.
+  - **Relais** : le navigateur ne parle qu'à Open Keys. La CSP reste inchangée, et l'autre app n'a pas besoin d'accepter le cross-origin.
+  - **API d'intégration** : clé de 32 caractères au moins, comparée en temps constant (empreintes SHA-256). Elle n'existe que si la clé est configurée, agit au nom d'un seul compte, et ne lance que des transcriptions de sources autorisées.
 - **Routes protégées par préfixe** (voir `06-api.md`). L'identifiant d'une ressource créée côté client (boucle, session) qui appartient à un autre utilisateur est traité comme introuvable : jamais écrasé, jamais révélé.
 - Import par URL (`shared/http/safe-fetch.ts`) : seulement http/https sans identifiants dans l'URL, 3 redirections au plus (chacune revalidée), délai maximal de 10 s, 2 Mo maximum (contrôlés aussi pendant le téléchargement). **Seules les adresses unicast publiques sont autorisées**, et elles sont vérifiées **au moment de la connexion** (`lookup` de l'`Agent` undici), ce qui couvre aussi le DNS rebinding. Les IP écrites en dur dans l'URL sont vérifiées avant. Testé contre `127.0.0.1`, `localhost`, `::1`, `169.254.169.254`, `10.x`, `fd00::`, `::ffff:127.0.0.1` et un DNS truqué.
 - Les URL de couverture passent par le même `safe-fetch`, avec 10 Mo maximum en entrée. sharp valide le format (JPEG, PNG, WebP, AVIF) et **ré-encode** toujours l'image : aucun fichier d'origine n'est servi, et les métadonnées EXIF sont supprimées.

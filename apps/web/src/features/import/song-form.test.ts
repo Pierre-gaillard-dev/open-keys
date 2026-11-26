@@ -53,6 +53,7 @@ const song: SongDetail = {
     },
   ],
   midiUrl: "/api/songs/x/midi",
+  audioUrl: null,
   updatedAt: 1,
 };
 

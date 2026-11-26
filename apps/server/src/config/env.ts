@@ -42,12 +42,42 @@ const envSchema = z
       .int()
       .positive()
       .default(40 * 1024 * 1024),
+    /**
+     * Origins whose recordings may be transcribed and played back (D35), comma-separated: the app that
+     * fetches the recordings (https://music.example.org). Only these URLs are ever downloaded.
+     */
+    AUDIO_SOURCES: z
+      .string()
+      .default("")
+      .transform((value, context) => {
+        const origins: string[] = [];
+        for (const entry of value
+          .split(",")
+          .map((part) => part.trim())
+          .filter(Boolean)) {
+          const parsed = z.url({ protocol: /^https?$/ }).safeParse(entry);
+          if (!parsed.success) {
+            context.addIssue({ code: "custom", message: `Invalid origin: ${entry}` });
+            return z.NEVER;
+          }
+          origins.push(new URL(parsed.data).origin);
+        }
+        return origins;
+      }),
+    /** Key of the other app sending recordings (Authorization: Bearer …), 32 characters at least (D35). */
+    INTEGRATION_TOKEN: z.string().min(32).optional(),
+    /** Account the recordings sent by the other app are imported for. */
+    INTEGRATION_USERNAME: z.string().trim().min(1).optional(),
     /** Synchronisation of the online libraries (disabled by the end-to-end tests: no crawling in CI). */
     SOURCES_SYNC: booleanString.default(true),
   })
   .refine((env) => (env.ADMIN_USERNAME === undefined) === (env.ADMIN_PASSWORD === undefined), {
     message: "ADMIN_USERNAME and ADMIN_PASSWORD must be set together",
     path: ["ADMIN_PASSWORD"],
+  })
+  .refine((env) => (env.INTEGRATION_TOKEN === undefined) === (env.INTEGRATION_USERNAME === undefined), {
+    message: "INTEGRATION_TOKEN and INTEGRATION_USERNAME must be set together",
+    path: ["INTEGRATION_USERNAME"],
   })
   .refine((env) => env.NODE_ENV !== "production" || env.PUBLIC_URL !== undefined, {
     message: "PUBLIC_URL is required in production",

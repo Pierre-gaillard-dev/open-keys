@@ -76,6 +76,7 @@ export function songDetail(overrides: Partial<SongDetail> = {}): SongDetail {
     noteHands: null,
     canEdit: true,
     midiUrl: `/api/songs/${summary.id}/midi`,
+    audioUrl: null,
     updatedAt: 1,
     ...overrides,
   };
