@@ -1,5 +1,6 @@
 # Production (Dokploy compose application, see docs/03-architecture/07-deploiement.md).
 # Traefik routes the domain: /api → api:3000, everything else → web:8080 (domains configured in Dokploy).
+# The transcriber has no domain: only the API reaches it, on the compose network.
 # Variables come from the Dokploy environment (written to .env next to this file). An unset variable is
 # passed as an empty string, which the API treats as unset (PUBLIC_URL is required: the API refuses to start).
 
@@ -28,9 +29,25 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-true}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Import from a recording (D34). Empty TRANSCRIBER_URL in Dokploy keeps this default.
+      TRANSCRIBER_URL: ${TRANSCRIBER_URL:-http://transcriber:8000}
+      MAX_AUDIO_SIZE: ${MAX_AUDIO_SIZE:-}
     volumes:
       - data:/data
     stop_grace_period: 15s
+
+  # Piano recording → MIDI (D34): PyTorch on the CPU, one transcription at a time (about 1 GB of RAM
+  # while transcribing, every core). Image of about 3 GB, built by Dokploy like the others.
+  transcriber:
+    build:
+      context: .
+      dockerfile: docker/transcriber.Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      THREADS: ${TRANSCRIBER_THREADS:-}
+      LOG_LEVEL: ${TRANSCRIBER_LOG_LEVEL:-INFO}
 
 volumes:
   data:

@@ -38,6 +38,7 @@ Open Keys est une application *falling notes* personnelle et auto-hébergée. El
 
 - **Import** d'un fichier MIDI ou d'une URL, avec un écran de vérification : répartition des pistes entre les mains, métadonnées, couverture trouvée automatiquement.
 - **Recherche multi-sources** dans [Mutopia](https://www.mutopiaproject.org/), [MAESTRO](https://magenta.tensorflow.org/datasets/maestro) et [xivmidi](https://xivmidi.com/), soit près de 9 000 morceaux indexés par le serveur, avec **écoute avant import**. La source, la licence et le crédit de chaque fichier le suivent dans le catalogue.
+- **Import depuis un enregistrement** de piano seul (mp3, opus…) : un service de transcription en tâche de fond en tire les notes, la pédale et le tempo, à vérifier comme un MIDI importé.
 
 | Catalogue | Recherche en ligne |
 |---|---|
@@ -111,6 +112,7 @@ Le détail (contexte, moteur du lecteur, flux, API, déploiement, sécurité, te
 apps/
   web/       PWA React, découpée par feature (catalog, import, player, progress…)
   server/    API Hono, découpée par feature (auth, songs, imports, covers, sources, practice…)
+  transcriber/ service Python interne : enregistrement de piano → MIDI (PyTorch, CPU)
 packages/
   core/      Analyse MIDI, répartition des mains, timeline (TypeScript pur)
   contracts/ Schémas Zod partagés front/back
@@ -158,6 +160,7 @@ ADMIN_USERNAME=pierre ADMIN_PASSWORD='mot-de-passe-local' \
 
 - Code : [MIT](LICENSE).
 - Échantillons de piano : [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3), par Alexander Holm, sous licence CC-BY 3.0.
+- Transcription des enregistrements : [modèle de transcription du piano](https://zenodo.org/record/4034264) de Qiuqiang Kong et al. (ByteDance), sous licence CC-BY 4.0, avec [piano_transcription_inference](https://github.com/qiuqiangkong/piano_transcription_inference) (MIT). Tempo : [librosa](https://librosa.org/) (ISC).
 - Modèle de détection au micro (labo, en essai) : [Basic Pitch](https://github.com/spotify/basic-pitch-ts), par Spotify, sous licence Apache-2.0. La licence est fournie avec le modèle dans `apps/web/public/models/basic-pitch`.
 - Bibliothèques MIDI : [Mutopia Project](https://www.mutopiaproject.org/) (domaine public, Creative Commons), [MAESTRO](https://magenta.tensorflow.org/datasets/maestro) (Google Magenta, CC BY-NC-SA 4.0), [xivmidi](https://xivmidi.com/) (arrangements de la communauté). La source, la licence et le crédit de chaque morceau importé sont conservés avec lui et affichés dans l'app.
 - Couvertures : [MusicBrainz](https://musicbrainz.org/) / [Cover Art Archive](https://coverartarchive.org/) et [Wikimedia Commons](https://commons.wikimedia.org/). L'attribution est affichée dans l'app.

@@ -169,6 +169,16 @@ Jouer sur un vrai piano sans câble : le micro du téléphone ou du PC entend le
 - [ ] Score et précision dans `practice_sessions`.
 - [ ] Pause avec une touche dédiée du piano (par exemple A0).
 
+## V1.6 — Import d'enregistrements (D34)
+
+Importer un enregistrement de piano (mp3, opus…) au lieu d'un MIDI : l'app en tire les notes, la pédale et la grille de temps.
+
+- [x] **Spike** sur une reprise piano de 4 min 25 (`tools/audio-to-midi/`). ByteDance (spécialisé piano) est nettement plus propre que Basic Pitch : il n'a pas les 40 % de notes fantômes. En revanche, il calcule pendant 2 fois la durée du morceau sur le CPU d'un PC à 4 cœurs, contre 13 s. La grille de temps détectée place 93 % des attaques sur un temps ou un demi-temps.
+- [x] **Choix** après écoute dans l'app : ByteDance avec la grille de temps, dans un conteneur sur le VPS (D34).
+- [x] **Import d'enregistrements** (UC-38) : service `transcriber` (Python, interne), file de tâches dans l'API (une à la fois), brouillon à vérifier comme un MIDI importé, enregistrement supprimé après transcription.
+- [ ] Mesurer le temps de transcription sur le VPS, puis régler `TRANSCRIBER_THREADS` et l'estimation affichée.
+- [ ] Ensuite : reprise piano générée depuis un vrai morceau, avec chant et instruments (Etude, AMT-APC, Pop2Piano…). L'audio d'origine pourra être rejoué en accompagnement.
+
 ## Après l'audio → piano — Accompagnement (MIDI à plusieurs instruments)
 
 Mis de côté : il prendra tout son sens avec la version qui extrait le piano d'un vrai morceau (MP3, Opus) et rejoue l'audio d'origine.
@@ -184,4 +194,4 @@ Aujourd'hui, chaque piste est attribuée à une main ou ignorée. Une piste igno
 ## Plus tard (non planifié)
 
 - Gamification (séries de jours, objectifs quotidiens).
-- **Audio → piano** : générer une reprise piano à partir d'un vrai morceau (Etude, AMT-APC, Pop2Piano…) et la jouer avec l'audio d'origine. Spike en attente de fichiers audio de test.
+- **Audio → piano** : voir « Audio → MIDI » plus haut.

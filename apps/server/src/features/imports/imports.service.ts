@@ -9,6 +9,8 @@ import type { SongsService } from "../songs";
 
 export type ImportSource =
   | { readonly type: "upload"; readonly filename: string }
+  /** A recording transcribed on the server (D34): stored as an upload, credited to the transcription. */
+  | { readonly type: "transcription"; readonly filename: string }
   | { readonly type: "url"; readonly url: string }
   | { readonly type: "library"; readonly piece: LibraryPiece };
 
@@ -45,11 +47,12 @@ export interface ImportResult {
 export type ImportsService = ReturnType<typeof createImportsService>;
 
 const MAX_TITLE_LENGTH = 200;
+const MAX_CREDIT_LENGTH = 300;
 
 /** "gymnopedie_1.mid" → "gymnopedie 1", "Evanescence - Bring_Me_to_Life.mid" keeps its " - ". */
 export function titleFromName(name: string): string {
   const base = name
-    .replace(/\.(mid|midi|kar)$/i, "")
+    .replace(/\.(mid|midi|kar|mp3|opus|ogg|oga|m4a|aac|wav|flac|webm)$/i, "")
     .replace(/_+/g, " ")
     .replace(/(\S)-+(?=\S)/g, "$1 ")
     .replace(/\s+/g, " ")
@@ -64,7 +67,7 @@ function suggestedTitle(analysis: MidiAnalysis, source: ImportSource): string {
   if (analysis.title) {
     return analysis.title.slice(0, MAX_TITLE_LENGTH);
   }
-  if (source.type === "upload") {
+  if (source.type === "upload" || source.type === "transcription") {
     return titleFromName(source.filename);
   }
   const lastSegment = new URL(source.url).pathname.split("/").filter(Boolean).at(-1) ?? "";
@@ -78,9 +81,15 @@ function draftOrigin(analysis: MidiAnalysis, source: ImportSource) {
     title: suggestedTitle(analysis, source),
     composer: piece?.composer ?? null,
     license: piece?.license ?? null,
-    credit: piece?.credit ?? null,
+    credit:
+      source.type === "transcription"
+        ? `Transcription automatique de l'enregistrement « ${source.filename} » (ByteDance Piano Transcription)`.slice(
+            0,
+            MAX_CREDIT_LENGTH,
+          )
+        : (piece?.credit ?? null),
     // A library file is downloaded too: "url", the library itself is in sourceLibrary.
-    sourceType: source.type === "upload" ? ("upload" as const) : ("url" as const),
+    sourceType: source.type === "url" || source.type === "library" ? ("url" as const) : ("upload" as const),
     sourceUrl: piece ? piece.pageUrl : source.type === "url" ? source.url : null,
     sourceLibrary: piece?.library ?? null,
     sourcePieceId: piece?.pieceId ?? null,
@@ -179,6 +188,11 @@ export function createImportsService(deps: ImportsServiceDeps) {
 
     async importUrl(actor: AuthUser, url: string): Promise<ImportResult> {
       return importBytes(actor, await downloadMidi(url), { type: "url", url });
+    },
+
+    /** The MIDI transcribed from the recording `filename` (D34). */
+    importTranscription(actor: AuthUser, bytes: Uint8Array, filename: string): Promise<ImportResult> {
+      return importBytes(actor, bytes, { type: "transcription", filename });
     },
 
     /** A piece of an online library, already downloaded by its provider (UC-20). */

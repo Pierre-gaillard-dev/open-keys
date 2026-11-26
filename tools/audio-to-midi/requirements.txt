@@ -1,0 +1,15 @@
+# Spike tools (CPU). PyTorch: install first from https://download.pytorch.org/whl/cpu
+piano_transcription_inference==0.0.6
+librosa
+mido
+numpy
+audioread
+standard-aifc
+standard-sunau
+# compare.py
+pretty-midi
+mir-eval
+# transcribe_basic_pitch.py (installed with --no-deps: it would pull TensorFlow, ONNX is enough)
+onnxruntime
+resampy
+scikit-learn

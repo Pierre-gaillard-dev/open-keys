@@ -6,3 +6,4 @@ export { loops, practiceSessions } from "../features/practice/practice.schema";
 export { songHands, songs, songTracks } from "../features/songs/songs.schema";
 export { sourcePieces } from "../features/sources/sources.schema";
 export { songTags, tags } from "../features/tags/tags.schema";
+export { transcriptionJobs } from "../features/transcriptions/transcriptions.schema";

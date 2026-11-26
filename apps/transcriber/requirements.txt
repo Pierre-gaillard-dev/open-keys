@@ -1,0 +1,6 @@
+# Runtime of the transcriber (CPU). PyTorch is installed before, from https://download.pytorch.org/whl/cpu
+piano_transcription_inference==0.0.6
+librosa==0.11.0
+mido==1.3.3
+numpy==2.3.5
+audioread==3.0.1

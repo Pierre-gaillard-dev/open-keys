@@ -14,7 +14,13 @@ import { z } from "zod";
 import { AccountPage, InvitePage } from "../features/account";
 import { currentUserQuery, LoginPage } from "../features/auth";
 import { CatalogPage, type CatalogSearch, catalogSearchSchema, SongDetailPage } from "../features/catalog";
-import { ImportPage, ImportReviewPage, OnlineSearchPage, SongEditPage } from "../features/import";
+import {
+  AudioImportPage,
+  ImportPage,
+  ImportReviewPage,
+  OnlineSearchPage,
+  SongEditPage,
+} from "../features/import";
 import { MicLabPage } from "../features/listening";
 import { PlayerPage } from "../features/player";
 import { ProgressPage } from "../features/progress";
@@ -146,6 +152,13 @@ const onlineSearchRoute = createRoute({
   },
 });
 
+/** D34: import from a recording of piano, transcribed on the server. */
+const audioImportRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/import/audio",
+  component: AudioImportPage,
+});
+
 const progressRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/progress",
@@ -183,6 +196,7 @@ const routeTree = rootRoute.addChildren([
       songEditRoute,
       importRoute,
       onlineSearchRoute,
+      audioImportRoute,
       importReviewRoute,
       progressRoute,
       accountRoute,

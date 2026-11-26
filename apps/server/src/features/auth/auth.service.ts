@@ -198,6 +198,12 @@ export function createAuthService({ db, clock, newId, hasher, rateLimiter, logge
       return toAuthUser({ ...user, ...preferences });
     },
 
+    /** The user `id` as a session would see it, for work done on their behalf later (transcriptions). */
+    findAuthUser(id: string): AuthUser | undefined {
+      const user = findUserById(db, id);
+      return user && user.disabledAt === null ? toAuthUser(user) : undefined;
+    },
+
     // ── Used by the accounts feature (D29) ──
 
     listAccounts(): UserAccount[] {

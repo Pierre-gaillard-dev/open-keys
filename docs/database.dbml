@@ -179,6 +179,26 @@ table tags {
   name text [not null, unique]
 }
 
+table transcription_jobs {
+  id text [pk, not null]
+  user_id text [not null]
+  file_name text [not null]
+  audio_sha256 text
+  status text [not null]
+  duration_s real
+  song_id text
+  error text
+  created_at integer [not null]
+  started_at integer
+  finished_at integer
+
+  indexes {
+    (status, created_at) [name: 'transcription_jobs_status_idx']
+    (user_id, created_at) [name: 'transcription_jobs_user_idx']
+    
+  }
+}
+
 table user_songs {
   user_id text [not null]
   song_id text [not null]
@@ -233,6 +253,10 @@ ref song_tags_tag_id_tags_id_fk: song_tags.tag_id > tags.id [delete: cascade, up
 ref song_tracks_song_id_songs_id_fk: song_tracks.song_id > songs.id [delete: cascade, update: no action]
 
 ref songs_created_by_users_id_fk: songs.created_by > users.id [delete: no action, update: no action]
+
+ref transcription_jobs_user_id_users_id_fk: transcription_jobs.user_id > users.id [delete: cascade, update: no action]
+
+ref transcription_jobs_song_id_songs_id_fk: transcription_jobs.song_id > songs.id [delete: set null, update: no action]
 
 ref user_songs_user_id_users_id_fk: user_songs.user_id > users.id [delete: cascade, update: no action]
 

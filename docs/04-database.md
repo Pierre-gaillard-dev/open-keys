@@ -111,6 +111,20 @@ Une ligne par session de lecture d'au moins 10 s effectives.
 
 Index : `(user_id, song_id, started_at)`, `(user_id, started_at)` pour le tableau de bord.
 
+### `transcription_jobs` — feature `transcriptions` (D34)
+Enregistrements envoyés pour être transcrits en MIDI, une ligne par envoi.
+
+| Colonne | Note |
+|---|---|
+| `status` | `queued`, `running`, `done` ou `failed` (contrainte CHECK). Au démarrage de l'API, une tâche `running` interrompue redevient `queued` |
+| `audio_sha256` | L'enregistrement dans `audio/` tant qu'il n'est pas transcrit. Vidé, et le fichier supprimé, dès que la tâche est finie ou a échoué : seul le brouillon reste. La maintenance supprime aussi un enregistrement qu'aucune tâche ne référence plus, par exemple après la suppression d'un compte |
+| `file_name` | Nom du fichier envoyé, montré à l'utilisateur, jamais utilisé comme chemin |
+| `duration_s` | Durée mesurée par le navigateur, pour estimer le temps restant |
+| `song_id` | Le brouillon créé (`set null` s'il est supprimé) |
+| `error` | `unreadable`, `no_notes`, `too_long` ou `failed` |
+
+Index : `(status, created_at)` pour la file, `(user_id, created_at)` pour la liste de l'utilisateur.
+
 ### `source_pieces` — feature `sources` (V1.1)
 Copie locale des index des **bibliothèques en ligne** (D24) : Mutopia Project, MAESTRO, xivmidi. Seulement les morceaux à **un seul fichier MIDI**. Chaque bibliothèque est reconstruite selon son propre rythme, jamais modifiée par l'utilisateur.
 

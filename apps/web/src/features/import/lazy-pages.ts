@@ -18,6 +18,10 @@ export const SongEditPage = lazy(() =>
   import("./pages/SongEditPage").then((module) => ({ default: module.SongEditPage })),
 );
 
+export const AudioImportPage = lazy(() =>
+  import("./pages/AudioImportPage").then((module) => ({ default: module.AudioImportPage })),
+);
+
 export const OnlineSearchPage = lazy(() =>
   import("./pages/OnlineSearchPage").then((module) => ({ default: module.OnlineSearchPage })),
 );

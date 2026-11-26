@@ -2,11 +2,13 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export type FileKind = "midi" | "cover";
+export type FileKind = "midi" | "cover" | "audio";
 
 const LAYOUT: Readonly<Record<FileKind, { readonly dir: string; readonly ext: string }>> = {
   midi: { dir: "midi", ext: ".mid" },
   cover: { dir: "covers", ext: ".webp" },
+  /** Recordings waiting to be transcribed (D34): removed once done. Any format: ffmpeg reads the content. */
+  audio: { dir: "audio", ext: ".audio" },
 };
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;

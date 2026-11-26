@@ -50,6 +50,13 @@
       "when": 1795550401986,
       "tag": "0006_practice_modes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1795622934263,
+      "tag": "0007_transcription_jobs",
+      "breakpoints": true
     }
   ]
 }
